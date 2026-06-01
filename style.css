@@ -951,7 +951,7 @@ body { position:fixed; inset:0; width:100%; }
 
 
 /* ============================================================
-   V2.5.2 · Stabilisierung: Liquid Glass, Safe-Area, Touch-Fallback
+   V2.5.3 · Stabilisierung: Liquid Glass, Safe-Area, Touch-Fallback
    Diese End-Overrides ersetzen alte manuelle Pixel-Schiebereien.
    ============================================================ */
 :root{
@@ -986,3 +986,17 @@ body { position:fixed; inset:0; width:100%; }
 .manual-copy-card p{font-size:13px;color:var(--muted);line-height:1.35}
 .manual-copy-card textarea{width:100%;height:58dvh;border-radius:16px;padding:12px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.16);color:var(--text);font:12px ui-monospace,SFMono-Regular,Menlo,monospace;resize:none;-webkit-user-select:text;user-select:text}
 @media (max-height:720px){.hero-text{margin-top:56px}.panel-detail{max-height:72dvh!important}.filter-fab{right:18px!important}}
+
+
+/* V2.5.3 · Regression-Fix: Panels, Detail-Pins, Audit-Hinweis */
+.hero{z-index:35!important;pointer-events:none}
+.hero-btns,.hero-btns *{pointer-events:auto!important}
+#filterBtn{z-index:34!important;pointer-events:auto!important;touch-action:manipulation!important}
+.sheet{z-index:50!important}
+.backdrop{z-index:45!important}
+.settings-panel{z-index:60!important;pointer-events:auto!important}
+.settings-panel.hidden{pointer-events:none!important}
+.panel-detail{z-index:42!important}
+.pr-pin.pin-hidden{opacity:0!important;transform:scale(.72)!important;pointer-events:none!important}
+.pr-pin.pin-sel{opacity:1!important;z-index:999!important;filter:drop-shadow(0 0 16px rgba(90,200,250,.95))}
+.swipe-hint{display:none!important}

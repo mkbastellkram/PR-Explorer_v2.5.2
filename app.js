@@ -1,14 +1,20 @@
 /* ============================================================
    PR Explorer · app.js · Midnight Teal Pro
-   V2.5.2: Stabilisierung Maschinenraum, Cache und iOS-Bedienung
+   V2.5.3: Regression-Fix Panels und Detailmodus
    ============================================================ */
 'use strict';
 
 const qs  = s => document.querySelector(s);
 const qsa = s => [...document.querySelectorAll(s)];
 
-const APP_VERSION = 'V2.5.2';
+const APP_VERSION = 'V2.5.3';
 const APP_CHANGELOG = [
+  { version:'V2.5.3', date:'2026-06-01', title:'Regression-Fix Panels & Detailmodus', changes:[
+    'Filter- und Einstellungsbutton erhalten eine robuste iOS-Touchbindung mit Stop-Propagation.',
+    'Detailmodus blendet bewusst alle nicht aktiven PR-Pins aus; der ausgewählte Pin bleibt sichtbar markiert.',
+    'Statusänderungen rendern den aktiven Detail-Pin nach Layer-Neuaufbau stabil nach.',
+    'Veralteter Wisch-Hinweis im Detail-Panel und im Audit wurde entfernt.'
+  ]},
   { version:'V2.5.2', date:'2026-06-01', title:'Stabilisierung Maschinenraum, Cache und iOS-Bedienung', changes:[
     'Repository bereinigt: aktive Dateien heißen jetzt app.js und style.css; alte Versionsduplikate wurden aus dem Auslieferungsstand entfernt.',
     'Service Worker, Manifest, App-Version, Changelog und HTML sind auf einen eindeutigen Stand synchronisiert.',
@@ -156,7 +162,15 @@ const STATUS_DEF = {
   skip:    { label:'Kein Interesse', dot:'#636366' },
 };
 function getSt(id)   { return prStatus[id]||'open'; }
-function setSt(id,s) { prStatus[id]=s; saveStatus(); renderLayers(); renderDetail(); renderPanel(); }
+function setSt(id,s) {
+  prStatus[id]=s;
+  saveStatus();
+  const activeId = S.selected?.id || id;
+  renderLayers();
+  renderDetail();
+  renderPanel();
+  if(activeId) setTimeout(()=>focusDetailPins(activeId),60);
+}
 
 const REGIONS = {
   center:'Zentrales Hochgebirge', west:'Rabaçal / Paul da Serra',
@@ -418,9 +432,9 @@ function renderHikingVectorLayers(){
   if(!loadCachedHikingVector()){ fetchHikingVectorData(false); return; }
   const out=hikingOutlineColor(), w=+(cfg.hikingVectorWeight||3), ow=+(cfg.hikingVectorOutlineWeight||3), op=+(cfg.hikingVectorOpacity||.95);
   if(out){
-    L.geoJSON(hikingVectorGeojson,{style:()=>({color:out,weight:w+ow,opacity:Math.min(1,op),lineCap:'round',lineJoin:'round',interactive:false})}).addTo(lgHikingCasing);
+    L.geoJSON(hikingVectorGeojson,{style:()=>({pane:'hikingPane',color:out,weight:w+ow,opacity:Math.min(1,op),lineCap:'round',lineJoin:'round',interactive:false})}).addTo(lgHikingCasing);
   }
-  L.geoJSON(hikingVectorGeojson,{style:f=>({color:routeColorByProps(f.properties||{}),weight:w,opacity:op,lineCap:'round',lineJoin:'round'}),onEachFeature:(f,l)=>{l.bindPopup(hikingPopupHtml(f.properties||{}),{className:'hv-popup'}); l.bindTooltip((f.properties.ref||f.properties.name||'OSM Hiking'),{sticky:true,className:'region-tt'});}}).addTo(lgHikingCore);
+  L.geoJSON(hikingVectorGeojson,{style:f=>({pane:'hikingPane',interactive:false,color:routeColorByProps(f.properties||{}),weight:w,opacity:op,lineCap:'round',lineJoin:'round'}),onEachFeature:(f,l)=>{l.bindPopup(hikingPopupHtml(f.properties||{}),{className:'hv-popup'}); l.bindTooltip((f.properties.ref||f.properties.name||'OSM Hiking'),{sticky:true,className:'region-tt'});}}).addTo(lgHikingCore);
   renderHikingVectorLabels();
 }
 function setHikingOutline(v){ cfg.hikingVectorOutline=v; saveCfg(); renderHikingVectorLayers(); renderSettings(); }
@@ -436,7 +450,7 @@ function hikingVectorStatusHtml(){
 
 const CONCELHOS={"type":"FeatureCollection","features":[{"type":"Feature","properties":{"name":"Funchal"},"geometry":{"type":"Polygon","coordinates":[[[-16.87,32.63],[-16.88,32.68],[-16.93,32.70],[-16.98,32.68],[-16.95,32.63],[-16.87,32.63]]]}},{"type":"Feature","properties":{"name":"Câmara de Lobos"},"geometry":{"type":"Polygon","coordinates":[[[-16.98,32.63],[-16.95,32.63],[-16.98,32.68],[-17.03,32.68],[-17.03,32.63],[-16.98,32.63]]]}},{"type":"Feature","properties":{"name":"Ribeira Brava"},"geometry":{"type":"Polygon","coordinates":[[[-17.03,32.63],[-17.03,32.72],[-17.10,32.73],[-17.14,32.65],[-17.08,32.62],[-17.03,32.63]]]}},{"type":"Feature","properties":{"name":"Ponta do Sol"},"geometry":{"type":"Polygon","coordinates":[[[-17.14,32.65],[-17.10,32.73],[-17.19,32.75],[-17.22,32.67],[-17.14,32.65]]]}},{"type":"Feature","properties":{"name":"Calheta"},"geometry":{"type":"Polygon","coordinates":[[[-17.22,32.67],[-17.19,32.75],[-17.28,32.78],[-17.32,32.70],[-17.22,32.67]]]}},{"type":"Feature","properties":{"name":"Porto Moniz"},"geometry":{"type":"Polygon","coordinates":[[[-17.17,32.82],[-17.28,32.85],[-17.32,32.80],[-17.28,32.78],[-17.19,32.75],[-17.17,32.82]]]}},{"type":"Feature","properties":{"name":"São Vicente"},"geometry":{"type":"Polygon","coordinates":[[[-17.03,32.72],[-17.03,32.82],[-17.17,32.82],[-17.19,32.75],[-17.10,32.73],[-17.03,32.72]]]}},{"type":"Feature","properties":{"name":"Santana"},"geometry":{"type":"Polygon","coordinates":[[[-16.88,32.68],[-16.88,32.82],[-17.03,32.82],[-17.03,32.72],[-16.98,32.68],[-16.88,32.68]]]}},{"type":"Feature","properties":{"name":"Machico"},"geometry":{"type":"Polygon","coordinates":[[[-16.75,32.65],[-16.73,32.72],[-16.80,32.75],[-16.87,32.68],[-16.87,32.63],[-16.75,32.65]]]}},{"type":"Feature","properties":{"name":"Santa Cruz"},"geometry":{"type":"Polygon","coordinates":[[[-16.71,32.63],[-16.70,32.70],[-16.73,32.72],[-16.75,32.65],[-16.71,32.63]]]}},{"type":"Feature","properties":{"name":"Nordeste"},"geometry":{"type":"Polygon","coordinates":[[[-16.70,32.70],[-16.64,32.78],[-16.73,32.80],[-16.80,32.75],[-16.73,32.72],[-16.70,32.70]]]}}]};
 
-function drawRegions(){ lgRegions.clearLayers(); L.geoJSON(CONCELHOS,{style:()=>({color:'rgba(90,200,250,.6)',weight:1.2,fillColor:'#5ac8fa',fillOpacity:.05,dashArray:'4 6'}),onEachFeature:(f,l)=>{l.bindTooltip(f.properties.name,{sticky:true,className:'region-tt'});l.on('click',()=>{lgRegions.eachLayer(x=>{if(x.setStyle)x.setStyle({fillOpacity:.05,weight:1.2});});l.setStyle({fillOpacity:.18,weight:2});map.flyToBounds(l.getBounds(),{padding:[40,40],duration:.8});toast(f.properties.name);});}}).addTo(lgRegions); }
+function drawRegions(){ lgRegions.clearLayers(); L.geoJSON(CONCELHOS,{style:()=>({pane:'regionPane',color:'rgba(90,200,250,.6)',weight:1.2,fillColor:'#5ac8fa',fillOpacity:.05,dashArray:'4 6'}),onEachFeature:(f,l)=>{l.bindTooltip(f.properties.name,{sticky:true,className:'region-tt'});l.on('click',()=>{lgRegions.eachLayer(x=>{if(x.setStyle)x.setStyle({fillOpacity:.05,weight:1.2});});l.setStyle({fillOpacity:.18,weight:2});map.flyToBounds(l.getBounds(),{padding:[40,40],duration:.8});toast(f.properties.name);});}}).addTo(lgRegions); }
 function toggleRegions(){ if(cfg.layers.regions)drawRegions();else lgRegions.clearLayers();saveCfg(); }
 
 /* OSM POI LAYER */
@@ -541,7 +555,17 @@ function renderLayers(){
   drawHomePin();
   updateZoom();
 }
-function highlightPin(id){ lgMarkers.eachLayer(m=>{const el=m.getElement();if(el)el.classList.toggle('pin-sel',m._prId===id);}); }
+function focusDetailPins(id){
+  lgMarkers.eachLayer(m=>{
+    const el=m.getElement();
+    if(!el)return;
+    const active=m._prId===id;
+    el.classList.toggle('pin-sel',active);
+    el.classList.toggle('pin-hidden',!!id && !active);
+  });
+}
+function clearPinFocus(){ lgMarkers.eachLayer(m=>{const el=m.getElement();if(el){el.classList.remove('pin-sel','pin-hidden');}}); }
+function highlightPin(id){ focusDetailPins(id); }
 function soloOnMap(id){ cfg.soloMode=true;cfg.soloId=id;cfg.layers.tracks=true;cfg.layers.drive=true;cfg.layers.markers=true;saveCfg();renderLayers();setTab('map');const r=DATA.find(x=>x.id===id);if(r){setTimeout(()=>{const b=routeBounds(r);if(isValidBounds(b))map.flyToBounds(b,mapSafeFitOptions(false));toast(`${id} · Tippe Karte für alle PR`);},200);} }
 function exitSoloMode(){ cfg.soloMode=false;cfg.soloId=null;saveCfg();renderLayers(); }
 
@@ -557,8 +581,18 @@ function openTestPanel(){
 }
 function syncTestToggle(){ const t=qs('#testToggle'); if(!t)return; t.classList.toggle('hidden',!cfg.showTestToggle); t.classList.toggle('active',S.tab==='test'); }
 function setTab(tab){ qs('#panel')?.classList.remove('test-panel'); qs('#app')?.classList.remove('test-mode'); S.tab=tab;qsa('#bottomNav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));qs('#testToggle')?.classList.remove('active');qs('#panel').classList.toggle('hidden',tab==='map');qs('#hero').classList.toggle('hide',tab!=='map');qs('.filter-fab')?.classList.toggle('hidden',tab!=='map');S.panel=tab!=='map';syncTestToggle();if(S.panel){renderPanel();setTimeout(()=>map.invalidateSize(),200);} }
-function openDetail(id,zoom=false){ S.selected=DATA.find(r=>r.id===id);if(!S.selected)return;qs('#panel').classList.add('hidden');qs('#detailPanel').classList.remove('hidden');renderDetail();if(zoom){const b=routeBounds(S.selected);if(isValidBounds(b))map.flyToBounds(b,mapSafeFitOptions(true));}setTimeout(()=>{highlightPin(id);drawElevProfile(S.selected,'elevCanvas');},200); }
-function closeDetail(){ qs('#detailPanel').classList.add('hidden');S.selected=null;lgMarkers.eachLayer(m=>{const el=m.getElement();if(el)el.classList.remove('pin-sel');}); }
+function openDetail(id,zoom=false){
+  S.selected=DATA.find(r=>r.id===id);
+  if(!S.selected)return;
+  closeAllSheets(false);
+  qs('#panel').classList.add('hidden');
+  qs('#detailPanel').classList.remove('hidden');
+  focusDetailPins(id);
+  renderDetail();
+  if(zoom){const b=routeBounds(S.selected);if(isValidBounds(b))map.flyToBounds(b,mapSafeFitOptions(true));}
+  setTimeout(()=>{focusDetailPins(id);drawElevProfile(S.selected,'elevCanvas');},200);
+}
+function closeDetail(){ qs('#detailPanel').classList.add('hidden');S.selected=null;clearPinFocus(); }
 function setFullscreen(on){ S.fullscreen=on;qs('#app').classList.toggle('fullscreen',on);qs('#fullscreenClose').classList.toggle('hidden',!on);closeDetail();qs('#panel').classList.add('hidden');S.panel=false;setTimeout(()=>map.invalidateSize(),200); }
 function pxHeight(sel){ const el=qs(sel); return el && !el.classList.contains('hidden') ? Math.ceil(el.getBoundingClientRect().height||0) : 0; }
 function mapSafeFitOptions(detail=false){ const top=Math.max(96,pxHeight('#hero')+18); const bottomNav=pxHeight('#bottomNav')||72; const test=(cfg.showTestToggle&&!qs('#testToggle')?.classList.contains('hidden'))?(pxHeight('#testToggle')+8):0; const detailPanel=detail?Math.min(Math.round(window.innerHeight*0.42),pxHeight('#detailPanel')||260):0; const bottom=Math.max(120,bottomNav+test+detailPanel+26); return {paddingTopLeft:[28,top],paddingBottomRight:[34,bottom],maxZoom:14,duration:.85}; }
@@ -567,7 +601,13 @@ function fitMadeira(){ map.flyToBounds([[32.60,-17.28],[32.90,-16.58]],{padding:
 function fitVisible(){ const b=allBounds(); if(isValidBounds(b)) map.flyToBounds(b,mapSafeFitOptions(false)); }
 
 /* FILTER SHEET */
-function openFilterSheet(){ renderFilterSheet();qs('#filterSheet').classList.remove('hidden');qs('#backdrop').classList.remove('hidden'); }
+function openFilterSheet(){
+  closeDetail();
+  renderFilterSheet();
+  qs('#filterSheet').classList.remove('hidden');
+  qs('#backdrop').classList.remove('hidden');
+  setTimeout(()=>map.invalidateSize(),80);
+}
 function closeFilterSheet(){ qs('#filterSheet').classList.add('hidden');qs('#backdrop').classList.add('hidden');renderLayers();renderPanel(); }
 function renderFilterSheet(){
   const rSet=regionFiltered(),rb=computeFilterBounds(rSet),gb=globalFilterBounds();_fb={global:gb,region:rb};
@@ -695,7 +735,13 @@ async function shareRouteFile(id,kind='kml'){ const r=DATA.find(x=>x.id===id); i
 function exportTripICS(){ if(!cfg.tripStart||!cfg.tripEnd)return;const s=cfg.tripStart.replace(/-/g,''),e=cfg.tripEnd.replace(/-/g,'');const ics=`BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//PR Explorer Claude V2.1//DE\nBEGIN:VEVENT\nUID:trip-madeira-${Date.now()}@pr-explorer\nDTSTAMP:${s}T120000Z\nDTSTART;VALUE=DATE:${s}\nDTEND;VALUE=DATE:${e}\nSUMMARY:🌴 Madeira Wanderurlaub\nDESCRIPTION:PR Explorer Reisezeitraum\nLOCATION:Madeira\\, Portugal\nEND:VEVENT\nEND:VCALENDAR`;const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([ics],{type:'text/calendar'}));a.download='Madeira-Urlaub.ics';a.click();toast('Reisezeitraum exportiert'); }
 
 /* SETTINGS */
-function openSettings(){ renderSettings();qs('#settingsPanel').classList.remove('hidden'); }
+function openSettings(){
+  closeDetail();
+  closeAllSheets(false);
+  renderSettings();
+  qs('#settingsPanel').classList.remove('hidden');
+  setTimeout(()=>map.invalidateSize(),80);
+}
 function closeSettings(){ qs('#settingsPanel').classList.add('hidden'); }
 function fmtDate(d){ if(!d)return '–';return new Date(d).toLocaleDateString('de',{day:'numeric',month:'short',year:'numeric'}); }
 function lineStyleBtns(cfgKey,def){ return ['solid','dashed','dotted'].map(s=>`<button class="line-style-btn ${(cfg[cfgKey]||def)===s?'ls-active':''}" onclick="cfg['${cfgKey}']='${s}';saveCfg();renderLayers();renderSettings()">${s==='solid'?'━━━':s==='dashed'?'╌╌╌':'···'}</button>`).join(''); }
@@ -805,7 +851,7 @@ function closeDateSheet(){ qs('#dateSheet').classList.add('hidden');closeBackdro
 
 /* BACKDROP */
 function closeBackdrop(){ const any=['#colorSheet','#iconSheet','#dateSheet','#filterSheet'].some(s=>!qs(s).classList.contains('hidden'));if(!any)qs('#backdrop').classList.add('hidden'); }
-function closeAllSheets(){ ['#colorSheet','#iconSheet','#dateSheet','#filterSheet'].forEach(s=>qs(s).classList.add('hidden'));qs('#backdrop').classList.add('hidden');renderLayers();renderPanel(); }
+function closeAllSheets(refresh=true){ ['#colorSheet','#iconSheet','#dateSheet','#filterSheet'].forEach(s=>qs(s).classList.add('hidden'));qs('#backdrop').classList.add('hidden'); if(refresh){renderLayers();renderPanel();} }
 
 /* SWIPE GESTURES */
 function addSwipeClose(el,closeFn,directions,handleOnly=false){
@@ -870,7 +916,7 @@ function initAllSwipe(){
 }
 
 /* TEST TAB */
-const TEST_STEPS=[{cat:'Karte & Navigation',steps:[{id:'map-load',icon:'🗺️',title:'App startet & Topo-Karte lädt',sub:'Topo-Karte als Standard',tap:'App öffnen – warte 2 Sek.',expect:'<b>Topo-Karte</b> erscheint (grün/braun). "MADEIRA / PR Explorer" oben. Teal-Fußleiste.'},{id:'map-pins',icon:'📍',title:'PR-Pins erscheinen',sub:'Label-Tags',tap:'Warte nach dem Laden',expect:'Farbige Tags auf der Karte. Grün=leicht, Orange=mittel, Rot=schwer.'},{id:'map-locate',icon:'📡',title:'Standort-Button',sub:'Linke Pill',tap:'Obere linke Pill → Pfeil-Button',expect:'Browser fragt Standort. Karte springt zu deiner Position.'},{id:'map-fit',icon:'⬜',title:'Route einpassen',sub:'Mittlerer Button',tap:'Obere linke Pill → Rechteck-Button',expect:'Karte zeigt alle sichtbaren PRs.'},{id:'map-fs',icon:'⛶',title:'Vollbild',sub:'Rechter Button',tap:'Obere linke Pill → Pfeile → dann × oben',expect:'Nur Karte sichtbar. × beendet Vollbild.'}]},{cat:'Pin & Detail',steps:[{id:'pin-tap',icon:'👆',title:'Pin → Detail öffnet',sub:'Label-Tag antippen',tap:'Einen PR-Tag antippen',expect:'Detail-Panel von unten. Pin leuchtet Teal.'},{id:'detail-elev',icon:'⛰️',title:'Höhenprofil',sub:'Canvas-Chart',tap:'Im Detail nach unten scrollen',expect:'Teal-Gradient-Chart. Meter-Labels. 4 Stat-Boxen darunter.',note:'Nur bei PRs mit GPX-Daten. Teste PR 1, PR 6.3, PR 10.'},{id:'detail-swipe',icon:'👈',title:'Wischen schließt Detail',sub:'Links, rechts oder runter',tap:'Detail-Panel links oder rechts wischen',expect:'Panel folgt Finger. Fliegt bei genug Schwung raus.'},{id:'detail-status',icon:'🚦',title:'Status setzen',sub:'4 Buttons',tap:'"Eingeschränkt" antippen',expect:'Status-Dot am Pin wechselt auf gelb.'},{id:'detail-solo',icon:'🎯',title:'Solo auf Karte',sub:'Karten-Button im Journal',tap:'Journal → Karten-Icon bei einem PR antippen',expect:'Nur dieser PR auf der Karte mit Route + Anfahrt.'}]},{cat:'Filter',steps:[{id:'flt-open',icon:'🔽',title:'Filter öffnen & schließen',sub:'FAB + Wischen',tap:'Trichter antippen → nach unten wischen zum Schließen',expect:'Filter-Sheet öffnet. Schließt per Wischen.'},{id:'flt-region',icon:'🗾',title:'Regions-Filter + Slider-Anpassung',sub:'Dynamische Grenzen',tap:'"Zentrales Hochgebirge" antippen',expect:'Slider passen <b>automatisch</b> Min/Max an.'},{id:'flt-slider',icon:'📏',title:'Dual-Slider',sub:'Zwei Anfasser',tap:'Track-Länge: beide Anfasser verschieben',expect:'Karte aktualisiert live. Anfasser nicht aneinander vorbei.'},{id:'flt-reset',icon:'↺',title:'Filter zurücksetzen',sub:'Reset-Button',tap:'"Filter zurücksetzen"',expect:'Alle PRs wieder sichtbar.'}]},{cat:'Einstellungen',steps:[{id:'set-gpx',icon:'📏',title:'GPX Strichstärke + Stil',sub:'Slider + Stil-Buttons',tap:'Einstellungen → GPX Strichstärke + Stil',expect:'Linien ändern sich live.'},{id:'set-pinsize',icon:'🔎',title:'Pin-Größe',sub:'50%–200%',tap:'Einstellungen → Pin Größe Slider',expect:'Pins werden live größer/kleiner.'},{id:'set-color',icon:'🎨',title:'Farbpicker',sub:'Gitter + RGB-Regler',tap:'GPX Farbe → andere Farbe → Sichern',expect:'GPX-Linien wechseln Farbe sofort.'},{id:'set-date',icon:'📅',title:'Reisezeitraum',sub:'Kalender-Picker',tap:'Zeitraum → zwei Daten → Sichern',expect:'Travel-Banner in Übersicht erscheint.'}]}];
+const TEST_STEPS=[{cat:'Karte & Navigation',steps:[{id:'map-load',icon:'🗺️',title:'App startet & Topo-Karte lädt',sub:'Topo-Karte als Standard',tap:'App öffnen – warte 2 Sek.',expect:'<b>Topo-Karte</b> erscheint (grün/braun). "MADEIRA / PR Explorer" oben. Teal-Fußleiste.'},{id:'map-pins',icon:'📍',title:'PR-Pins erscheinen',sub:'Label-Tags',tap:'Warte nach dem Laden',expect:'Farbige Tags auf der Karte. Grün=leicht, Orange=mittel, Rot=schwer.'},{id:'map-locate',icon:'📡',title:'Standort-Button',sub:'Linke Pill',tap:'Obere linke Pill → Pfeil-Button',expect:'Browser fragt Standort. Karte springt zu deiner Position.'},{id:'map-fit',icon:'⬜',title:'Route einpassen',sub:'Mittlerer Button',tap:'Obere linke Pill → Rechteck-Button',expect:'Karte zeigt alle sichtbaren PRs.'},{id:'map-fs',icon:'⛶',title:'Vollbild',sub:'Rechter Button',tap:'Obere linke Pill → Pfeile → dann × oben',expect:'Nur Karte sichtbar. × beendet Vollbild.'}]},{cat:'Pin & Detail',steps:[{id:'pin-tap',icon:'👆',title:'Pin → Detail öffnet',sub:'Label-Tag antippen',tap:'Einen PR-Tag antippen',expect:'Detail-Panel von unten. Pin leuchtet Teal.'},{id:'detail-elev',icon:'⛰️',title:'Höhenprofil',sub:'Canvas-Chart',tap:'Im Detail nach unten scrollen',expect:'Teal-Gradient-Chart. Meter-Labels. 4 Stat-Boxen darunter.',note:'Nur bei PRs mit GPX-Daten. Teste PR 1, PR 6.3, PR 10.'},{id:'detail-close',icon:'✕',title:'Schließen-Kreuz im Detail',sub:'Kein Wischen mehr',tap:'Detail-Panel öffnen → Kreuz oben rechts antippen',expect:'Detail-Panel schließt. Alle PR-Pins erscheinen wieder.'},{id:'detail-status',icon:'🚦',title:'Status setzen',sub:'4 Buttons',tap:'"Eingeschränkt" antippen',expect:'Status-Dot am Pin wechselt auf gelb.'},{id:'detail-solo',icon:'🎯',title:'Solo auf Karte',sub:'Karten-Button im Journal',tap:'Journal → Karten-Icon bei einem PR antippen',expect:'Nur dieser PR auf der Karte mit Route + Anfahrt.'}]},{cat:'Filter',steps:[{id:'flt-open',icon:'🔽',title:'Filter öffnen & schließen',sub:'FAB + Wischen',tap:'Trichter antippen → nach unten wischen zum Schließen',expect:'Filter-Sheet öffnet. Schließt per Wischen.'},{id:'flt-region',icon:'🗾',title:'Regions-Filter + Slider-Anpassung',sub:'Dynamische Grenzen',tap:'"Zentrales Hochgebirge" antippen',expect:'Slider passen <b>automatisch</b> Min/Max an.'},{id:'flt-slider',icon:'📏',title:'Dual-Slider',sub:'Zwei Anfasser',tap:'Track-Länge: beide Anfasser verschieben',expect:'Karte aktualisiert live. Anfasser nicht aneinander vorbei.'},{id:'flt-reset',icon:'↺',title:'Filter zurücksetzen',sub:'Reset-Button',tap:'"Filter zurücksetzen"',expect:'Alle PRs wieder sichtbar.'}]},{cat:'Einstellungen',steps:[{id:'set-gpx',icon:'📏',title:'GPX Strichstärke + Stil',sub:'Slider + Stil-Buttons',tap:'Einstellungen → GPX Strichstärke + Stil',expect:'Linien ändern sich live.'},{id:'set-pinsize',icon:'🔎',title:'Pin-Größe',sub:'50%–200%',tap:'Einstellungen → Pin Größe Slider',expect:'Pins werden live größer/kleiner.'},{id:'set-color',icon:'🎨',title:'Farbpicker',sub:'Gitter + RGB-Regler',tap:'GPX Farbe → andere Farbe → Sichern',expect:'GPX-Linien wechseln Farbe sofort.'},{id:'set-date',icon:'📅',title:'Reisezeitraum',sub:'Kalender-Picker',tap:'Zeitraum → zwei Daten → Sichern',expect:'Travel-Banner in Übersicht erscheint.'}]}];
 let _testResults=JSON.parse(localStorage.getItem('prTestResultsPersistent')||localStorage.getItem('prTestResults')||'{}');
 let _testActive=null;
 function saveTestResults(){ const v=JSON.stringify(_testResults); localStorage.setItem('prTestResults',v); localStorage.setItem('prTestResultsPersistent',v); _updateTestBadge(); }
@@ -935,26 +981,34 @@ function showManualCopySheet(txt){
 }
 
 /* BIND */
+function bindTap(sel,fn){
+  const el=qs(sel); if(!el)return;
+  let last=0;
+  const run=e=>{ e?.preventDefault?.(); e?.stopPropagation?.(); if(window.L?.DomEvent)L.DomEvent.stop(e); const now=Date.now(); if(now-last<260)return; last=now; fn(e); };
+  el.addEventListener('click',run,{passive:false});
+  el.addEventListener('touchend',run,{passive:false});
+  el.style.pointerEvents='auto';
+}
 function bind(){
   window.addEventListener('resize',()=>{ if(S.tab==='test') setTimeout(()=>window.scrollTo(0,0),50); });
   window.visualViewport?.addEventListener('resize',()=>{ if(S.tab==='test') setTimeout(()=>window.scrollTo(0,0),50); });
   qsa('#bottomNav button').forEach(b=>{ b.onclick=()=>setTab(b.dataset.tab); });
   const tt=qs('#testToggle'); if(tt)tt.onclick=()=>openTestPanel();
-  qs('#locateBtn').onclick=()=>{map.locate({setView:true,maxZoom:15,enableHighAccuracy:true,timeout:9000});};
+  bindTap('#locateBtn',()=>{map.locate({setView:true,maxZoom:15,enableHighAccuracy:true,timeout:9000});});
   map.on('locationfound',e=>{ if(locMarker)map.removeLayer(locMarker); if(locCircle)map.removeLayer(locCircle); locCircle=L.circle(e.latlng,{radius:e.accuracy||20,color:'#5ac8fa',weight:1,opacity:.7,fillColor:'#5ac8fa',fillOpacity:.12}).addTo(map); locMarker=L.circleMarker(e.latlng,{radius:8,color:'#fff',weight:2,fillColor:'#0a84ff',fillOpacity:1}).addTo(map); toast('Standort markiert'); });
   map.on('locationerror',()=>toast('Standort nicht verfügbar'));
-  qs('#fitAllBtn').onclick=()=>fitVisible();
-  qs('#fullscreenBtn').onclick=()=>setFullscreen(true);
-  qs('#fullscreenClose').onclick=()=>setFullscreen(false);
-  qs('#settingsBtn').onclick=()=>openSettings();
-  qs('#shareBtn').onclick=()=>shareTestReport();
-  const fb=qs('#filterBtn'); if(fb){ fb.onclick=(e)=>{ e?.stopPropagation?.(); openFilterSheet(); }; fb.style.pointerEvents='auto'; };
-  qs('#filterClose').onclick=()=>closeFilterSheet();
-  qs('#resetFilters').onclick=()=>resetFilters();
-  qs('#detailClose').onclick=closeDetail;
-  qs('#settingsClose').onclick=closeSettings;
-  qs('#backdrop').onclick=closeAllSheets;
-  map.on('click',()=>{closeAllSheets();lgMarkers.eachLayer(m=>{const el=m.getElement();if(el)el.classList.remove('pin-sel');});if(cfg.soloMode){exitSoloMode();toast('Alle PR wieder sichtbar');}});
+  bindTap('#fitAllBtn',()=>fitVisible());
+  bindTap('#fullscreenBtn',()=>setFullscreen(true));
+  bindTap('#fullscreenClose',()=>setFullscreen(false));
+  bindTap('#settingsBtn',()=>openSettings());
+  bindTap('#shareBtn',()=>shareTestReport());
+  bindTap('#filterBtn',()=>openFilterSheet());
+  bindTap('#filterClose',()=>closeFilterSheet());
+  bindTap('#resetFilters',()=>resetFilters());
+  bindTap('#detailClose',()=>closeDetail());
+  bindTap('#settingsClose',()=>closeSettings());
+  qs('#backdrop').onclick=()=>closeAllSheets();
+  map.on('click',()=>{closeAllSheets();clearPinFocus();if(cfg.soloMode){exitSoloMode();toast('Alle PR wieder sichtbar');}});
   initAllSwipe();
 }
 
@@ -974,7 +1028,7 @@ const _addCSS=`
 const _styleEl=document.createElement('style');_styleEl.textContent=_addCSS;document.head.appendChild(_styleEl);
 
 /* GLOBALS */
-Object.assign(window,{S,F,cfg,favs,saveFavs,saveCfg,saveStatus,openDetail,closeDetail,setTab,setSt,setBase,setLayer,setHikingMode,setHikingColorMode,soloOnMap,exitSoloMode,openSettings,closeSettings,renderSettings,setPinShape,openColorSheet,closeColorSheet,confirmColor,setColorTab,sliderChanged,hexChanged,pickColor,openIconSheet,closeIconSheet,confirmIcon,filterIcons,pickIcon,openDateSheet,closeDateSheet,confirmDate,calPrev,calNext,calDay,exportICS,exportTripICS,exportBookedICS,updatePrSchedule,clearPrSchedule,resetFilters,setRegion,setSF,toggleRegions,dualMove,renderFilterSheet,closeAllSheets,closeBackdrop,fitVisible,renderLayers,renderPanel,renderDetail,tcToggle,tcResult,tcReset,tcExport,tcSaveNote,tcClearNote,renderTestTab,openTestPanel,syncTestToggle,APP_VERSION,APP_CHANGELOG,qs,lineStyleBtns,setSort,setScheduleFilter,refreshPoiData,setPoiCat,googleMapsSearch,exportRouteFile,shareRouteFile,shareTestReport,darkenChanged,setHomeField,drawHomePin,togglePois});
+Object.assign(window,{S,F,cfg,favs,saveFavs,saveCfg,saveStatus,openDetail,closeDetail,setTab,setSt,setBase,setLayer,setHikingMode,setHikingColorMode,soloOnMap,exitSoloMode,openSettings,closeSettings,renderSettings,setPinShape,openColorSheet,closeColorSheet,confirmColor,setColorTab,sliderChanged,hexChanged,pickColor,openIconSheet,closeIconSheet,confirmIcon,filterIcons,pickIcon,openDateSheet,closeDateSheet,confirmDate,calPrev,calNext,calDay,exportICS,exportTripICS,exportBookedICS,updatePrSchedule,clearPrSchedule,resetFilters,setRegion,setSF,toggleRegions,dualMove,renderFilterSheet,closeAllSheets,closeBackdrop,fitVisible,renderLayers,renderPanel,renderDetail,tcToggle,tcResult,tcReset,tcExport,tcSaveNote,tcClearNote,renderTestTab,openTestPanel,syncTestToggle,APP_VERSION,APP_CHANGELOG,qs,lineStyleBtns,setSort,setScheduleFilter,refreshPoiData,setPoiCat,googleMapsSearch,exportRouteFile,shareRouteFile,shareTestReport,darkenChanged,setHomeField,drawHomePin,togglePois,focusDetailPins,clearPinFocus,openFilterSheet});
 
 /* INIT */
 bind();renderFilterSheet();renderLayers();setTab('map');syncTestToggle();setTimeout(fitMadeira,300);_updateTestBadge();

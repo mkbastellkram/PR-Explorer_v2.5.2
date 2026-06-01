@@ -1,8 +1,8 @@
 {
   "name": "PR Explorer Madeira",
-  "version": "V2.5.2",
+  "version": "V2.5.3",
   "date": "2026-06-01",
   "release": "Stabilisierung Maschinenraum",
   "activeFiles": ["index.html", "app.js", "style.css", "pr-data.js", "service-worker.js", "manifest.webmanifest"],
-  "cache": "pr-explorer-V2.5.2"
+  "cache": "pr-explorer-V2.5.3"
 }

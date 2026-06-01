@@ -2,7 +2,7 @@
 
 ## Pflichtprüfung nach Upload
 
-1. App öffnen und Versionsanzeige/Changelog prüfen: V2.5.2.
+1. App öffnen und Versionsanzeige/Changelog prüfen: V2.5.3.
 2. iPhone-PWA/Safari hart neu laden, falls alte Dateien sichtbar sind.
 3. Einstellungen öffnen und Kartenstil einmal auf Topo, OSM, Satellit, Hybrid, zurück auf Topo wechseln.
 4. Route einpassen testen: sichtbare Overlays dürfen nicht unter Bottom-Navigation/Test-Schalter verschwinden.
@@ -26,4 +26,4 @@ Zulässige Zustände:
 
 - Safari: Website-Daten für die GitHub-Pages-Domain löschen.
 - PWA vom Home-Bildschirm entfernen und neu hinzufügen.
-- Danach prüfen, ob `version.json` V2.5.2 meldet.
+- Danach prüfen, ob `version.json` V2.5.3 meldet.
