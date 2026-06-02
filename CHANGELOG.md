@@ -1,3 +1,12 @@
+# V3.0.1 · Integrierte Roadmap-, Audit- und Planungsarchitektur
+
+- Direkte Integration in die aktuelle app.js-/style.css-/service-worker.js-Struktur.
+- index.html lädt nun prx-v3.0.1.css und prx-v3.0.1.js mit Cache-Busting.
+- app.js meldet APP_VERSION V3.0.1 und enthält den V3.0.1-Eintrag im Änderungslogbuch.
+- service-worker.js nutzt eigenen V3.0.1-Cache und cached die neuen V3-Dateien.
+- version.json und manifest.webmanifest auf V3.0.1 aktualisiert.
+- Roadmap/Audit/V3-Zusatzmodule sind jetzt direkt über die laufende App erreichbar.
+
 # PR Explorer Madeira · Changelog
 
 ## V2.5.8 · 2026-06-02 · Reiseplan-Grundsystem

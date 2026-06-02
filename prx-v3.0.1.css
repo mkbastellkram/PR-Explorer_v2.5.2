@@ -45,3 +45,14 @@
 #prx301-toast{position:fixed;z-index:6000;left:50%;bottom:calc(env(safe-area-inset-bottom) + 34px);transform:translateX(-50%) translateY(20px);opacity:0;transition:.22s;background:rgba(10,24,22,.94);border:1px solid rgba(90,200,250,.2);color:#f0faf8;border-radius:999px;padding:10px 14px;font:700 13px -apple-system,BlinkMacSystemFont,sans-serif}
 #prx301-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 @media(max-width:460px){.prx301-two,.prx301-kpis{grid-template-columns:1fr}.prx301-plan-item{grid-template-columns:34px 1fr auto}.prx301-plan-item button{padding:6px 8px}.prx301-near{grid-template-columns:auto 1fr}.prx301-near em{grid-column:2}}
+
+
+/* V3.0.1 Integration compatibility */
+.prx301-enabled .sheet,
+.prx301-enabled .panel,
+.prx301-enabled .detail-panel {
+  background-color: rgba(10,24,22,var(--prx-sheet-opacity,.88));
+}
+@supports (height: 100dvh) {
+  html, body, #app { height: 100dvh !important; min-height: 100dvh !important; }
+}

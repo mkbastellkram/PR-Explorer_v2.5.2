@@ -1,14 +1,22 @@
 /* ============================================================
    PR Explorer · app.js · Midnight Teal Pro
-   V2.5.8: Reiseplan-Grundsystem
+   V3.0.1: integrierte Roadmap-, Audit- und Planungsarchitektur
    ============================================================ */
 'use strict';
 
 const qs  = s => document.querySelector(s);
 const qsa = s => [...document.querySelectorAll(s)];
 
-const APP_VERSION = 'V2.5.8';
+const APP_VERSION = 'V3.0.1';
 const APP_CHANGELOG = [
+  { version:'V3.0.1', date:'2026-06-02', title:'Integrierte Roadmap-, Audit- und Planungsarchitektur', changes:[
+    'V3.0.1 direkt in die aktuelle app.js-/style.css-/service-worker.js-Struktur eingebunden; keine app-claude-v21-Abhängigkeit mehr.',
+    'Audit-Rapport V3 ergänzt: strukturierte Prüffragen nach App-Start, Karte, Bottom-Sheets, Einstellungen, Detailseite, Kalender, Status, Reiseliste, Journal, externen Unternehmungen, GPX, Export und Persistenz.',
+    'Roadmap-Erweiterung ergänzt: Reiseliste mit editierbaren Ideen, externen Unternehmungen, freien GPX-Routen, Tageszuordnung und ZIP-Exportpaket für ChatGPT-Roadmap.',
+    'Detailseiten erweitert: Termin/Buchung/IFCN-fix, Statusprüfung, SIMplifica-Chrome-Link, Schmale-Pfade-Zusatzlink, nahegelegene PRs und Planungskennwerte.',
+    'Einstellungen ergänzt: Bottom-Sheet-Transparenz, Zoomslider, Verbrauch, Madeira-Bergkorrektur, Kraftstoffpreis und Home-PIN-Parameter.',
+    'iPhone-/PWA-Cache aktualisiert: Cache-Version, Asset-Liste und Query-Strings auf V3.0.1 umgestellt.'
+  ]},
   { version:'V2.5.8', date:'2026-06-02', title:'Reiseplan-Grundsystem', changes:[
     'Reiseplan-Ansicht aus dem Reisezeitraum ergänzt: jeder Urlaubstag wird als eigene Tageskarte mit geplanten PRs, gebuchten IFCN-Terminen und externen Unternehmungen dargestellt.',
     'Favoriten ohne Termin werden separat als Planungsrückstand angezeigt und können direkt einem Reisetag mit 30-Minuten-Zeitfenster zugeordnet werden.',
@@ -284,7 +292,8 @@ let _fb = {};
 const S = { tab:'map', selected:null, query:'', fullscreen:false, panel:false };
 
 /* MAP */
-const map = L.map('map',{zoomControl:false,attributionControl:false,preferCanvas:true,tap:true}).setView([32.755,-16.93],10);
+const map = L.map('map',{zoomControl:false,attributionControl:false,preferCanvas:true,tap:true,doubleClickZoom:true,touchZoom:true}).setView([32.755,-16.93],10);
+window.PRX301_MAP = map;
 function initMapPanes(){
   const panes = [
     ['regionPane', 310], ['drivePane', 360], ['trackPane', 410], ['heatPane', 430],
