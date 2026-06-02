@@ -1,14 +1,20 @@
 /* ============================================================
    PR Explorer · app.js · Midnight Teal Pro
-   V2.5.4: Regression-Fix Panels und Detailmodus
+   V2.5.5: Render-Fix Filter und Einstellungen
    ============================================================ */
 'use strict';
 
 const qs  = s => document.querySelector(s);
 const qsa = s => [...document.querySelectorAll(s)];
 
-const APP_VERSION = 'V2.5.4';
+const APP_VERSION = 'V2.5.5';
 const APP_CHANGELOG = [
+  { version:'V2.5.5', date:'2026-06-02', title:'Render-Fix für Filter- und Einstellungsinhalte', changes:[
+    'Fehlende HTML-Escape-Hilfsfunktion ergänzt; Home-PIN und Einstellungsfelder können dadurch nicht mehr den Settings-Aufbau abbrechen.',
+    'Filter-Rendering defensiv gemacht: fehlende Container, leere Datenmengen und alte localStorage-Grenzwerte werden abgefangen.',
+    'Fehlerkarten zeigen jetzt die technische Kurzursache an, damit iPhone-Prüfungen nicht mehr blind enden.',
+    'Initialisierung ruft Filter/Settings nicht mehr ungeprüft auf; Panels rendern erst beim Öffnen stabil nach.'
+  ]},
   { version:'V2.5.4', date:'2026-06-01', title:'Notfall-Fix Button-Capture für Filter und Einstellungen', changes:[
     'Filter- und Einstellungsbutton werden zusätzlich in der Capture-Phase abgefangen, bevor Leaflet oder Map-Click eingreifen können.',
     'Direkte HTML-Fallbacks für Filter, Einstellungen, Schließen und Reset ergänzt.',
@@ -616,20 +622,40 @@ function openFilterSheet(){
   catch(err){
     console.error('Filter render failed',err);
     const body=qs('#filterSheet .sheet-body');
-    if(body)body.innerHTML='<div class="empty-state"><b>Filter konnte nicht gerendert werden.</b><br>Fehler im Daten-/Slideraufbau. Bitte Screenshot/Prüfnotiz senden.</div>';
+    if(body)body.innerHTML='<div class="empty-state"><b>Filter konnte nicht gerendert werden.</b><br><small>'+htmlEsc(err?.message||String(err))+'</small><br>Bitte diese Prüfnotiz senden.</div>';
   }
   setTimeout(()=>map.invalidateSize(),80);
 }
 function closeFilterSheet(){ qs('#filterSheet').classList.add('hidden');qs('#backdrop').classList.add('hidden');renderLayers();renderPanel(); }
-function renderFilterSheet(){
-  const rSet=regionFiltered(),rb=computeFilterBounds(rSet),gb=globalFilterBounds();_fb={global:gb,region:rb};
-  ['dist','driveKm','driveMin','elevUp'].forEach(k=>{const lo=k+'Min',hi=k+'Max';if(F[lo]<gb[lo])F[lo]=gb[lo];if(F[hi]>gb[hi])F[hi]=gb[hi];if(F[hi]<F[lo]){F[lo]=rb[lo];F[hi]=rb[hi];}});
-  const keys=[...new Set(DATA.map(groupOf))].filter(k=>REGIONS[k]);
-  qs('#regionFilters').innerHTML=`<button class="f-chip ${F.region==='all'?'active':''}" onclick="setRegion('all')">Alle</button>`+keys.map(k=>`<button class="f-chip ${F.region===k?'active':''}" onclick="setRegion('${k}')">${REGIONS[k]}</button>`).join('');
-  qs('#statusFilters').innerHTML=`<div class="sf-chip ${F.status==='all'?'active-chip':''}" onclick="setSF('all')">Alle Status</div>`+Object.entries(STATUS_DEF).map(([k,d])=>`<div class="sf-chip ${F.status===k?'active-chip':''}" data-s="${k}" onclick="setSF('${k}')"><span class="dot" style="background:${d.dot}"></span>${d.label}</div>`).join('')+`<div class="sf-chip ${F.schedule==='planned'?'active-chip':''}" onclick="setScheduleFilter('planned')">🗓 geplant</div><div class="sf-chip ${F.schedule==='booked'?'active-chip':''}" onclick="setScheduleFilter('booked')">📘 gebucht</div>`;
-  const sl=qs('#rangeSliders');if(sl){sl.innerHTML=`<div class="filter-note">Skala bleibt global. Die Griffe zeigen den gewählten Bereich innerhalb aller PRs.</div>`+dualSliderHtml('dist','Track-Länge',gb.distMin,gb.distMax,F.distMin,F.distMax,'km')+dualSliderHtml('drivekm','Anfahrt',gb.driveKmMin,gb.driveKmMax,F.driveKmMin,F.driveKmMax,'km')+dualSliderHtml('drivemin','Anfahrtszeit',gb.driveMinMin,gb.driveMinMax,F.driveMinMin,F.driveMinMax,'min')+dualSliderHtml('elevup','Höhenmeter ↑',gb.elevUpMin,gb.elevUpMax,F.elevUpMin,F.elevUpMax,'m');['dist','drivekm','drivemin','elevup'].forEach(id=>{dualMove(id,'lo');dualMove(id,'hi');});}
+function _setHtml(sel,html){ const el=qs(sel); if(!el) throw new Error('Container fehlt: '+sel); el.innerHTML=html; return el; }
+function _num(v,def=0){ v=Number(v); return Number.isFinite(v)?v:def; }
+function _normRange(prefix,bounds){
+  const lo=prefix+'Min', hi=prefix+'Max';
+  const blo=_num(bounds[lo],0), bhi=_num(bounds[hi],blo);
+  if(!Number.isFinite(F[lo])) F[lo]=blo;
+  if(!Number.isFinite(F[hi])) F[hi]=bhi;
+  F[lo]=Math.max(blo,Math.min(_num(F[lo],blo),bhi));
+  F[hi]=Math.max(blo,Math.min(_num(F[hi],bhi),bhi));
+  if(F[hi]<F[lo]){ F[lo]=blo; F[hi]=bhi; }
 }
-function dualSliderHtml(id,label,min,max,curMin,curMax,unit){ if(min===max)return '';const st=max-min<=10?0.1:max-min<=100?1:max-min<=1000?5:10;return `<div class="dual-slider-wrap"><div class="dual-sl-label"><span>${label}</span><span class="range-vals" id="${id}-val">${curMin}–${curMax} ${unit}</span></div><div class="dual-sl" id="${id}-wrap"><div class="track"></div><div class="fill" id="${id}-fill"></div><input type="range" id="${id}-lo" min="${min}" max="${max}" value="${curMin}" step="${st}" oninput="dualMove('${id}','lo')"><input type="range" id="${id}-hi" min="${min}" max="${max}" value="${curMax}" step="${st}" oninput="dualMove('${id}','hi')"></div></div>`; }
+function renderFilterSheet(){
+  const rSet=regionFiltered();
+  const gb=globalFilterBounds();
+  const rb=computeFilterBounds(rSet.length?rSet:DATA);
+  _fb={global:gb,region:rb};
+  _normRange('dist',gb); _normRange('driveKm',gb); _normRange('driveMin',gb); _normRange('elevUp',gb);
+  const keys=[...new Set(DATA.map(groupOf))].filter(k=>REGIONS[k]);
+  _setHtml('#regionFilters',`<button class="f-chip ${F.region==='all'?'active':''}" onclick="setRegion('all')">Alle</button>`+keys.map(k=>`<button class="f-chip ${F.region===k?'active':''}" onclick="setRegion('${k}')">${REGIONS[k]}</button>`).join(''));
+  _setHtml('#statusFilters',`<div class="sf-chip ${F.status==='all'?'active-chip':''}" onclick="setSF('all')">Alle Status</div>`+Object.entries(STATUS_DEF).map(([k,d])=>`<div class="sf-chip ${F.status===k?'active-chip':''}" data-s="${k}" onclick="setSF('${k}')"><span class="dot" style="background:${d.dot}"></span>${d.label}</div>`).join('')+`<div class="sf-chip ${F.schedule==='planned'?'active-chip':''}" onclick="setScheduleFilter('planned')">🗓 geplant</div><div class="sf-chip ${F.schedule==='booked'?'active-chip':''}" onclick="setScheduleFilter('booked')">📘 gebucht</div>`);
+  const sliderHtml = `<div class="filter-note">Skala bleibt global. Die Griffe zeigen den gewählten Bereich innerhalb aller PRs.</div>`+
+    dualSliderHtml('dist','Track-Länge',gb.distMin,gb.distMax,F.distMin,F.distMax,'km')+
+    dualSliderHtml('drivekm','Anfahrt',gb.driveKmMin,gb.driveKmMax,F.driveKmMin,F.driveKmMax,'km')+
+    dualSliderHtml('drivemin','Anfahrtszeit',gb.driveMinMin,gb.driveMinMax,F.driveMinMin,F.driveMinMax,'min')+
+    dualSliderHtml('elevup','Höhenmeter ↑',gb.elevUpMin,gb.elevUpMax,F.elevUpMin,F.elevUpMax,'m');
+  _setHtml('#rangeSliders', sliderHtml || '<div class="empty-state">Keine numerischen Filterdaten vorhanden.</div>');
+  ['dist','drivekm','drivemin','elevup'].forEach(id=>{dualMove(id,'lo');dualMove(id,'hi');});
+}
+function dualSliderHtml(id,label,min,max,curMin,curMax,unit){ min=_num(min,0); max=_num(max,min); curMin=_num(curMin,min); curMax=_num(curMax,max); if(max<=min)return ''; const st=max-min<=10?0.1:max-min<=100?1:max-min<=1000?5:10;return `<div class="dual-slider-wrap"><div class="dual-sl-label"><span>${label}</span><span class="range-vals" id="${id}-val">${curMin}–${curMax} ${unit}</span></div><div class="dual-sl" id="${id}-wrap"><div class="track"></div><div class="fill" id="${id}-fill"></div><input type="range" id="${id}-lo" min="${min}" max="${max}" value="${curMin}" step="${st}" oninput="dualMove('${id}','lo')"><input type="range" id="${id}-hi" min="${min}" max="${max}" value="${curMax}" step="${st}" oninput="dualMove('${id}','hi')"></div></div>`; }
 function dualMove(id,which){ const lo=qs(`#${id}-lo`),hi=qs(`#${id}-hi`);if(!lo||!hi)return;let vlo=parseFloat(lo.value),vhi=parseFloat(hi.value);if(which==='lo'&&vlo>vhi){vlo=vhi;lo.value=vlo;}if(which==='hi'&&vhi<vlo){vhi=vlo;hi.value=vhi;}const min=parseFloat(lo.min),max=parseFloat(lo.max),range=max-min||1;const left=((vlo-min)/range)*100,right=((max-vhi)/range)*100;const fill=qs(`#${id}-fill`);if(fill){fill.style.left=left+'%';fill.style.right=right+'%';}const unit={'dist':'km','drivekm':'km','drivemin':'min','elevup':'m'}[id]||'';const valEl=qs(`#${id}-val`);if(valEl)valEl.textContent=`${vlo}–${vhi} ${unit}`;const key={'dist':['distMin','distMax'],'drivekm':['driveKmMin','driveKmMax'],'drivemin':['driveMinMin','driveMinMax'],'elevup':['elevUpMin','elevUpMax']}[id];if(key){F[key[0]]=vlo;F[key[1]]=vhi;}renderLayers();renderPanel(); }
 function setRegion(k){ F.region=k; const rb=computeFilterBounds(regionFiltered()); F.distMin=rb.distMin;F.distMax=rb.distMax;F.driveKmMin=rb.driveKmMin;F.driveKmMax=rb.driveKmMax;F.driveMinMin=rb.driveMinMin;F.driveMinMax=rb.driveMinMax;F.elevUpMin=rb.elevUpMin;F.elevUpMax=rb.elevUpMax;renderFilterSheet();renderLayers();renderPanel(); }
 function setSF(k){ F.status=k||'all';renderFilterSheet();renderLayers();renderPanel(); }
@@ -736,6 +762,7 @@ function exportICS(id){ const r=DATA.find(x=>x.id===id);if(!r)return; const sc=g
 
 /* ROUTE EXPORT */
 function xmlEsc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function htmlEsc(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 function fileBase(r){ return String(r.id||'PR').replace(/\s+/g,'-')+'-'+String(r.name||'Route').replace(/[^a-z0-9äöüß-]+/gi,'-').slice(0,40); }
 function kmlCoords(points){ return (points||[]).map(p=>`${p[1]},${p[0]},0`).join(' '); }
 function buildKML(r){ const tr=r.track||[], dr=r.driveRoute||[]; return `<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>${xmlEsc(r.id+' '+r.name)}</name>${tr.length?`<Placemark><name>${xmlEsc(r.id+' GPX Wanderweg')}</name><Style><LineStyle><color>ff303bff</color><width>5</width></LineStyle></Style><LineString><tessellate>1</tessellate><coordinates>${kmlCoords(tr.map(p=>[p[0],p[1]]))}</coordinates></LineString></Placemark>`:''}${dr.length?`<Placemark><name>${xmlEsc(r.id+' KML Anfahrt')}</name><Style><LineStyle><color>ffff7a00</color><width>5</width></LineStyle></Style><LineString><tessellate>1</tessellate><coordinates>${kmlCoords(dr)}</coordinates></LineString></Placemark>`:''}</Document></kml>`; }
@@ -756,7 +783,7 @@ function openSettings(){
   catch(err){
     console.error('Settings render failed',err);
     const c=qs('#settingsContent');
-    if(c)c.innerHTML='<div class="empty-state" style="margin:18px"><b>Einstellungen konnten nicht gerendert werden.</b><br>Fehler im Einstellungsaufbau. Bitte Prüfnotiz senden.</div>';
+    if(c)c.innerHTML='<div class="empty-state" style="margin:18px"><b>Einstellungen konnten nicht gerendert werden.</b><br><small>'+htmlEsc(err?.message||String(err))+'</small><br>Bitte diese Prüfnotiz senden.</div>';
   }
   setTimeout(()=>map.invalidateSize(),80);
 }
@@ -1074,5 +1101,5 @@ const _styleEl=document.createElement('style');_styleEl.textContent=_addCSS;docu
 Object.assign(window,{S,F,cfg,favs,saveFavs,saveCfg,saveStatus,openDetail,closeDetail,setTab,setSt,setBase,setLayer,setHikingMode,setHikingColorMode,soloOnMap,exitSoloMode,openSettings,closeSettings,renderSettings,setPinShape,openColorSheet,closeColorSheet,confirmColor,setColorTab,sliderChanged,hexChanged,pickColor,openIconSheet,closeIconSheet,confirmIcon,filterIcons,pickIcon,openDateSheet,closeDateSheet,confirmDate,calPrev,calNext,calDay,exportICS,exportTripICS,exportBookedICS,updatePrSchedule,clearPrSchedule,resetFilters,setRegion,setSF,toggleRegions,dualMove,renderFilterSheet,closeAllSheets,closeBackdrop,fitVisible,renderLayers,renderPanel,renderDetail,tcToggle,tcResult,tcReset,tcExport,tcSaveNote,tcClearNote,renderTestTab,openTestPanel,syncTestToggle,APP_VERSION,APP_CHANGELOG,qs,lineStyleBtns,setSort,setScheduleFilter,refreshPoiData,setPoiCat,googleMapsSearch,exportRouteFile,shareRouteFile,shareTestReport,darkenChanged,setHomeField,drawHomePin,togglePois,focusDetailPins,clearPinFocus,openFilterSheet,installCriticalTapGuards});
 
 /* INIT */
-bind();renderFilterSheet();renderLayers();setTab('map');syncTestToggle();setTimeout(fitMadeira,300);_updateTestBadge();
+bind();try{renderFilterSheet();}catch(e){console.warn('Initial filter render skipped',e);}renderLayers();setTab('map');syncTestToggle();setTimeout(fitMadeira,300);_updateTestBadge();
 if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js').catch(()=>{});
