@@ -1,14 +1,23 @@
 /* ============================================================
    PR Explorer · app.js · Midnight Teal Pro
-   V2.5.6: Render-Fix Filter und Einstellungen
+   V2.5.7: POI-, Kalender- und Linien-Regression-Fix
    ============================================================ */
 'use strict';
 
 const qs  = s => document.querySelector(s);
 const qsa = s => [...document.querySelectorAll(s)];
 
-const APP_VERSION = 'V2.5.6';
+const APP_VERSION = 'V2.5.7';
 const APP_CHANGELOG = [
+  { version:'V2.5.7', date:'2026-06-02', title:'POI-, Kalender- und Linien-Regression-Fix', changes:[
+    'Concelhos-Grenzen aus der App-UI entfernt und als Layer deaktiviert; die unsauberen Platzhalter-Polygone werden nicht mehr gezeichnet.',
+    'POI-Darstellung bereinigt: transparente Markerhülle, editierbare POI-Größe, Google-Maps-Übergabe und Radiusmodus um den aktiven PR.',
+    'Kalenderfelder auf iOS-robuste Datum/Uhrzeit-Steuerung mit Stundenwahl und 30-Minuten-Raster umgestellt.',
+    'IFCN-Termin berechnet die Abfahrt am Hotel aus Fahrzeit, Korrekturfaktor, Parkplatzpuffer und Wegzeit zum PR-Start.',
+    'ICS-Export nutzt die berechnete Hotel-Abfahrt und enthält zwei editierbare Erinnerungen.',
+    'Konturbreiten für GPX und KML sind wieder einstellbar; Sortierung ist im Filter-Sheet wieder sichtbar.',
+    'Teilen-Button öffnet eine Auswahl für Audit, gefilterte PR-Liste sowie aktive PR-Info/GPX/KML.'
+  ]},
   { version:'V2.5.6', date:'2026-06-02', title:'Render-Fix für Filter- und Einstellungsinhalte', changes:[
     'Fehlende HTML-Escape-Hilfsfunktion ergänzt; Home-PIN und Einstellungsfelder können dadurch nicht mehr den Settings-Aufbau abbrechen.',
     'Filter-Rendering defensiv gemacht: fehlende Container, leere Datenmengen und alte localStorage-Grenzwerte werden abgefangen.',
@@ -122,6 +131,8 @@ let cfg = Object.assign({
   hikingVectorLabels:true, hikingVectorWeight:5.5, hikingVectorOpacity:.75,
   hikingVectorOutline:'auto', hikingVectorOutlineWeight:3, hikingVectorColor:'#34c759', hikingVectorColorMode:'uniform',
   poiCats:{toilets:true,parking:true,cafe:true,bar:true,attraction:true,beach:true,supermarket:true,fuel:true},
+  poiSize:1.0, poiMode:'near', poiRadiusKm:3.0,
+  driveTimeFactor:1.15, parkingBufferMin:15, walkStartBufferMin:10, reminderDayMin:1440, reminderDepartMin:120,
   home:{label:'Pestana Promenade',lat:32.6376,lon:-16.9382,show:true},
   showTestToggle:true,
 }, JSON.parse(localStorage.getItem('prCfg')||'{}'));
@@ -143,7 +154,8 @@ applyHikingModeToLegacyLayers();
 if(!['light','topo','sat','hybrid'].includes(cfg.base)) cfg.base='topo';
 if(cfg.base==='dark') cfg.base='topo';
 if(!cfg.layers || typeof cfg.layers!=='object') cfg.layers={};
-try { localStorage.setItem('prStorageSchema','V2.5.2'); } catch(e) {}
+cfg.layers.regions=false;
+try { localStorage.setItem('prStorageSchema','V2.5.7'); } catch(e) {}
 // V2.4.4: alte Standardwerte nur dann migrieren, wenn der Nutzer offenbar noch die früheren Defaults nutzt.
 if((cfg.gpxColor||'').toLowerCase()==='#5ac8fa') cfg.gpxColor='#FF3B30';
 if((cfg.kmlColor||'').toLowerCase()==='#ff9500') cfg.kmlColor='#007AFF';
@@ -156,6 +168,14 @@ if(!cfg.gpxOutlineWeight) cfg.gpxOutlineWeight=1;
 if(!cfg.kmlOutlineWeight) cfg.kmlOutlineWeight=1;
 if(typeof cfg.splitKmlJumps!=='boolean') cfg.splitKmlJumps=true;
 if(!cfg.kmlJumpKm) cfg.kmlJumpKm=1.8;
+if(!['all','near'].includes(cfg.poiMode)) cfg.poiMode='near';
+cfg.poiSize=Number.isFinite(+cfg.poiSize)?+cfg.poiSize:1.0;
+cfg.poiRadiusKm=Number.isFinite(+cfg.poiRadiusKm)?+cfg.poiRadiusKm:3.0;
+cfg.driveTimeFactor=Number.isFinite(+cfg.driveTimeFactor)?+cfg.driveTimeFactor:1.15;
+cfg.parkingBufferMin=Number.isFinite(+cfg.parkingBufferMin)?+cfg.parkingBufferMin:15;
+cfg.walkStartBufferMin=Number.isFinite(+cfg.walkStartBufferMin)?+cfg.walkStartBufferMin:10;
+cfg.reminderDayMin=Number.isFinite(+cfg.reminderDayMin)?+cfg.reminderDayMin:1440;
+cfg.reminderDepartMin=Number.isFinite(+cfg.reminderDepartMin)?+cfg.reminderDepartMin:120;
 
 let prSchedule = JSON.parse(localStorage.getItem('prSchedule')||'{}');
 function savePrSchedule(){ localStorage.setItem('prSchedule', JSON.stringify(prSchedule)); }
@@ -248,10 +268,10 @@ const OVERLAY_TILES = {
 };
 const OVERLAY_LABELS = {
   tracks:'GPX Wanderwege', drive:'KML Anfahrten', heat:'Heatmap', markers:'PR-Pins',
-  regions:'Concelhos-Grenzen', pois:'OSM Reise-POIs', hiking:'Hiking Referenzkarte', hikingVector:'Editierbare Hiking-Linien'
+  pois:'OSM Reise-POIs', hiking:'Hiking Referenzkarte', hikingVector:'Editierbare Hiking-Linien'
 };
 const OVERLAY_ICONS = { tracks:'🗺️', drive:'🚗', heat:'🔥', markers:'📍', regions:'🌐', pois:'☕', hiking:'🥾', hikingVector:'〰️' };
-const APP_LAYER_KEYS = ['tracks','drive','heat','markers','regions','pois'];
+const APP_LAYER_KEYS = ['tracks','drive','heat','markers','pois'];
 if(!TILES[cfg.base]) cfg.base='topo';
 APP_LAYER_KEYS.forEach(k=>{ if(typeof cfg.layers[k] !== 'boolean') cfg.layers[k]=false; });
 ['tracks','drive','markers'].forEach(k=>{ if(typeof cfg.layers[k] !== 'boolean') cfg.layers[k]=true; });
@@ -501,15 +521,37 @@ async function refreshPoiData(){
   }catch(err){ poiError=err.message||String(err); toast('POI-Laden fehlgeschlagen'); }
   finally{ poiLoading=false; drawPois(); renderPanel(); renderSettings?.(); }
 }
+function activePoiCenter(){
+  const id=S.selected?.id || (cfg.soloMode&&cfg.soloId?cfg.soloId:null);
+  const r=id?DATA.find(x=>x.id===id):null;
+  return r&&r.lat&&r.lon ? [r.lat,r.lon] : null;
+}
+function googleMapsPoint(lat,lon,label='POI'){
+  const url=`https://www.google.com/maps/search/?api=1&query=${lat.toFixed(6)},${lon.toFixed(6)}`;
+  window.open(url,'_blank');
+}
+function poiPopupHtml(def,p,lat,lon){
+  const name=htmlEsc(p.name||def.label);
+  return `<b>${def.icon} ${name}</b><br>${htmlEsc(def.label)}<br><small>OSM · ${htmlEsc(p.id||'')}</small><br><button class="popup-action" onclick="googleMapsPoint(${lat},${lon})">In Google Maps öffnen</button>`;
+}
 function drawPois(){
   lgPois.clearLayers();
   if(!cfg.layers.pois||!poiGeojson||!poiGeojson.features)return;
   const active=cfg.poiCats||{};
+  const center=activePoiCenter();
+  const radius=+(cfg.poiRadiusKm||3);
+  const nearMode=(cfg.poiMode||'near')==='near';
+  const size=Math.max(.55,Math.min(1.8,+(cfg.poiSize||1)));
   poiGeojson.features.forEach(f=>{
     const p=f.properties||{},cat=p.cat||'attraction'; if(active[cat]===false)return;
     const def=POI_DEF[cat]||POI_DEF.attraction, c=f.geometry.coordinates;
-    const ico=L.divIcon({className:'poi-pin',html:`<div class="poi-bubble">${def.icon}</div>`,iconSize:[30,30],iconAnchor:[15,15]});
-    L.marker([c[1],c[0]],{icon:ico,keyboard:false,pane:'poiPane'}).bindPopup(`<b>${def.icon} ${p.name||def.label}</b><br>${def.label}<br><small>OSM · ${p.id}</small>`).addTo(lgPois);
+    const lat=+c[1], lon=+c[0]; if(!Number.isFinite(lat)||!Number.isFinite(lon))return;
+    if(nearMode && center && pointKm(center,[lat,lon])>radius)return;
+    if(nearMode && !center)return;
+    const px=Math.round(30*size);
+    const fs=Math.max(12,Math.round(16*size));
+    const ico=L.divIcon({className:'poi-pin',html:`<div class="poi-bubble" style="width:${px}px;height:${px}px;font-size:${fs}px">${def.icon}</div>`,iconSize:[px,px],iconAnchor:[px/2,px/2]});
+    L.marker([lat,lon],{icon:ico,keyboard:false,pane:'poiPane'}).bindPopup(poiPopupHtml(def,p,lat,lon)).addTo(lgPois);
   });
 }
 function togglePois(){ if(cfg.layers.pois){ if(!poiGeojson) refreshPoiData(); else drawPois(); } else lgPois.clearLayers(); }
@@ -604,7 +646,7 @@ function openDetail(id,zoom=false){
   if(zoom){const b=routeBounds(S.selected);if(isValidBounds(b))map.flyToBounds(b,mapSafeFitOptions(true));}
   setTimeout(()=>{focusDetailPins(id);drawElevProfile(S.selected,'elevCanvas');},200);
 }
-function closeDetail(){ qs('#detailPanel').classList.add('hidden');S.selected=null;clearPinFocus(); }
+function closeDetail(){ qs('#detailPanel').classList.add('hidden');S.selected=null;clearPinFocus();drawPois(); }
 function setFullscreen(on){ S.fullscreen=on;qs('#app').classList.toggle('fullscreen',on);qs('#fullscreenClose').classList.toggle('hidden',!on);closeDetail();qs('#panel').classList.add('hidden');S.panel=false;setTimeout(()=>map.invalidateSize(),200); }
 function pxHeight(sel){ const el=qs(sel); return el && !el.classList.contains('hidden') ? Math.ceil(el.getBoundingClientRect().height||0) : 0; }
 function mapSafeFitOptions(detail=false){ const top=Math.max(96,pxHeight('#hero')+18); const bottomNav=pxHeight('#bottomNav')||72; const test=(cfg.showTestToggle&&!qs('#testToggle')?.classList.contains('hidden'))?(pxHeight('#testToggle')+8):0; const detailPanel=detail?Math.min(Math.round(window.innerHeight*0.42),pxHeight('#detailPanel')||260):0; const bottom=Math.max(120,bottomNav+test+detailPanel+26); return {paddingTopLeft:[28,top],paddingBottomRight:[34,bottom],maxZoom:14,duration:.85}; }
@@ -672,7 +714,9 @@ function renderFilterSheet(){
   const keys=[...new Set(DATA.map(groupOf))].filter(k=>REGIONS[k]);
   _setHtml('#regionFilters',`<button class="f-chip ${F.region==='all'?'active':''}" onclick="setRegion('all')">Alle</button>`+keys.map(k=>`<button class="f-chip ${F.region===k?'active':''}" onclick="setRegion('${k}')">${REGIONS[k]}</button>`).join(''));
   _setHtml('#statusFilters',`<div class="sf-chip ${F.status==='all'?'active-chip':''}" onclick="setSF('all')">Alle Status</div>`+Object.entries(STATUS_DEF).map(([k,d])=>`<div class="sf-chip ${F.status===k?'active-chip':''}" data-s="${k}" onclick="setSF('${k}')"><span class="dot" style="background:${d.dot}"></span>${d.label}</div>`).join('')+`<div class="sf-chip ${F.schedule==='planned'?'active-chip':''}" onclick="setScheduleFilter('planned')">🗓 geplant</div><div class="sf-chip ${F.schedule==='booked'?'active-chip':''}" onclick="setScheduleFilter('booked')">📘 gebucht</div>`);
-  const sliderHtml = `<div class="filter-note">Skala bleibt global. Die Griffe zeigen den gewählten Bereich innerhalb aller PRs.</div>`+
+  const sortOpts=[['id','PR-Nummer'],['name','Name'],['distance','Länge'],['drive','Fahrzeit'],['elev','Höhenmeter'],['status','Status']];
+  const sortHtml=`<div class="fsec-label" style="margin-top:16px">Sortierung</div><div class="sort-row">${sortOpts.map(([k,l])=>`<button class="f-chip ${cfg.sort===k?'active':''}" onclick="setSort('${k}')">${l}</button>`).join('')}</div>`;
+  const sliderHtml = sortHtml+`<div class="filter-note">Skala bleibt global. Die Griffe zeigen den gewählten Bereich innerhalb aller PRs.</div>`+
     dualSliderHtml('dist','Track-Länge',gb.distMin,gb.distMax,F.distMin,F.distMax,'km')+
     dualSliderHtml('drivekm','Anfahrt',gb.driveKmMin,gb.driveKmMax,F.driveKmMin,F.driveKmMax,'km')+
     dualSliderHtml('drivemin','Anfahrtszeit',gb.driveMinMin,gb.driveMinMax,F.driveMinMin,F.driveMinMax,'min')+
@@ -753,36 +797,71 @@ function renderDetail(){
 }
 
 /* ICS */
-function dtLocalValue(v){ return v||''; }
-function scheduleHtml(r){ const sc=getPrSchedule(r.id); return `<div class="schedule-box">
-  <label class="sched-row"><span>Geplanter Termin</span><input type="datetime-local" step="1800" value="${dtLocalValue(sc.planned)}" onchange="updatePrSchedule('${r.id}','planned',this.value)"></label>
-  <label class="sched-row"><span>IFCN gebucht</span><input type="datetime-local" step="1800" value="${dtLocalValue(sc.booked)}" onchange="updatePrSchedule('${r.id}','booked',this.value)"></label>
+function pad2(n){ return String(n).padStart(2,'0'); }
+function dtParts(v){
+  const now=new Date();
+  const raw=String(v||'');
+  const d=raw.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})/);
+  return {date:d?d[1]:'', hour:d?d[2]:pad2(now.getHours()), minute:d?d[3]:(now.getMinutes()<30?'00':'30')};
+}
+function scheduleDomId(id,key,suffix){ return 'dt-'+String(id).replace(/[^a-z0-9]+/gi,'-')+'-'+key+'-'+suffix; }
+function composeDt(id,key){
+  const d=qs('#'+scheduleDomId(id,key,'date'))?.value||'';
+  const h=qs('#'+scheduleDomId(id,key,'hour'))?.value||'08';
+  const m=qs('#'+scheduleDomId(id,key,'minute'))?.value||'00';
+  updatePrSchedule(id,key,d?`${d}T${h}:${m}`:'');
+}
+function timeSelectOptions(cur,from,to,step=1){
+  let out=''; for(let i=from;i<=to;i+=step){const v=pad2(i); out+=`<option value="${v}" ${String(cur)===v?'selected':''}>${v}</option>`;} return out;
+}
+function scheduleInputHtml(id,key,label,val){
+  const p=dtParts(val);
+  return `<div class="sched-row sched-grid"><span>${label}</span><input id="${scheduleDomId(id,key,'date')}" type="date" value="${p.date}" onchange="composeDt('${id}','${key}')"><select id="${scheduleDomId(id,key,'hour')}" onchange="composeDt('${id}','${key}')">${timeSelectOptions(p.hour,0,23,1)}</select><select id="${scheduleDomId(id,key,'minute')}" onchange="composeDt('${id}','${key}')"><option value="00" ${p.minute==='00'?'selected':''}>00</option><option value="30" ${p.minute==='30'?'selected':''}>30</option></select></div>`;
+}
+function departureInfo(r){
+  const sc=getPrSchedule(r.id); const start=sc.booked||sc.planned; if(!start)return null;
+  const routeMin=Math.round((+(r.driveMin||0))*(+(cfg.driveTimeFactor||1)));
+  const extra=(+(cfg.parkingBufferMin||0))+(+(cfg.walkStartBufferMin||0));
+  const total=routeMin+extra;
+  const startDate=new Date(start); const dep=new Date(startDate.getTime()-total*60000);
+  return {start:startDate,departure:dep,routeMin,extra,total};
+}
+function scheduleHtml(r){
+  const sc=getPrSchedule(r.id); const info=departureInfo(r);
+  const dep=info?`<div class="sched-calc"><b>Abfahrt Hotel:</b> ${info.departure.toLocaleString('de',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}<br><small>Rechnung: Google ${r.driveMin||0} min × ${cfg.driveTimeFactor||1} = ${info.routeMin} min + Parkplatz ${cfg.parkingBufferMin||0} min + Weg zum Start ${cfg.walkStartBufferMin||0} min</small></div>`:'';
+  return `<div class="schedule-box">
+  ${scheduleInputHtml(r.id,'planned','Geplanter Termin',sc.planned)}
+  ${scheduleInputHtml(r.id,'booked','IFCN gebucht',sc.booked)}
+  ${dep}
   <div class="sched-actions"><button onclick="clearPrSchedule('${r.id}','planned')">Planung leeren</button><button onclick="clearPrSchedule('${r.id}','booked')">Buchung leeren</button><button class="sched-ics" onclick="exportBookedICS('${r.id}')">Gebucht als iOS-Kalender</button></div>
-</div>`; }
+</div>`;
+}
 function clearPrSchedule(id,key){ if(!prSchedule[id])return; prSchedule[id][key]=''; savePrSchedule(); renderDetail(); renderPanel(); }
-function icsDateFromDate(d){ const pad=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`; }
+function icsDateFromDate(d){ return `${d.getFullYear()}${pad2(d.getMonth()+1)}${pad2(d.getDate())}T${pad2(d.getHours())}${pad2(d.getMinutes())}00`; }
 function icsDateLocal(v){ return icsDateFromDate(new Date(v)); }
 function escICS(s){ return String(s||'').replace(/\\/g,'\\\\').replace(/,/g,'\\,').replace(/;/g,'\\;').replace(/\n/g,'\\n'); }
+function triggerFromMinutes(min){ min=Math.max(0,Math.round(+min||0)); if(min%1440===0 && min>=1440)return `-P${min/1440}D`; const h=Math.floor(min/60),m=min%60; return `-PT${h?`${h}H`:''}${m?`${m}M`:(!h?'0M':'')}`; }
 function buildPrICS(r,startLocal){
-  const dt=icsDateLocal(startLocal);
-  const end=new Date(new Date(startLocal).getTime()+30*60000);
-  const endStr=icsDateFromDate(end);
+  const sc=getPrSchedule(r.id);
+  const info=departureInfo(r);
+  const eventStart=info?info.departure:new Date(startLocal);
+  const prStart=sc.booked||sc.planned||startLocal;
+  const end=new Date(new Date(prStart).getTime()+30*60000);
   const stamp=new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');
   return [
     'BEGIN:VCALENDAR','VERSION:2.0',`PRODID:-//PR Explorer ${APP_VERSION}//DE`,'BEGIN:VEVENT',
     `UID:pr-${r.id.replace(/\s+/g,'-')}-${Date.now()}@pr-explorer`,
-    `DTSTAMP:${stamp}`,`DTSTART:${dt}`,`DTEND:${endStr}`,
-    `SUMMARY:${escICS(r.id+' · '+r.name)}`,
-    `DESCRIPTION:${escICS('IFCN gebuchter PR-Termin · '+(r.distanceKm||'?')+' km · '+(r.duration||'?'))}`,
-    'LOCATION:Madeira\\, Portugal',
-    'BEGIN:VALARM','TRIGGER:-P1D','ACTION:DISPLAY',`DESCRIPTION:${escICS(r.id+' morgen')}`,'END:VALARM',
-    'BEGIN:VALARM','TRIGGER:-PT3H','ACTION:DISPLAY',`DESCRIPTION:${escICS(r.id+' in 3 Stunden')}`,'END:VALARM',
+    `DTSTAMP:${stamp}`,`DTSTART:${icsDateFromDate(eventStart)}`,`DTEND:${icsDateFromDate(end)}`,
+    `SUMMARY:${escICS('Abfahrt Hotel · '+r.id+' · '+r.name)}`,
+    `DESCRIPTION:${escICS('IFCN/PR-Termin: '+new Date(prStart).toLocaleString('de')+'\nAbfahrt Hotel: '+eventStart.toLocaleString('de')+'\nFahrzeit Google: '+(r.driveMin||0)+' min · Faktor '+(cfg.driveTimeFactor||1)+' · Parkplatz '+(cfg.parkingBufferMin||0)+' min · Weg zum Start '+(cfg.walkStartBufferMin||0)+' min\n'+(r.distanceKm||'?')+' km · '+(r.duration||'?'))}`,
+    'LOCATION:Pestana Promenade\, Funchal',
+    'BEGIN:VALARM',`TRIGGER:${triggerFromMinutes(cfg.reminderDayMin||1440)}`,'ACTION:DISPLAY',`DESCRIPTION:${escICS(r.id+' morgen / Vorbereitung')}`,'END:VALARM',
+    'BEGIN:VALARM',`TRIGGER:${triggerFromMinutes(cfg.reminderDepartMin||120)}`,'ACTION:DISPLAY',`DESCRIPTION:${escICS(r.id+' Abfahrt in '+(cfg.reminderDepartMin||120)+' Minuten')}`,'END:VALARM',
     'END:VEVENT','END:VCALENDAR'
   ].join('\n');
 }
-function exportBookedICS(id){ const r=DATA.find(x=>x.id===id); const sc=getPrSchedule(id); if(!r||!sc.booked){toast('Kein IFCN-Termin eingetragen');return;} const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([buildPrICS(r,sc.booked)],{type:'text/calendar'})); a.download=`${r.id.replace(' ','-')}-IFCN.ics`; a.click(); toast('ICS für iOS-Kalender erstellt'); }
-
-function exportICS(id){ const r=DATA.find(x=>x.id===id);if(!r)return; const sc=getPrSchedule(id); const start=sc.booked||sc.planned||(cfg.tripStart?cfg.tripStart+'T08:00':new Date().toISOString().slice(0,16)); const ics=buildPrICS(r,start); const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([ics],{type:'text/calendar'}));a.download=`${r.id.replace(' ','-')}.ics`;a.click();toast('Kalender-Event exportiert'); }
+function exportBookedICS(id){ const r=DATA.find(x=>x.id===id); const sc=getPrSchedule(id); if(!r||!sc.booked){toast('Kein IFCN-Termin eingetragen');return;} downloadBlob(buildPrICS(r,sc.booked),`${r.id.replace(' ','-')}-IFCN-Abfahrt.ics`,'text/calendar'); toast('ICS mit Hotel-Abfahrt erstellt'); }
+function exportICS(id){ const r=DATA.find(x=>x.id===id);if(!r)return; const sc=getPrSchedule(id); const start=sc.booked||sc.planned||(cfg.tripStart?cfg.tripStart+'T08:00':new Date().toISOString().slice(0,16)); downloadBlob(buildPrICS(r,start),`${r.id.replace(' ','-')}.ics`,'text/calendar');toast('Kalender-Event exportiert'); }
 
 
 /* ROUTE EXPORT */
@@ -795,6 +874,32 @@ function buildGPX(r){ const pts=(r.track||[]).map(p=>`<trkpt lat="${p[0]}" lon="
 function downloadBlob(txt,name,type){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([txt],{type})); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); }
 function exportRouteFile(id,kind){ const r=DATA.find(x=>x.id===id); if(!r)return; if(kind==='gpx'){ if(!r.track?.length){toast('Keine GPX-Route vorhanden');return;} downloadBlob(buildGPX(r),fileBase(r)+'.gpx','application/gpx+xml'); } else { downloadBlob(buildKML(r),fileBase(r)+'.kml','application/vnd.google-earth.kml+xml'); } toast(kind.toUpperCase()+' exportiert'); }
 async function shareRouteFile(id,kind='kml'){ const r=DATA.find(x=>x.id===id); if(!r)return; const txt=kind==='gpx'?buildGPX(r):buildKML(r); const name=fileBase(r)+'.'+kind; const type=kind==='gpx'?'application/gpx+xml':'application/vnd.google-earth.kml+xml'; const file=new File([txt],name,{type}); if(navigator.canShare&&navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:name,text:r.id+' · '+r.name}); } else { downloadBlob(txt,name,type); toast('Datei erstellt – über Teilen/Dateien an Google Earth öffnen'); } }
+
+function prInfoText(r){ return `${r.id} · ${r.name}
+Region: ${regionLabel(r)}
+Strecke: ${r.distanceKm||'–'} km · Dauer: ${r.duration||'–'}
+Anfahrt: ${r.driveKm||'–'} km · ${r.driveMin||'–'} min
+Höhenmeter: ↑ ${r.elevUp||'–'} m / ↓ ${r.elevDown||'–'} m
+Status: ${(STATUS_DEF[getSt(r.id)]||{}).label||getSt(r.id)}
+Madeira: ${r.officialUrl||''}
+Maps: ${r.startUrl||''}`; }
+function filteredCsv(){ const rows=filtered(); const head=['id','name','region','distanceKm','driveKm','driveMin','elevUp','status']; return [head.join(';')].concat(rows.map(r=>[r.id,r.name,regionLabel(r),r.distanceKm||'',r.driveKm||'',r.driveMin||'',r.elevUp||'',(STATUS_DEF[getSt(r.id)]||{}).label||getSt(r.id)].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';'))).join('\n'); }
+async function shareText(title,txt,name='pr-explorer.txt'){
+  if(navigator.share){ try{ await navigator.share({title,text:txt}); return; }catch(e){} }
+  if(navigator.clipboard){ try{ await navigator.clipboard.writeText(txt); toast('In Zwischenablage kopiert'); return; }catch(e){} }
+  downloadBlob(txt,name,'text/plain');
+}
+function openShareSheet(){
+  let box=qs('#shareChoiceBox');
+  if(!box){ box=document.createElement('div'); box.id='shareChoiceBox'; box.className='manual-copy-box'; document.body.appendChild(box); }
+  const r=S.selected;
+  box.innerHTML=`<div class="manual-copy-card share-card"><div class="manual-copy-head"><b>Teilen / Export</b><button onclick="document.getElementById('shareChoiceBox').remove()">×</button></div>
+    <p>Wähle den Datensatz. iOS entscheidet danach, ob Share-Sheet, Zwischenablage oder Datei verwendet wird.</p>
+    <button class="share-opt" onclick="shareTestReport()">Audit / Testbericht teilen</button>
+    <button class="share-opt" onclick="shareText('PR Explorer gefilterte Liste',filteredCsv(),'pr-gefiltert.csv')">Gefilterte PR-Liste CSV</button>
+    ${r?`<button class="share-opt" onclick="shareText('${r.id} Info',prInfoText(S.selected),'${r.id.replace(' ','-')}-info.txt')">Aktive PR-Info</button><button class="share-opt" onclick="shareRouteFile('${r.id}','gpx')">Aktive PR · GPX teilen</button><button class="share-opt" onclick="shareRouteFile('${r.id}','kml')">Aktive PR · KML/Anfahrt teilen</button>`:'<small>Für PR-Info/GPX/KML zuerst eine PR-Detailseite öffnen.</small>'}
+  </div>`;
+}
 
 function exportTripICS(){ if(!cfg.tripStart||!cfg.tripEnd)return;const s=cfg.tripStart.replace(/-/g,''),e=cfg.tripEnd.replace(/-/g,'');const ics=`BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//PR Explorer Claude V2.1//DE\nBEGIN:VEVENT\nUID:trip-madeira-${Date.now()}@pr-explorer\nDTSTAMP:${s}T120000Z\nDTSTART;VALUE=DATE:${s}\nDTEND;VALUE=DATE:${e}\nSUMMARY:🌴 Madeira Wanderurlaub\nDESCRIPTION:PR Explorer Reisezeitraum\nLOCATION:Madeira\\, Portugal\nEND:VEVENT\nEND:VCALENDAR`;const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([ics],{type:'text/calendar'}));a.download='Madeira-Urlaub.ics';a.click();toast('Reisezeitraum exportiert'); }
 
@@ -825,6 +930,14 @@ function renderSettings(){
     ${cfg.tripStart&&cfg.tripEnd?tripBannerHtml():''}
     <div class="sg"><div class="sg-title">Reisezeitraum</div><div class="sg-box">
       <div class="sg-row" onclick="openDateSheet()"><div class="sg-icon" style="background:rgba(90,200,250,.1)">📅</div><span class="sg-label">Zeitraum</span><span class="sg-val">${dL}<svg class="sg-chev" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></span></div>
+      <div class="sg-row" style="cursor:default;flex-direction:column;align-items:stretch;padding:12px 16px;gap:8px"><span class="sg-label">Direkte Eingabe</span><div class="home-grid"><input class="home-input" type="date" value="${cfg.tripStart||''}" onchange="cfg.tripStart=this.value||null;saveCfg();renderSettings();renderPanel()"><input class="home-input" type="date" value="${cfg.tripEnd||''}" onchange="cfg.tripEnd=this.value||null;saveCfg();renderSettings();renderPanel()"></div></div>
+    </div></div>
+    <div class="sg"><div class="sg-title">Abfahrt & Kalender</div><div class="sg-box">
+      <div class="sg-row" style="cursor:default"><span class="sg-label">Fahrzeit-Faktor</span><input class="mini-num" type="number" min="0.5" max="2.5" step="0.05" value="${cfg.driveTimeFactor}" onchange="cfg.driveTimeFactor=+this.value||1;saveCfg();renderSettings();renderDetail()"></div>
+      <div class="sg-row" style="cursor:default"><span class="sg-label">Parkplatzsuche min</span><input class="mini-num" type="number" min="0" max="120" step="5" value="${cfg.parkingBufferMin}" onchange="cfg.parkingBufferMin=+this.value||0;saveCfg();renderSettings();renderDetail()"></div>
+      <div class="sg-row" style="cursor:default"><span class="sg-label">Weg Parkplatz → Start min</span><input class="mini-num" type="number" min="0" max="120" step="5" value="${cfg.walkStartBufferMin}" onchange="cfg.walkStartBufferMin=+this.value||0;saveCfg();renderSettings();renderDetail()"></div>
+      <div class="sg-row" style="cursor:default"><span class="sg-label">Erinnerung 1 min vorher</span><input class="mini-num" type="number" min="0" max="2880" step="30" value="${cfg.reminderDayMin}" onchange="cfg.reminderDayMin=+this.value||1440;saveCfg();renderSettings()"></div>
+      <div class="sg-row" style="cursor:default"><span class="sg-label">Erinnerung 2 min vorher</span><input class="mini-num" type="number" min="0" max="1440" step="30" value="${cfg.reminderDepartMin}" onchange="cfg.reminderDepartMin=+this.value||120;saveCfg();renderSettings()"></div>
     </div></div>
     <div class="sg"><div class="sg-title">GPX Wanderweg</div><div class="sg-box">
       <div class="sg-row" onclick="openColorSheet('gpx','GPX Farbe')"><div class="sg-icon" style="background:rgba(90,200,250,.1)">🎨</div><span class="sg-label">Farbe</span><span class="sg-val"><div class="sg-cdot" style="background:${cfg.gpxColor}"></div><svg class="sg-chev" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></span></div>
@@ -833,6 +946,10 @@ function renderSettings(){
         <input type="range" min="1" max="8" step="0.5" value="${cfg.gpxWeight||3}" class="s-range-sl" oninput="cfg.gpxWeight=+this.value;saveCfg();renderLayers();qs('#gpwVal').textContent=this.value+'px'">
         <div class="line-style-row">${lineStyleBtns('gpxDash','solid')}</div>
       </div>
+      <div class="sg-row" style="cursor:default;flex-direction:column;align-items:stretch;padding:12px 16px;gap:8px">
+        <div style="display:flex;justify-content:space-between"><span class="sg-label">Konturbreite</span><span id="gpoxVal" style="font-size:13px;color:var(--teal);font-weight:700">${cfg.gpxOutlineWeight||0}px</span></div>
+        <input type="range" min="0" max="8" step="0.5" value="${cfg.gpxOutlineWeight||0}" class="s-range-sl" oninput="cfg.gpxOutlineWeight=+this.value;saveCfg();renderLayers();qs('#gpoxVal').textContent=this.value+'px'">
+      </div>
     </div></div>
     <div class="sg"><div class="sg-title">KML Anfahrt</div><div class="sg-box">
       <div class="sg-row" onclick="openColorSheet('kml','KML Farbe')"><div class="sg-icon" style="background:rgba(255,149,0,.1)">🎨</div><span class="sg-label">Farbe</span><span class="sg-val"><div class="sg-cdot" style="background:${cfg.kmlColor}"></div><svg class="sg-chev" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></span></div>
@@ -840,6 +957,10 @@ function renderSettings(){
         <div style="display:flex;justify-content:space-between"><span class="sg-label">Strichstärke</span><span id="kmwVal" style="font-size:13px;color:var(--orange);font-weight:700">${cfg.kmlWeight||2}px</span></div>
         <input type="range" min="1" max="8" step="0.5" value="${cfg.kmlWeight||2}" class="s-range-sl" oninput="cfg.kmlWeight=+this.value;saveCfg();renderLayers();qs('#kmwVal').textContent=this.value+'px'">
         <div class="line-style-row">${lineStyleBtns('kmlDash','dashed')}</div>
+      </div>
+      <div class="sg-row" style="cursor:default;flex-direction:column;align-items:stretch;padding:12px 16px;gap:8px">
+        <div style="display:flex;justify-content:space-between"><span class="sg-label">Konturbreite</span><span id="kmoxVal" style="font-size:13px;color:var(--orange);font-weight:700">${cfg.kmlOutlineWeight||0}px</span></div>
+        <input type="range" min="0" max="8" step="0.5" value="${cfg.kmlOutlineWeight||0}" class="s-range-sl" oninput="cfg.kmlOutlineWeight=+this.value;saveCfg();renderLayers();qs('#kmoxVal').textContent=this.value+'px'">
       </div>
     </div></div>
     <div class="sg"><div class="sg-title">Kartenpin</div><div class="sg-box">
@@ -853,6 +974,13 @@ function renderSettings(){
         <span class="sg-label" style="margin-bottom:10px">Form</span>
         <div class="pin-shapes">${[['tag','🏷️'],['circle','⚪'],['square','🔲'],['diamond','🔷']].map(([sh,em])=>`<div class="pin-shape-opt ${cfg.pinShape===sh?'active':''}" onclick="setPinShape('${sh}')">${em}</div>`).join('')}</div>
       </div>
+    </div></div>
+    <div class="sg"><div class="sg-title">OSM Reise-POIs</div><div class="sg-box">
+      <div class="sg-row" style="cursor:default"><span class="sg-label">POIs anzeigen</span><input type="checkbox" class="s-tog" ${cfg.layers.pois?'checked':''} onchange="setLayer('pois',this.checked);renderSettings()"></div>
+      <div class="sg-row" style="cursor:default"><span class="sg-label">Anzeige nur im Radius</span><input type="checkbox" class="s-tog" ${(cfg.poiMode||'near')==='near'?'checked':''} onchange="cfg.poiMode=this.checked?'near':'all';saveCfg();drawPois();renderSettings()"></div>
+      <div class="sg-row" style="cursor:default;flex-direction:column;align-items:stretch;padding:12px 16px;gap:8px"><div style="display:flex;justify-content:space-between"><span class="sg-label">POI-Radius aktiver PR</span><span id="poiRadVal" style="font-size:13px;color:var(--teal);font-weight:700">${cfg.poiRadiusKm||3} km</span></div><input type="range" min="0.5" max="12" step="0.5" value="${cfg.poiRadiusKm||3}" class="s-range-sl" oninput="cfg.poiRadiusKm=+this.value;saveCfg();drawPois();qs('#poiRadVal').textContent=this.value+' km'"></div>
+      <div class="sg-row" style="cursor:default;flex-direction:column;align-items:stretch;padding:12px 16px;gap:8px"><div style="display:flex;justify-content:space-between"><span class="sg-label">POI-Größe</span><span id="poiSizeVal" style="font-size:13px;color:var(--teal);font-weight:700">${Math.round((cfg.poiSize||1)*100)}%</span></div><input type="range" min="0.6" max="1.8" step="0.1" value="${cfg.poiSize||1}" class="s-range-sl" oninput="cfg.poiSize=+this.value;saveCfg();drawPois();qs('#poiSizeVal').textContent=Math.round(this.value*100)+'%'"></div>
+      <div class="poi-cat-grid">${Object.entries(POI_DEF).map(([k,d])=>`<button class="poi-cat-btn ${cfg.poiCats?.[k]!==false?'active':''}" onclick="setPoiCat('${k}',!(cfg.poiCats?.['${k}']!==false));event.stopPropagation();"><span>${d.icon}</span>${d.label}</button>`).join('')}</div>
     </div></div>
     <div class="sg"><div class="sg-title">Ebenen</div><div class="sg-box">
       ${APP_LAYER_KEYS.map(k=>`<div class="sg-row" style="cursor:default"><span class="sg-label">${OVERLAY_ICONS[k]} ${OVERLAY_LABELS[k]}</span><input type="checkbox" class="s-tog" ${cfg.layers[k]?'checked':''} onchange="setLayer('${k}',this.checked);renderSettings()"></div>`).join('')}
@@ -1096,7 +1224,7 @@ function bind(){
   bindTap('#fullscreenBtn',()=>setFullscreen(true));
   bindTap('#fullscreenClose',()=>setFullscreen(false));
   bindTap('#settingsBtn',()=>openSettings());
-  bindTap('#shareBtn',()=>shareTestReport());
+  bindTap('#shareBtn',()=>openShareSheet());
   bindTap('#filterBtn',()=>openFilterSheet());
   bindTap('#filterClose',()=>closeFilterSheet());
   bindTap('#resetFilters',()=>resetFilters());
@@ -1123,7 +1251,7 @@ const _addCSS=`
 const _styleEl=document.createElement('style');_styleEl.textContent=_addCSS;document.head.appendChild(_styleEl);
 
 /* GLOBALS */
-Object.assign(window,{S,F,cfg,favs,saveFavs,saveCfg,saveStatus,openDetail,closeDetail,setTab,setSt,setBase,setLayer,setHikingMode,setHikingColorMode,soloOnMap,exitSoloMode,openSettings,closeSettings,renderSettings,setPinShape,openColorSheet,closeColorSheet,confirmColor,setColorTab,sliderChanged,hexChanged,pickColor,openIconSheet,closeIconSheet,confirmIcon,filterIcons,pickIcon,openDateSheet,closeDateSheet,confirmDate,calPrev,calNext,calDay,exportICS,exportTripICS,exportBookedICS,updatePrSchedule,clearPrSchedule,resetFilters,setRegion,setSF,toggleRegions,dualMove,renderFilterSheet,closeAllSheets,closeBackdrop,fitVisible,renderLayers,renderPanel,renderDetail,tcToggle,tcResult,tcReset,tcExport,tcSaveNote,tcClearNote,renderTestTab,openTestPanel,syncTestToggle,APP_VERSION,APP_CHANGELOG,qs,lineStyleBtns,setSort,setScheduleFilter,refreshPoiData,setPoiCat,googleMapsSearch,exportRouteFile,shareRouteFile,shareTestReport,darkenChanged,setHomeField,drawHomePin,togglePois,focusDetailPins,clearPinFocus,openFilterSheet,installCriticalTapGuards});
+Object.assign(window,{S,F,cfg,favs,saveFavs,saveCfg,saveStatus,openDetail,closeDetail,setTab,setSt,setBase,setLayer,setHikingMode,setHikingColorMode,soloOnMap,exitSoloMode,openSettings,closeSettings,renderSettings,setPinShape,openColorSheet,closeColorSheet,confirmColor,setColorTab,sliderChanged,hexChanged,pickColor,openIconSheet,closeIconSheet,confirmIcon,filterIcons,pickIcon,openDateSheet,closeDateSheet,confirmDate,calPrev,calNext,calDay,exportICS,exportTripICS,exportBookedICS,updatePrSchedule,composeDt,clearPrSchedule,resetFilters,setRegion,setSF,toggleRegions,dualMove,renderFilterSheet,closeAllSheets,closeBackdrop,fitVisible,googleMapsPoint,renderLayers,renderPanel,renderDetail,tcToggle,tcResult,tcReset,tcExport,tcSaveNote,tcClearNote,renderTestTab,openTestPanel,syncTestToggle,APP_VERSION,APP_CHANGELOG,qs,lineStyleBtns,setSort,setScheduleFilter,refreshPoiData,setPoiCat,googleMapsSearch,exportRouteFile,shareRouteFile,shareTestReport,openShareSheet,shareText,prInfoText,filteredCsv,darkenChanged,setHomeField,drawHomePin,togglePois,focusDetailPins,clearPinFocus,openFilterSheet,installCriticalTapGuards});
 
 /* INIT */
 bind();try{renderFilterSheet();}catch(e){console.warn('Initial filter render skipped',e);}renderLayers();setTab('map');syncTestToggle();setTimeout(fitMadeira,300);_updateTestBadge();

@@ -1,6 +1,15 @@
 # PR Explorer Madeira · Changelog
 
-## V2.5.6 · 2026-06-02 · Render-Fix Filter und Einstellungen
+## V2.5.7 · 2026-06-02 · POI-, Kalender- und Linien-Regression-Fix
+
+- Concelhos-Grenzen aus App-UI entfernt und als Layer deaktiviert.
+- POIs: transparente Liquid-Glass-Marker, editierbare Größe, Google-Maps-Übergabe und Radiusmodus um den aktiven PR.
+- Kalenderfelder im Detail auf iOS-robuste Datum/Uhrzeit-Steuerung mit Stundenwahl und 30-Minuten-Raster umgestellt.
+- IFCN-Termin berechnet Hotel-Abfahrt aus Google-Fahrzeit, Fahrzeit-Faktor, Parkplatzpuffer und Wegzeit zum Start.
+- ICS-Export nutzt die berechnete Abfahrt und zwei editierbare Erinnerungen.
+- GPX/KML-Konturbreiten wieder einstellbar.
+- Sortierung im Filter-Sheet wieder ergänzt.
+- Teilen-Button öffnet eine Auswahl für Audit, gefilterte PR-Liste und aktive PR-Daten.
 
 - Fehlende `htmlEsc()` Hilfsfunktion ergänzt; Einstellungsaufbau bricht dadurch nicht mehr beim Home-PIN ab.
 - Filteraufbau defensiv gemacht: Container, leere Datenmengen und alte Grenzwerte werden abgefangen.

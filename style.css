@@ -1010,3 +1010,11 @@ body { position:fixed; inset:0; width:100%; }
 #filterSheet{z-index:110!important}
 #backdrop{z-index:100!important}
 #settingsPanel.hidden,#filterSheet.hidden{pointer-events:none!important}
+
+/* V2.5.7 · POI, Kalender, Linien, Share */
+#dateSheet,#colorSheet,#iconSheet{z-index:140!important}
+#dateSheet.hidden,#colorSheet.hidden,#iconSheet.hidden{pointer-events:none!important}
+.poi-pin{background:transparent!important;border:0!important;box-shadow:none!important}
+.poi-bubble{border-radius:999px!important;display:grid!important;place-items:center!important;background:rgba(7,22,19,.42)!important;border:1px solid rgba(255,255,255,.22)!important;box-shadow:0 4px 12px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.10)!important;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.popup-action,.share-opt{width:100%;min-height:38px;margin-top:10px;border-radius:14px;border:1px solid rgba(90,200,250,.22);background:rgba(90,200,250,.12);color:#bdefff;font-weight:800}
+.sort-row{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}.mini-num{width:92px;border:1px solid rgba(90,200,250,.22);background:rgba(255,255,255,.06);border-radius:12px;color:var(--text);padding:8px 10px;text-align:right;font-weight:800}.sched-grid{display:grid!important;grid-template-columns:1fr 1.35fr .75fr .75fr;gap:8px;align-items:center}.sched-grid input,.sched-grid select{min-width:0;height:36px;border:1px solid rgba(90,200,250,.22);background:rgba(255,255,255,.06);border-radius:12px;color:var(--text);padding:0 8px;font-weight:800}.sched-calc{margin:10px 0;padding:10px 12px;border-radius:14px;background:rgba(90,200,250,.08);border:1px solid rgba(90,200,250,.16);font-size:13px;color:var(--text)}.sched-calc small{color:var(--muted);line-height:1.35}.share-card{max-height:72dvh;overflow:auto}.share-opt{display:block;text-align:left;padding:0 14px}
