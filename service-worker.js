@@ -1,15 +1,15 @@
-const APP_VERSION = 'V3.0.1';
-const CACHE_NAME = `pr-explorer-${APP_VERSION}-20260602b`;
+const APP_VERSION = 'V3.0.2';
+const CACHE_NAME = `pr-explorer-${APP_VERSION}-20260603a`;
 const CORE_ASSETS = [
   './',
   './index.html',
   './manifest.webmanifest',
   './version.json',
-  './style.css?v=3.0.1-20260602b',
-  './prx-v3.0.1.css?v=3.0.1-20260602b',
-  './app.js?v=3.0.1-20260602b',
-  './prx-v3.0.1.js?v=3.0.1-20260602b',
-  './pr-data.js?v=3.0.1-20260602b',
+  './style.css?v=3.0.2-20260603a',
+  './prx-v3.0.2.css?v=3.0.2-20260603a',
+  './app.js?v=3.0.2-20260603a',
+  './prx-v3.0.2.js?v=3.0.2-20260603a',
+  './pr-data.js?v=3.0.2-20260603a',
   './icon-180.png',
   './icon-192.png',
   './icon-512.png',
@@ -24,19 +24,13 @@ const CORE_ASSETS = [
 
 self.addEventListener('install', event => {
   self.skipWaiting();
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(CORE_ASSETS))
-  );
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(CORE_ASSETS)));
 });
 
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
     const names = await caches.keys();
-    await Promise.all(
-      names
-        .filter(name => name !== CACHE_NAME && name.startsWith('pr-explorer-'))
-        .map(name => caches.delete(name))
-    );
+    await Promise.all(names.filter(name => name !== CACHE_NAME && name.startsWith('pr-explorer-')).map(name => caches.delete(name)));
     await self.clients.claim();
   })());
 });
@@ -48,8 +42,7 @@ async function networkFirst(request) {
     if (response && response.ok) cache.put(request, response.clone());
     return response;
   } catch (e) {
-    const cached = await cache.match(request, { ignoreSearch: false }) || await cache.match(new URL(request.url).pathname);
-    return cached || cache.match('./index.html');
+    return await cache.match(request, { ignoreSearch: false }) || await cache.match('./index.html');
   }
 }
 

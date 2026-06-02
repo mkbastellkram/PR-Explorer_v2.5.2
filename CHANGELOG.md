@@ -1,3 +1,15 @@
+# V3.0.2 · Audit-, Roadmap- und Bedienfixes nach Praxistest
+
+- Alter Testbericht auf vollständige V3-Auditstruktur erweitert.
+- Kopierbutton oben rechts im Audit/Test-Kopf entfernt.
+- Bottom-/Safe-Area nochmals verschärft.
+- Doppeltipp-Zoom per Touch-Fallback abgesichert.
+- Zoomslider-Schalter in normalen Einstellungen ergänzt.
+- Detail-Nachrendern für nahegelegene PRs und Links stabilisiert.
+- Journal-Layout und Suchfeld stabilisiert.
+- Roadmap-Export bereinigt verwaiste Einträge.
+- ZIP-Dateinamen werden mit UTF-8-Flag geschrieben.
+
 # V3.0.1 · Integrierte Roadmap-, Audit- und Planungsarchitektur
 
 - Direkte Integration in die aktuelle app.js-/style.css-/service-worker.js-Struktur.
