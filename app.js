@@ -1,15 +1,15 @@
 /* ============================================================
    PR Explorer · app.js · Midnight Teal Pro
-   V2.5.5: Render-Fix Filter und Einstellungen
+   V2.5.6: Render-Fix Filter und Einstellungen
    ============================================================ */
 'use strict';
 
 const qs  = s => document.querySelector(s);
 const qsa = s => [...document.querySelectorAll(s)];
 
-const APP_VERSION = 'V2.5.5';
+const APP_VERSION = 'V2.5.6';
 const APP_CHANGELOG = [
-  { version:'V2.5.5', date:'2026-06-02', title:'Render-Fix für Filter- und Einstellungsinhalte', changes:[
+  { version:'V2.5.6', date:'2026-06-02', title:'Render-Fix für Filter- und Einstellungsinhalte', changes:[
     'Fehlende HTML-Escape-Hilfsfunktion ergänzt; Home-PIN und Einstellungsfelder können dadurch nicht mehr den Settings-Aufbau abbrechen.',
     'Filter-Rendering defensiv gemacht: fehlende Container, leere Datenmengen und alte localStorage-Grenzwerte werden abgefangen.',
     'Fehlerkarten zeigen jetzt die technische Kurzursache an, damit iPhone-Prüfungen nicht mehr blind enden.',
@@ -612,6 +612,31 @@ function isValidBounds(b){ return b && (!b.isValid || b.isValid()); }
 function fitMadeira(){ map.flyToBounds([[32.60,-17.28],[32.90,-16.58]],{padding:[16,16],duration:.9}); }
 function fitVisible(){ const b=allBounds(); if(isValidBounds(b)) map.flyToBounds(b,mapSafeFitOptions(false)); }
 
+
+function filterFallbackHtml(err){
+  const msg=htmlEsc(err?.stack||err?.message||String(err||'unbekannt'));
+  return `<div class="empty-state" style="margin:18px;text-align:left">
+    <b>Filter-Fallback aktiv · ${APP_VERSION}</b><br>
+    <small style="display:block;margin-top:8px;color:#9fb3b0">Der reguläre Filteraufbau ist abgebrochen. Diese Notansicht bestätigt: Button und Sheet funktionieren, der Fehler liegt im Renderinhalt.</small>
+    <details style="margin-top:12px;white-space:pre-wrap"><summary>Technische Meldung anzeigen</summary>${msg}</details>
+    <button class="reset-btn" style="margin-top:16px" onclick="resetFilters();return false;">Filter zurücksetzen</button>
+    <button class="reset-btn" style="margin-top:8px" onclick="try{localStorage.removeItem('prx_filters');localStorage.removeItem('prx_cfg');location.reload();}catch(e){location.reload();}return false;">Lokale App-Einstellungen zurücksetzen & neu laden</button>
+  </div>`;
+}
+function settingsFallbackHtml(err){
+  const msg=htmlEsc(err?.stack||err?.message||String(err||'unbekannt'));
+  return `<div class="empty-state" style="margin:18px;text-align:left">
+    <b>Einstellungs-Fallback aktiv · ${APP_VERSION}</b><br>
+    <small style="display:block;margin-top:8px;color:#9fb3b0">Der reguläre Einstellungsaufbau ist abgebrochen. Diese Notansicht zeigt die technische Meldung und erlaubt einen lokalen Reset.</small>
+    <details style="margin-top:12px;white-space:pre-wrap"><summary>Technische Meldung anzeigen</summary>${msg}</details>
+    <div class="sg" style="margin-top:16px"><div class="sg-title">Notbedienung</div><div class="sg-box">
+      <div class="sg-row" onclick="setBase('topo')"><span class="sg-label">Basiskarte auf OpenTopoMap setzen</span></div>
+      <div class="sg-row" onclick="fitVisible()"><span class="sg-label">Sichtbare Routen einpassen</span></div>
+      <div class="sg-row" onclick="try{localStorage.clear();location.reload();}catch(e){location.reload();}"><span class="sg-label">Lokalen Speicher komplett zurücksetzen & neu laden</span></div>
+    </div></div>
+  </div>`;
+}
+
 /* FILTER SHEET */
 function openFilterSheet(){
   closeDetail();
@@ -622,7 +647,7 @@ function openFilterSheet(){
   catch(err){
     console.error('Filter render failed',err);
     const body=qs('#filterSheet .sheet-body');
-    if(body)body.innerHTML='<div class="empty-state"><b>Filter konnte nicht gerendert werden.</b><br><small>'+htmlEsc(err?.message||String(err))+'</small><br>Bitte diese Prüfnotiz senden.</div>';
+    if(body)body.innerHTML=filterFallbackHtml(err);
   }
   setTimeout(()=>map.invalidateSize(),80);
 }
@@ -783,7 +808,7 @@ function openSettings(){
   catch(err){
     console.error('Settings render failed',err);
     const c=qs('#settingsContent');
-    if(c)c.innerHTML='<div class="empty-state" style="margin:18px"><b>Einstellungen konnten nicht gerendert werden.</b><br><small>'+htmlEsc(err?.message||String(err))+'</small><br>Bitte diese Prüfnotiz senden.</div>';
+    if(c)c.innerHTML=settingsFallbackHtml(err);
   }
   setTimeout(()=>map.invalidateSize(),80);
 }

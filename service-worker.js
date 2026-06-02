@@ -1,8 +1,8 @@
-const APP_VERSION = 'V2.5.5';
-const CACHE_NAME = `pr-explorer-${APP_VERSION}`;
+const APP_VERSION = 'V2.5.6';
+const CACHE_NAME = `pr-explorer-${APP_VERSION}-20260602a`;
 const CORE_ASSETS = [
   './', './index.html', './manifest.webmanifest', './version.json',
-  './style.css?v=2.5.5', './app.js?v=2.5.5', './pr-data.js',
+  './style.css?v=2.5.6-20260602a', './app.js?v=2.5.6-20260602a', './pr-data.js',
   './icon-180.png', './icon-192.png', './icon-512.png',
   './README.md', './CHANGELOG.md', './README_TESTING.md', './README_LAYER.md'
 ];

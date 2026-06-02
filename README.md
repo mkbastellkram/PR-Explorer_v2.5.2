@@ -1,4 +1,4 @@
-# PR Explorer Madeira · V2.5.5
+# PR Explorer Madeira · V2.5.6
 
 Private Madeira-Planungs-PWA für PR-Wanderungen, Karte, GPX/KML, POIs, Favoriten, Reisezeitraum, Audit und iPhone-Bedienung.
 

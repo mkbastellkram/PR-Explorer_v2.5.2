@@ -1,6 +1,6 @@
 # PR Explorer Madeira · Changelog
 
-## V2.5.5 · 2026-06-02 · Render-Fix Filter und Einstellungen
+## V2.5.6 · 2026-06-02 · Render-Fix Filter und Einstellungen
 
 - Fehlende `htmlEsc()` Hilfsfunktion ergänzt; Einstellungsaufbau bricht dadurch nicht mehr beim Home-PIN ab.
 - Filteraufbau defensiv gemacht: Container, leere Datenmengen und alte Grenzwerte werden abgefangen.

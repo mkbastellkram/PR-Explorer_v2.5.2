@@ -1,7 +1,7 @@
 {
   "name": "PR Explorer Madeira",
-  "version": "V2.5.5",
+  "version": "V2.5.6",
   "date": "2026-06-02",
-  "title": "Render-Fix Filter und Einstellungen",
-  "cache": "pr-explorer-V2.5.5"
+  "title": "Cache-Break + Panel-Fallback",
+  "cache": "pr-explorer-V2.5.6-20260602a"
 }
