@@ -951,7 +951,7 @@ body { position:fixed; inset:0; width:100%; }
 
 
 /* ============================================================
-   V2.5.3 · Stabilisierung: Liquid Glass, Safe-Area, Touch-Fallback
+   V2.5.4 · Stabilisierung: Liquid Glass, Safe-Area, Touch-Fallback
    Diese End-Overrides ersetzen alte manuelle Pixel-Schiebereien.
    ============================================================ */
 :root{
@@ -988,7 +988,7 @@ body { position:fixed; inset:0; width:100%; }
 @media (max-height:720px){.hero-text{margin-top:56px}.panel-detail{max-height:72dvh!important}.filter-fab{right:18px!important}}
 
 
-/* V2.5.3 · Regression-Fix: Panels, Detail-Pins, Audit-Hinweis */
+/* V2.5.4 · Regression-Fix: Panels, Detail-Pins, Audit-Hinweis */
 .hero{z-index:35!important;pointer-events:none}
 .hero-btns,.hero-btns *{pointer-events:auto!important}
 #filterBtn{z-index:34!important;pointer-events:auto!important;touch-action:manipulation!important}
@@ -1000,3 +1000,13 @@ body { position:fixed; inset:0; width:100%; }
 .pr-pin.pin-hidden{opacity:0!important;transform:scale(.72)!important;pointer-events:none!important}
 .pr-pin.pin-sel{opacity:1!important;z-index:999!important;filter:drop-shadow(0 0 16px rgba(90,200,250,.95))}
 .swipe-hint{display:none!important}
+
+/* V2.5.4 critical button hit-layer fix */
+.hero{pointer-events:none!important}
+.hero-btns,.hero-btns *{pointer-events:auto!important;touch-action:manipulation!important;-webkit-tap-highlight-color:transparent}
+#settingsBtn,#filterBtn,#filterClose,#settingsClose,#resetFilters{pointer-events:auto!important;touch-action:manipulation!important;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+#filterBtn{z-index:90!important;position:absolute!important}
+#settingsPanel{z-index:120!important}
+#filterSheet{z-index:110!important}
+#backdrop{z-index:100!important}
+#settingsPanel.hidden,#filterSheet.hidden{pointer-events:none!important}

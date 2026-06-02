@@ -1,14 +1,20 @@
 /* ============================================================
    PR Explorer · app.js · Midnight Teal Pro
-   V2.5.3: Regression-Fix Panels und Detailmodus
+   V2.5.4: Regression-Fix Panels und Detailmodus
    ============================================================ */
 'use strict';
 
 const qs  = s => document.querySelector(s);
 const qsa = s => [...document.querySelectorAll(s)];
 
-const APP_VERSION = 'V2.5.3';
+const APP_VERSION = 'V2.5.4';
 const APP_CHANGELOG = [
+  { version:'V2.5.4', date:'2026-06-01', title:'Notfall-Fix Button-Capture für Filter und Einstellungen', changes:[
+    'Filter- und Einstellungsbutton werden zusätzlich in der Capture-Phase abgefangen, bevor Leaflet oder Map-Click eingreifen können.',
+    'Direkte HTML-Fallbacks für Filter, Einstellungen, Schließen und Reset ergänzt.',
+    'Filter- und Settings-Panel öffnen zuerst sichtbar und zeigen bei Renderfehlern eine Fehlerkarte statt still zu scheitern.',
+    'iOS-Touchhandling für kritische App-Buttons mit pointerdown, touchstart und click abgesichert.'
+  ]},
   { version:'V2.5.3', date:'2026-06-01', title:'Regression-Fix Panels & Detailmodus', changes:[
     'Filter- und Einstellungsbutton erhalten eine robuste iOS-Touchbindung mit Stop-Propagation.',
     'Detailmodus blendet bewusst alle nicht aktiven PR-Pins aus; der ausgewählte Pin bleibt sichtbar markiert.',
@@ -603,9 +609,15 @@ function fitVisible(){ const b=allBounds(); if(isValidBounds(b)) map.flyToBounds
 /* FILTER SHEET */
 function openFilterSheet(){
   closeDetail();
-  renderFilterSheet();
-  qs('#filterSheet').classList.remove('hidden');
-  qs('#backdrop').classList.remove('hidden');
+  const sheet=qs('#filterSheet'), backdrop=qs('#backdrop');
+  if(sheet)sheet.classList.remove('hidden');
+  if(backdrop)backdrop.classList.remove('hidden');
+  try{ renderFilterSheet(); }
+  catch(err){
+    console.error('Filter render failed',err);
+    const body=qs('#filterSheet .sheet-body');
+    if(body)body.innerHTML='<div class="empty-state"><b>Filter konnte nicht gerendert werden.</b><br>Fehler im Daten-/Slideraufbau. Bitte Screenshot/Prüfnotiz senden.</div>';
+  }
   setTimeout(()=>map.invalidateSize(),80);
 }
 function closeFilterSheet(){ qs('#filterSheet').classList.add('hidden');qs('#backdrop').classList.add('hidden');renderLayers();renderPanel(); }
@@ -738,8 +750,14 @@ function exportTripICS(){ if(!cfg.tripStart||!cfg.tripEnd)return;const s=cfg.tri
 function openSettings(){
   closeDetail();
   closeAllSheets(false);
-  renderSettings();
-  qs('#settingsPanel').classList.remove('hidden');
+  const panel=qs('#settingsPanel');
+  if(panel)panel.classList.remove('hidden');
+  try{ renderSettings(); }
+  catch(err){
+    console.error('Settings render failed',err);
+    const c=qs('#settingsContent');
+    if(c)c.innerHTML='<div class="empty-state" style="margin:18px"><b>Einstellungen konnten nicht gerendert werden.</b><br>Fehler im Einstellungsaufbau. Bitte Prüfnotiz senden.</div>';
+  }
   setTimeout(()=>map.invalidateSize(),80);
 }
 function closeSettings(){ qs('#settingsPanel').classList.add('hidden'); }
@@ -989,7 +1007,32 @@ function bindTap(sel,fn){
   el.addEventListener('touchend',run,{passive:false});
   el.style.pointerEvents='auto';
 }
+function installCriticalTapGuards(){
+  const actions={
+    filterBtn:()=>openFilterSheet(),
+    settingsBtn:()=>openSettings(),
+    filterClose:()=>closeFilterSheet(),
+    settingsClose:()=>closeSettings(),
+    resetFilters:()=>resetFilters()
+  };
+  const last={};
+  const guard=e=>{
+    const t=e.target?.closest?.('#filterBtn,#settingsBtn,#filterClose,#settingsClose,#resetFilters');
+    if(!t || !actions[t.id])return;
+    e.preventDefault?.();
+    e.stopPropagation?.();
+    e.stopImmediatePropagation?.();
+    if(window.L?.DomEvent)L.DomEvent.stop(e);
+    const now=Date.now();
+    if(now-(last[t.id]||0)<360)return;
+    last[t.id]=now;
+    actions[t.id]();
+  };
+  ['pointerdown','touchstart','click'].forEach(ev=>document.addEventListener(ev,guard,{capture:true,passive:false}));
+}
+
 function bind(){
+  installCriticalTapGuards();
   window.addEventListener('resize',()=>{ if(S.tab==='test') setTimeout(()=>window.scrollTo(0,0),50); });
   window.visualViewport?.addEventListener('resize',()=>{ if(S.tab==='test') setTimeout(()=>window.scrollTo(0,0),50); });
   qsa('#bottomNav button').forEach(b=>{ b.onclick=()=>setTab(b.dataset.tab); });
@@ -1028,7 +1071,7 @@ const _addCSS=`
 const _styleEl=document.createElement('style');_styleEl.textContent=_addCSS;document.head.appendChild(_styleEl);
 
 /* GLOBALS */
-Object.assign(window,{S,F,cfg,favs,saveFavs,saveCfg,saveStatus,openDetail,closeDetail,setTab,setSt,setBase,setLayer,setHikingMode,setHikingColorMode,soloOnMap,exitSoloMode,openSettings,closeSettings,renderSettings,setPinShape,openColorSheet,closeColorSheet,confirmColor,setColorTab,sliderChanged,hexChanged,pickColor,openIconSheet,closeIconSheet,confirmIcon,filterIcons,pickIcon,openDateSheet,closeDateSheet,confirmDate,calPrev,calNext,calDay,exportICS,exportTripICS,exportBookedICS,updatePrSchedule,clearPrSchedule,resetFilters,setRegion,setSF,toggleRegions,dualMove,renderFilterSheet,closeAllSheets,closeBackdrop,fitVisible,renderLayers,renderPanel,renderDetail,tcToggle,tcResult,tcReset,tcExport,tcSaveNote,tcClearNote,renderTestTab,openTestPanel,syncTestToggle,APP_VERSION,APP_CHANGELOG,qs,lineStyleBtns,setSort,setScheduleFilter,refreshPoiData,setPoiCat,googleMapsSearch,exportRouteFile,shareRouteFile,shareTestReport,darkenChanged,setHomeField,drawHomePin,togglePois,focusDetailPins,clearPinFocus,openFilterSheet});
+Object.assign(window,{S,F,cfg,favs,saveFavs,saveCfg,saveStatus,openDetail,closeDetail,setTab,setSt,setBase,setLayer,setHikingMode,setHikingColorMode,soloOnMap,exitSoloMode,openSettings,closeSettings,renderSettings,setPinShape,openColorSheet,closeColorSheet,confirmColor,setColorTab,sliderChanged,hexChanged,pickColor,openIconSheet,closeIconSheet,confirmIcon,filterIcons,pickIcon,openDateSheet,closeDateSheet,confirmDate,calPrev,calNext,calDay,exportICS,exportTripICS,exportBookedICS,updatePrSchedule,clearPrSchedule,resetFilters,setRegion,setSF,toggleRegions,dualMove,renderFilterSheet,closeAllSheets,closeBackdrop,fitVisible,renderLayers,renderPanel,renderDetail,tcToggle,tcResult,tcReset,tcExport,tcSaveNote,tcClearNote,renderTestTab,openTestPanel,syncTestToggle,APP_VERSION,APP_CHANGELOG,qs,lineStyleBtns,setSort,setScheduleFilter,refreshPoiData,setPoiCat,googleMapsSearch,exportRouteFile,shareRouteFile,shareTestReport,darkenChanged,setHomeField,drawHomePin,togglePois,focusDetailPins,clearPinFocus,openFilterSheet,installCriticalTapGuards});
 
 /* INIT */
 bind();renderFilterSheet();renderLayers();setTab('map');syncTestToggle();setTimeout(fitMadeira,300);_updateTestBadge();

@@ -1,8 +1,8 @@
-const APP_VERSION = 'V2.5.3';
+const APP_VERSION = 'V2.5.4';
 const CACHE_NAME = `pr-explorer-${APP_VERSION}`;
 const CORE_ASSETS = [
   './', './index.html', './manifest.webmanifest', './version.json',
-  './style.css?v=2.5.3', './app.js?v=2.5.3', './pr-data.js',
+  './style.css?v=2.5.4', './app.js?v=2.5.4', './pr-data.js',
   './icon-180.png', './icon-192.png', './icon-512.png',
   './README.md', './CHANGELOG.md', './README_TESTING.md', './README_LAYER.md'
 ];

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>PR Explorer Madeira · V2.5.3</title>
+<title>PR Explorer Madeira · V2.5.4</title>
 <meta name="theme-color" content="#060f0d">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="./icon-180.png">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="./style.css?v=2.5.3">
+<link rel="stylesheet" href="./style.css?v=2.5.4">
 </head>
 <body>
 <div id="app">
@@ -41,7 +41,7 @@
       </div>
       <!-- Settings + Share Pill -->
       <div class="h-pill">
-        <button id="settingsBtn" aria-label="Einstellungen">
+        <button id="settingsBtn" type="button" aria-label="Einstellungen" onclick="openSettings();return false;" ontouchend="openSettings();return false;">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
         <div class="h-sep"></div>
@@ -53,7 +53,7 @@
   </header>
 
   <!-- FILTER FAB -->
-  <button id="filterBtn" class="filter-fab" aria-label="Filter">
+  <button id="filterBtn" type="button" class="filter-fab" aria-label="Filter" onclick="openFilterSheet();return false;" ontouchend="openFilterSheet();return false;">
     <svg viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
   </button>
 
@@ -62,7 +62,7 @@
     <div class="sheet-bar"></div>
     <div class="sheet-head">
       <span class="sheet-title">Filter</span>
-      <button id="filterClose" class="sheet-x">&#x2715;</button>
+      <button id="filterClose" type="button" class="sheet-x" onclick="closeFilterSheet();return false;">&#x2715;</button>
     </div>
     <div class="sheet-body">
       <div class="fsec-label">Region</div>
@@ -70,7 +70,7 @@
       <div class="fsec-label" style="margin-top:16px">Status</div>
       <div id="statusFilters" class="sf-chips"></div>
       <div id="rangeSliders" style="margin-top:16px"></div>
-    <button id="resetFilters" class="reset-btn">Filter zurücksetzen</button>
+    <button id="resetFilters" type="button" class="reset-btn" onclick="resetFilters();return false;">Filter zurücksetzen</button>
     </div>
   </div>
 
@@ -91,7 +91,7 @@
   <!-- SETTINGS PANEL -->
   <section id="settingsPanel" class="settings-panel hidden">
     <div class="settings-nav">
-      <button id="settingsClose" class="s-close-btn">
+      <button id="settingsClose" type="button" class="s-close-btn" onclick="closeSettings();return false;">
         <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
       <span class="s-title">Einstellungen</span>
@@ -212,6 +212,6 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="./pr-data.js"></script>
-<script src="./app.js?v=2.5.3"></script>
+<script src="./app.js?v=2.5.4"></script>
 </body>
 </html>
