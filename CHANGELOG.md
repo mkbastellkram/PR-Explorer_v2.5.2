@@ -1,5 +1,16 @@
 # PR Explorer Madeira · Changelog
 
+## V2.5.8 · 2026-06-02 · Reiseplan-Grundsystem
+
+- Reise-Tab erweitert: Reisetage werden aus dem Reisezeitraum erzeugt und als eigene Tageskarten angezeigt.
+- Geplante PR-Termine und IFCN-Buchungen erscheinen chronologisch in den jeweiligen Tageskarten.
+- PR-Favoriten ohne Termin werden separat als offener Planungsrückstand angezeigt.
+- Offene PR-Favoriten können direkt mit Reisetag, Stunde und 00/30-Minutenraster eingeplant werden.
+- Externe Unternehmungen können lokal gespeichert werden: Titel, Kategorie, Status, Datum, Uhrzeit, Dauer, Fahrzeit, Link und optionale Koordinaten.
+- Externe Unternehmungen können als ICS exportiert oder per gespeichertem Link geöffnet werden.
+- Reiseplan kann als JSON gesichert werden.
+- Statuslogik für Reiseelemente: Idee, Favorit, geplant, gebucht, erledigt, verworfen.
+
 ## V2.5.7 · 2026-06-02 · POI-, Kalender- und Linien-Regression-Fix
 
 - Concelhos-Grenzen aus App-UI entfernt und als Layer deaktiviert.
@@ -10,11 +21,6 @@
 - GPX/KML-Konturbreiten wieder einstellbar.
 - Sortierung im Filter-Sheet wieder ergänzt.
 - Teilen-Button öffnet eine Auswahl für Audit, gefilterte PR-Liste und aktive PR-Daten.
-
-- Fehlende `htmlEsc()` Hilfsfunktion ergänzt; Einstellungsaufbau bricht dadurch nicht mehr beim Home-PIN ab.
-- Filteraufbau defensiv gemacht: Container, leere Datenmengen und alte Grenzwerte werden abgefangen.
-- Fehlerkarten zeigen künftig die technische Kurzursache an.
-- Initialer Filteraufbau wird geschützt ausgeführt.
 
 ## V2.5.2 · 2026-06-01 · Stabilisierung Maschinenraum
 

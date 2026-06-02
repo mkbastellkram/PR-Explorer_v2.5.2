@@ -1,4 +1,4 @@
-# PR Explorer Madeira · V2.5.7
+# PR Explorer Madeira · V2.5.8
 
 Private Madeira-Planungs-PWA für PR-Wanderungen, Karte, GPX/KML, POIs, Favoriten, Reisezeitraum, Audit und iPhone-Bedienung.
 
@@ -26,3 +26,11 @@ Alte Dateien wie `app-claude-v243.js`, `app-claude-v244.js`, `app-claude-v25.js`
 ## iPhone/GitHub-Hinweis
 
 GitHub auf iOS kann Ordner schlecht hochladen. Der bereitgestellte Release-Ordner ist deshalb flach aufgebaut. Dateien aus dem entpackten Ordner einzeln markieren und in GitHub hochladen; keinen ZIP als Website-Inhalt hochladen.
+
+
+## V2.5.8 · Reiseplan-Grundsystem
+
+- Reise-Tab erzeugt Tageskarten aus dem Reisezeitraum.
+- PR-Favoriten ohne Termin können direkt eingeplant werden.
+- Externe Unternehmungen werden lokal gespeichert und können mit Link/Koordinaten/Dauer/Fahrzeit ergänzt werden.
+- Reiseplan kann als JSON gesichert werden.

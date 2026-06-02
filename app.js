@@ -1,14 +1,21 @@
 /* ============================================================
    PR Explorer · app.js · Midnight Teal Pro
-   V2.5.7: POI-, Kalender- und Linien-Regression-Fix
+   V2.5.8: Reiseplan-Grundsystem
    ============================================================ */
 'use strict';
 
 const qs  = s => document.querySelector(s);
 const qsa = s => [...document.querySelectorAll(s)];
 
-const APP_VERSION = 'V2.5.7';
+const APP_VERSION = 'V2.5.8';
 const APP_CHANGELOG = [
+  { version:'V2.5.8', date:'2026-06-02', title:'Reiseplan-Grundsystem', changes:[
+    'Reiseplan-Ansicht aus dem Reisezeitraum ergänzt: jeder Urlaubstag wird als eigene Tageskarte mit geplanten PRs, gebuchten IFCN-Terminen und externen Unternehmungen dargestellt.',
+    'Favoriten ohne Termin werden separat als Planungsrückstand angezeigt und können direkt einem Reisetag mit 30-Minuten-Zeitfenster zugeordnet werden.',
+    'Externe Unternehmungen lassen sich lokal anlegen: Titel, Kategorie, Status, Datum, Uhrzeit, Dauer, Fahrzeit, Link und optionale Koordinaten.',
+    'Reiseplan-Daten werden lokal gespeichert und können als JSON exportiert werden; der Reiseplan ist bewusst unabhängig von Google/Instagram und nutzt Links nur als Referenz.',
+    'Statuslogik für Reiseelemente ergänzt: Idee, Favorit, geplant, gebucht, erledigt und verworfen.'
+  ]},
   { version:'V2.5.7', date:'2026-06-02', title:'POI-, Kalender- und Linien-Regression-Fix', changes:[
     'Concelhos-Grenzen aus der App-UI entfernt und als Layer deaktiviert; die unsauberen Platzhalter-Polygone werden nicht mehr gezeichnet.',
     'POI-Darstellung bereinigt: transparente Markerhülle, editierbare POI-Größe, Google-Maps-Übergabe und Radiusmodus um den aktiven PR.',
@@ -155,7 +162,7 @@ if(!['light','topo','sat','hybrid'].includes(cfg.base)) cfg.base='topo';
 if(cfg.base==='dark') cfg.base='topo';
 if(!cfg.layers || typeof cfg.layers!=='object') cfg.layers={};
 cfg.layers.regions=false;
-try { localStorage.setItem('prStorageSchema','V2.5.7'); } catch(e) {}
+try { localStorage.setItem('prStorageSchema','V2.5.8'); } catch(e) {}
 // V2.4.4: alte Standardwerte nur dann migrieren, wenn der Nutzer offenbar noch die früheren Defaults nutzt.
 if((cfg.gpxColor||'').toLowerCase()==='#5ac8fa') cfg.gpxColor='#FF3B30';
 if((cfg.kmlColor||'').toLowerCase()==='#ff9500') cfg.kmlColor='#007AFF';
@@ -181,6 +188,52 @@ let prSchedule = JSON.parse(localStorage.getItem('prSchedule')||'{}');
 function savePrSchedule(){ localStorage.setItem('prSchedule', JSON.stringify(prSchedule)); }
 function getPrSchedule(id){ return prSchedule[id] || { planned:'', booked:'' }; }
 function updatePrSchedule(id,key,val){ if(!prSchedule[id]) prSchedule[id]={planned:'',booked:''}; prSchedule[id][key]=val||''; savePrSchedule(); if(key==='booked'&&val) setSt(id,'booked'); else { renderDetail(); renderPanel(); } }
+
+
+let tripItems = JSON.parse(localStorage.getItem('prTripItems')||'[]');
+function saveTripItems(){ localStorage.setItem('prTripItems', JSON.stringify(tripItems)); }
+const TRIP_STATUS = {
+  idea:{label:'Idee',dot:'#8e8e93'}, fav:{label:'Favorit',dot:'#ffd60a'},
+  planned:{label:'Geplant',dot:'#5ac8fa'}, booked:{label:'Gebucht',dot:'#0a84ff'},
+  done:{label:'Erledigt',dot:'#34c759'}, skip:{label:'Verworfen',dot:'#636366'}
+};
+function tripStatusPill(st){ const d=TRIP_STATUS[st]||TRIP_STATUS.idea; return `<span class="trip-pill" style="border-color:${d.dot}66;color:${d.dot};background:${d.dot}18"><i style="background:${d.dot}"></i>${d.label}</span>`; }
+function tripDays(){
+  if(!cfg.tripStart||!cfg.tripEnd)return [];
+  const out=[], s=new Date(cfg.tripStart+'T00:00'), e=new Date(cfg.tripEnd+'T00:00');
+  if(isNaN(s)||isNaN(e)||e<s)return out;
+  for(let d=new Date(s); d<=e; d.setDate(d.getDate()+1)) out.push(new Date(d));
+  return out;
+}
+function dateKey(d){ if(d instanceof Date) return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; return String(d||'').slice(0,10); }
+function niceDay(d){ return d.toLocaleDateString('de',{weekday:'short',day:'2-digit',month:'2-digit'}); }
+function timeOf(dt){ return String(dt||'').slice(11,16)||'–'; }
+function scheduleKindLabel(k){ return k==='booked'?'IFCN gebucht':'geplant'; }
+function prScheduleRows(){ const rows=[]; Object.entries(prSchedule).forEach(([id,sc])=>{ const r=DATA.find(x=>x.id===id); if(!r)return; if(sc.planned)rows.push({kind:'pr',id,type:'planned',dt:sc.planned,r}); if(sc.booked)rows.push({kind:'pr',id,type:'booked',dt:sc.booked,r}); }); return rows; }
+function unscheduledFavs(){ return DATA.filter(r=>favs.has(r.id)&&!getPrSchedule(r.id).planned&&!getPrSchedule(r.id).booked); }
+function tripItemsForDay(key){ return tripItems.filter(x=>dateKey(x.dt)===key && x.status!=='skip'); }
+function travelEventsForDay(key){ return prScheduleRows().filter(x=>dateKey(x.dt)===key).concat(tripItemsForDay(key).map(x=>({kind:'item',dt:x.dt,item:x}))).sort((a,b)=>String(a.dt).localeCompare(String(b.dt))); }
+function tripItemTitle(x){ return htmlEsc(x.title||'Unternehmung'); }
+function addTripItemFromForm(){
+  const title=(qs('#tiTitle')?.value||'').trim(); if(!title){toast('Titel fehlt');return;}
+  const date=qs('#tiDate')?.value||''; const hour=qs('#tiHour')?.value||'09'; const min=qs('#tiMin')?.value||'00';
+  const item={id:'ti-'+Date.now(),title,cat:qs('#tiCat')?.value||'poi',status:qs('#tiStatus')?.value||'idea',dt:date?`${date}T${hour}:${min}`:'',durationMin:+(qs('#tiDur')?.value||120),driveMin:+(qs('#tiDrive')?.value||0),link:(qs('#tiLink')?.value||'').trim(),lat:parseFloat(qs('#tiLat')?.value||''),lon:parseFloat(qs('#tiLon')?.value||'')};
+  if(!Number.isFinite(item.lat)) delete item.lat; if(!Number.isFinite(item.lon)) delete item.lon;
+  tripItems.push(item); saveTripItems(); renderPanel(); toast('Unternehmung gespeichert');
+}
+function deleteTripItem(id){ tripItems=tripItems.filter(x=>x.id!==id); saveTripItems(); renderPanel(); }
+function setTripItemStatus(id,st){ const x=tripItems.find(i=>i.id===id); if(!x)return; x.status=st; saveTripItems(); renderPanel(); }
+function openTripLink(id){ const x=tripItems.find(i=>i.id===id); if(!x||!x.link){toast('Kein Link gespeichert');return;} window.open(x.link,'_blank'); }
+function planFavFromCard(id){ const date=qs('#pf-'+String(id).replace(/[^a-z0-9]+/gi,'-')+'-date')?.value||''; const hour=qs('#pf-'+String(id).replace(/[^a-z0-9]+/gi,'-')+'-hour')?.value||'09'; const min=qs('#pf-'+String(id).replace(/[^a-z0-9]+/gi,'-')+'-min')?.value||'00'; if(!date){toast('Reisetag wählen');return;} updatePrSchedule(id,'planned',`${date}T${hour}:${min}`); toast(id+' eingeplant'); }
+function exportTravelPlanJson(){ const payload={version:APP_VERSION,tripStart:cfg.tripStart,tripEnd:cfg.tripEnd,prSchedule,tripItems,generated:new Date().toISOString()}; downloadBlob(JSON.stringify(payload,null,2),'pr-explorer-reiseplan.json','application/json'); }
+function tripItemIcs(x){ const start=x.dt?new Date(x.dt):new Date(); const end=new Date(start.getTime()+(+(x.durationMin||120))*60000); const stamp=new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,''); return ['BEGIN:VCALENDAR','VERSION:2.0',`PRODID:-//PR Explorer ${APP_VERSION}//DE`,'BEGIN:VEVENT',`UID:${x.id}@pr-explorer`,`DTSTAMP:${stamp}`,`DTSTART:${icsDateFromDate(start)}`,`DTEND:${icsDateFromDate(end)}`,`SUMMARY:${escICS(x.title||'Madeira Unternehmung')}`,`DESCRIPTION:${escICS('Status: '+((TRIP_STATUS[x.status]||{}).label||x.status)+'\nDauer: '+(x.durationMin||0)+' min\nFahrzeit: '+(x.driveMin||0)+' min\n'+(x.link||''))}`,x.lat&&x.lon?`LOCATION:${x.lat}\, ${x.lon}`:'LOCATION:Madeira','END:VEVENT','END:VCALENDAR'].join('\n'); }
+function exportTripItemICS(id){ const x=tripItems.find(i=>i.id===id); if(!x){return;} downloadBlob(tripItemIcs(x),String(x.title||'Unternehmung').replace(/[^a-z0-9äöüß-]+/gi,'-').slice(0,40)+'.ics','text/calendar'); }
+function tripPlannerFormHtml(){ const days=tripDays(); const defDate=days[0]?dateKey(days[0]):''; return `<div class="trip-add"><div class="trip-add-head"><b>Externe Unternehmung</b><small>Manuell speichern, später einem Reisetag zuordnen.</small></div><input id="tiTitle" class="home-input" placeholder="Titel, z. B. Cabo Girão / Restaurant / Bootstour"><div class="trip-grid"><select id="tiCat"><option value="poi">POI</option><option value="food">Restaurant</option><option value="view">Aussichtspunkt</option><option value="beach">Strand</option><option value="city">Ort / Stadt</option><option value="tour">Tour</option><option value="other">Sonstiges</option></select><select id="tiStatus">${Object.entries(TRIP_STATUS).map(([k,d])=>`<option value="${k}">${d.label}</option>`).join('')}</select></div><div class="trip-grid"><input id="tiDate" type="date" class="home-input" value="${defDate}"><select id="tiHour">${timeSelectOptions('10',0,23,1)}</select><select id="tiMin"><option value="00">00</option><option value="30">30</option></select></div><div class="trip-grid"><input id="tiDur" class="home-input" type="number" min="15" step="15" value="120" placeholder="Dauer min"><input id="tiDrive" class="home-input" type="number" min="0" step="5" value="0" placeholder="Fahrzeit min"></div><input id="tiLink" class="home-input" placeholder="Link Google Maps / Website / Instagram / YouTube"><div class="trip-grid"><input id="tiLat" class="home-input" placeholder="Lat optional"><input id="tiLon" class="home-input" placeholder="Lon optional"></div><button class="btn-primary" onclick="addTripItemFromForm()">Unternehmung speichern</button></div>`; }
+function prPlanControlsHtml(r){ const safe=String(r.id).replace(/[^a-z0-9]+/gi,'-'); const days=tripDays(); return `<div class="plan-mini"><select id="pf-${safe}-date"><option value="">Reisetag wählen</option>${days.map(d=>`<option value="${dateKey(d)}">${niceDay(d)}</option>`).join('')}</select><select id="pf-${safe}-hour">${timeSelectOptions('09',0,23,1)}</select><select id="pf-${safe}-min"><option value="00">00</option><option value="30">30</option></select><button onclick="event.stopPropagation();planFavFromCard('${r.id}')">Planen</button></div>`; }
+function unscheduledFavsHtml(){ const rows=unscheduledFavs(); return `<div class="p-section">Favoriten ohne Termin</div>${rows.length?`<div class="list fav-backlog">${rows.map(r=>`<div class="pr-card backlog-card" onclick="openDetail('${r.id}',true)"><div class="pr-tag" style="background:${levelColor(r.level)}">${r.id}</div><div class="info"><b>${r.name}</b><span>${regionLabel(r)} · noch nicht eingeplant</span>${prPlanControlsHtml(r)}</div><span class="chevron">›</span></div>`).join('')}</div>`:'<div class="empty-state">Keine offenen PR-Favoriten ohne Termin.</div>'}`; }
+function eventCardHtml(ev){ if(ev.kind==='pr'){ const r=ev.r; return `<div class="day-event pr ${ev.type}" onclick="openDetail('${r.id}',true)"><div><b>${timeOf(ev.dt)} · ${r.id}</b><span>${htmlEsc(r.name)}</span><small>${scheduleKindLabel(ev.type)} · ${fmt(r.driveMin)} min Anfahrt · ${fmt(r.duration)}</small></div>${stPillHtml(getSt(r.id))}</div>`; } const x=ev.item; return `<div class="day-event item"><div><b>${timeOf(x.dt)} · ${tripItemTitle(x)}</b><span>${htmlEsc(x.cat||'Unternehmung')} · ${x.durationMin||0} min · Fahrt ${x.driveMin||0} min</span>${x.link?`<small>${htmlEsc(x.link).slice(0,80)}</small>`:''}</div><div class="event-actions">${tripStatusPill(x.status)}${x.link?`<button onclick="event.stopPropagation();openTripLink('${x.id}')">Link</button>`:''}<button onclick="event.stopPropagation();exportTripItemICS('${x.id}')">ICS</button><button onclick="event.stopPropagation();deleteTripItem('${x.id}')">×</button></div></div>`; }
+function tripDayCardsHtml(){ const days=tripDays(); if(!days.length)return '<div class="empty-state">Reisezeitraum in den Einstellungen setzen. Danach werden hier automatisch Tageskarten erzeugt.</div>'; return `<div class="trip-days">${days.map(d=>{ const k=dateKey(d), ev=travelEventsForDay(k); return `<div class="trip-day"><div class="trip-day-head"><b>${niceDay(d)}</b><span>${ev.length?ev.length+' Eintrag'+(ev.length>1?'e':''):'frei'}</span></div>${ev.length?ev.map(eventCardHtml).join(''):'<div class="free-slot">Noch keine feste Planung. Geeignet für POI, Reserve oder Ruhetag.</div>'}</div>`; }).join('')}</div>`; }
+function travelPlannerHtml(){ return `${tripBannerHtml()}<div class="trip-toolbar"><button class="mini-btn" onclick="exportTravelPlanJson()">Reiseplan JSON sichern</button><button class="mini-btn" onclick="exportTripICS()">Reisezeitraum ICS</button></div>${tripDayCardsHtml()}${unscheduledFavsHtml()}${tripPlannerFormHtml()}`; }
 
 function saveCfg()    { localStorage.setItem('prCfg',    JSON.stringify(cfg)); }
 function saveFavs()   { localStorage.setItem('prFavs',   JSON.stringify([...favs])); }
@@ -733,7 +786,7 @@ function resetFilters(){ F.region='all';F.status='all';F.schedule='all';S.query=
 
 /* PANEL */
 function stPillHtml(st){ const d=STATUS_DEF[st]||STATUS_DEF.open;return `<span class="pr-card sf-pill" style="background:${d.dot}22;border:1px solid ${d.dot}44;color:${d.dot}"><span class="dot" style="background:${d.dot}"></span>${d.label}</span>`; }
-function calendarOverviewHtml(){ const rows=[]; Object.entries(prSchedule).forEach(([id,sc])=>{ const r=DATA.find(x=>x.id===id); if(!r)return; if(sc.planned)rows.push({id,type:'geplant',dt:sc.planned,r}); if(sc.booked)rows.push({id,type:'gebucht',dt:sc.booked,r}); }); rows.sort((a,b)=>String(a.dt).localeCompare(String(b.dt))); if(!rows.length)return '<div class="p-section">Kalender</div><div class="empty-state">Noch keine geplanten oder gebuchten PR-Termine.</div>'; return `<div class="p-section">Kalender</div><div class="cal-list">${rows.map(x=>`<div class="cal-item ${x.type}" onclick="openDetail('${x.id}',true)"><b>${x.r.id}</b><span>${new Date(x.dt).toLocaleString('de',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})} · ${x.type}</span><small>${x.r.name}</small></div>`).join('')}</div>`; }
+function calendarOverviewHtml(){ return tripDayCardsHtml(); }
 function prCardHtml(r,showMapBtn=false){ const st=getSt(r.id),col=levelColor(r.level);const mapBtn=showMapBtn?`<button class="card-map-btn" onclick="event.stopPropagation();soloOnMap('${r.id}')" aria-label="Auf Karte"><svg viewBox="0 0 24 24"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg></button>`:'';return `<div class="pr-card" onclick="openDetail('${r.id}',true)"><div class="pr-tag" style="background:${col}">${r.id}</div><div class="info"><b>${r.name}</b><span>${regionLabel(r)} · ${fmt(r.distanceKm)} km · ${fmt(r.duration)}</span>${stPillHtml(st)}</div>${mapBtn}<span class="chevron">›</span></div>`; }
 function tripBannerHtml(){ if(!cfg.tripStart||!cfg.tripEnd)return '';const s=new Date(cfg.tripStart),e=new Date(cfg.tripEnd),now=new Date();const days=Math.round((e-s)/86400000)+1,rem=Math.max(0,Math.ceil((e-now)/86400000));const opts={day:'numeric',month:'short'};const sub=now<s?`Ab ${s.toLocaleDateString('de',opts)}`:now>e?'Reise beendet':`Noch ${rem} Tag${rem!==1?'e':''}`;return `<div class="travel-banner"><span class="tb-icon">✈️</span><div class="tb-text"><b>${s.toLocaleDateString('de',opts)} – ${e.toLocaleDateString('de',opts)}</b><small>${sub} · ${days} Tage gesamt</small></div><span class="tb-days">${days}</span></div>`; }
 
@@ -743,7 +796,7 @@ function renderPanel(){
   const list=filtered();let h='';
   if(S.tab==='overview'){ h=`${tripBannerHtml()}<div class="stats"><div class="stat"><b>${DATA.length}</b><small>PR gesamt</small></div><div class="stat"><b>${list.length}</b><small>Sichtbar</small></div><div class="stat"><b>${favs.size}</b><small>Favoriten</small></div></div><button class="btn-primary" onclick="setTab('journal')">Alle PR anzeigen</button>`; }
   else if(S.tab==='journal'){ const sb=cfg.soloMode?`<div class="solo-banner"><span>Solo: ${cfg.soloId}</span><button onclick="exitSoloMode();renderPanel()">× Alle</button></div>`:'';h=`<div class="search-row"><input class="search-input" placeholder="PR suchen…" value="${S.query}" oninput="S.query=this.value;renderLayers();renderPanel()"></div><div class="sort-row"><span>Sortierung</span><select onchange="setSort(this.value)"><option value="id" ${cfg.sort==='id'?'selected':''}>PR-Nummer</option><option value="name" ${cfg.sort==='name'?'selected':''}>Name</option><option value="distance" ${cfg.sort==='distance'?'selected':''}>Track-Länge</option><option value="drive" ${cfg.sort==='drive'?'selected':''}>Anfahrtszeit</option><option value="elev" ${cfg.sort==='elev'?'selected':''}>Höhenmeter</option><option value="status" ${cfg.sort==='status'?'selected':''}>Status</option></select></div>${sb}<div class="list">${list.map(r=>prCardHtml(r,true)).join('')||'<div class="empty-state">Keine PR gefunden.</div>'}</div>`; }
-  else if(S.tab==='trips'){ const fL=DATA.filter(r=>favs.has(r.id)); const cal=calendarOverviewHtml(); h=`${tripBannerHtml()}${cal}<div class="p-section">Favoriten</div><div class="list">${fL.map(r=>prCardHtml(r,true)).join('')||'<div class="empty-state">Noch keine Favoriten.</div>'}</div>`; }
+  else if(S.tab==='trips'){ h=travelPlannerHtml(); }
   else if(S.tab==='options'){ h=`<div class="p-section">Kartenstil</div><div class="mode-grid">${Object.keys(BASE_LABELS).map(m=>`<button class="mode-chip ${cfg.base===m?'active':''}" onclick="setBase('${m}')">${BASE_LABELS[m]}</button>`).join('')}</div><div class="p-section">Ebenen</div><div class="sg-box" style="border-radius:18px;overflow:hidden;background:rgba(90,200,250,.04);border:1px solid rgba(90,200,250,.1)">${APP_LAYER_KEYS.map(k=>`<div class="opt-row"><span style="font-size:18px;width:28px;text-align:center">${OVERLAY_ICONS[k]}</span><span class="opt-label">${OVERLAY_LABELS[k]}</span><input type="checkbox" class="s-tog" ${cfg.layers[k]?'checked':''} onchange="setLayer('${k}',this.checked)"></div>`).join('')}</div><div class="p-section">POI-Reiseziele</div><div class="vector-info-card"><b>OSM Reise-POIs</b><span>${poiStatusHtml()}</span><button class="mini-btn" onclick="refreshPoiData()">POIs laden / aktualisieren</button><div class="poi-cat-grid">${Object.entries(POI_DEF).map(([k,d])=>`<button class="poi-cat-btn ${cfg.poiCats?.[k]!==false?'active':''}" onclick="setPoiCat('${k}',!(cfg.poiCats?.['${k}']!==false));event.stopPropagation();"><span>${d.icon}</span>${d.label}</button>`).join('')}</div><button class="mini-btn" onclick="googleMapsSearch('Cafe Madeira')">Google-Maps-Suche Test</button></div><div class="p-section">Hiking-Darstellung</div><div class="vector-info-card"><b>${hikingModeLabel()}</b>${hikingModeControlsHtml('panel')}<span>${cfg.hikingMode==='raster'?'Waymarked Trails Raster-Referenz aktiv.':cfg.hikingMode==='vector'?'Editierbare OSM-Vektorlinien aktiv.':cfg.hikingMode==='compare'?'Vergleichsmodus: Raster und Vektor bewusst übereinander.':'Keine zusätzliche Hiking-Ebene aktiv.'}</span></div><div class="p-section">OSM Hiking Vektor</div><div class="vector-info-card"><b>Editierbare Rohdaten-Linien</b><span>${hikingVectorStatusHtml()}</span><button class="mini-btn" onclick="refreshHikingVectorData()">Rohdaten laden / aktualisieren</button></div><button class="btn-primary" style="margin-top:14px" onclick="fitVisible();setTab('map')">Sichtbare PR einpassen</button>`; }
   el.innerHTML=h;
 }
@@ -1237,6 +1290,23 @@ function bind(){
 
 /* CSS additions */
 const _addCSS=`
+.trip-toolbar{display:flex;gap:8px;margin:8px 0 14px;flex-wrap:wrap}
+.trip-days{display:flex;flex-direction:column;gap:12px;margin:10px 0 18px}
+.trip-day{border:1px solid rgba(90,200,250,.14);background:rgba(10,24,22,.58);border-radius:20px;overflow:hidden;box-shadow:0 8px 26px rgba(0,0,0,.22)}
+.trip-day-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid rgba(90,200,250,.08);background:rgba(90,200,250,.05)}
+.trip-day-head b{font-size:17px}.trip-day-head span{font-size:12px;color:var(--muted);font-weight:700}
+.day-event{margin:10px;border-radius:16px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.045);padding:11px;display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.day-event b{display:block;font-size:14px}.day-event span{display:block;font-size:13px;color:rgba(240,250,248,.7);margin-top:2px}.day-event small{display:block;font-size:11px;color:var(--muted);margin-top:3px;word-break:break-all}
+.day-event.pr.booked{border-color:rgba(10,132,255,.35);background:rgba(10,132,255,.08)}
+.free-slot{margin:10px;padding:13px;border-radius:16px;background:rgba(90,200,250,.04);color:var(--muted);font-size:13px;text-align:center}
+.trip-pill{height:25px;border-radius:999px;border:1px solid;display:inline-flex;align-items:center;gap:5px;padding:0 8px;font-size:11px;font-weight:700;white-space:nowrap}.trip-pill i{width:7px;height:7px;border-radius:50%;display:block}
+.event-actions{display:flex;flex-direction:column;gap:5px;align-items:flex-end}.event-actions button{height:26px;padding:0 8px;border-radius:999px;background:rgba(90,200,250,.1);border:1px solid rgba(90,200,250,.16);font-size:11px;color:var(--teal);font-weight:700}
+.trip-add{margin-top:16px;padding:14px;border:1px solid rgba(90,200,250,.14);border-radius:20px;background:rgba(90,200,250,.045);display:flex;flex-direction:column;gap:9px}.trip-add-head b{display:block}.trip-add-head small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.trip-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.trip-grid select,.plan-mini select{min-height:42px;border-radius:12px;background:rgba(255,255,255,.07);border:1px solid rgba(90,200,250,.12);padding:0 10px;color:var(--text)}
+.trip-grid:has(select:nth-child(3)){grid-template-columns:1fr .62fr .62fr}.trip-add input{min-height:42px}
+.plan-mini{display:grid;grid-template-columns:1fr .55fr .55fr .85fr;gap:6px;margin-top:8px}.plan-mini select,.plan-mini button{height:34px;font-size:12px;border-radius:10px;background:rgba(90,200,250,.08);border:1px solid rgba(90,200,250,.12);padding:0 6px}.plan-mini button{color:var(--teal);font-weight:800}
+.backlog-card{align-items:flex-start}.fav-backlog .info{width:100%}
+
 .card-map-btn{width:36px;height:36px;border-radius:50%;background:rgba(90,200,250,.1);border:1px solid rgba(90,200,250,.2);display:grid;place-items:center;flex:0 0 36px;color:var(--teal)}
 .card-map-btn svg{width:18px;height:18px;stroke:var(--teal);fill:none;stroke-width:2;stroke-linecap:round}
 .card-map-btn:active{transform:scale(.88)}
@@ -1251,7 +1321,7 @@ const _addCSS=`
 const _styleEl=document.createElement('style');_styleEl.textContent=_addCSS;document.head.appendChild(_styleEl);
 
 /* GLOBALS */
-Object.assign(window,{S,F,cfg,favs,saveFavs,saveCfg,saveStatus,openDetail,closeDetail,setTab,setSt,setBase,setLayer,setHikingMode,setHikingColorMode,soloOnMap,exitSoloMode,openSettings,closeSettings,renderSettings,setPinShape,openColorSheet,closeColorSheet,confirmColor,setColorTab,sliderChanged,hexChanged,pickColor,openIconSheet,closeIconSheet,confirmIcon,filterIcons,pickIcon,openDateSheet,closeDateSheet,confirmDate,calPrev,calNext,calDay,exportICS,exportTripICS,exportBookedICS,updatePrSchedule,composeDt,clearPrSchedule,resetFilters,setRegion,setSF,toggleRegions,dualMove,renderFilterSheet,closeAllSheets,closeBackdrop,fitVisible,googleMapsPoint,renderLayers,renderPanel,renderDetail,tcToggle,tcResult,tcReset,tcExport,tcSaveNote,tcClearNote,renderTestTab,openTestPanel,syncTestToggle,APP_VERSION,APP_CHANGELOG,qs,lineStyleBtns,setSort,setScheduleFilter,refreshPoiData,setPoiCat,googleMapsSearch,exportRouteFile,shareRouteFile,shareTestReport,openShareSheet,shareText,prInfoText,filteredCsv,darkenChanged,setHomeField,drawHomePin,togglePois,focusDetailPins,clearPinFocus,openFilterSheet,installCriticalTapGuards});
+Object.assign(window,{S,F,cfg,favs,saveFavs,saveCfg,saveStatus,openDetail,closeDetail,setTab,setSt,setBase,setLayer,setHikingMode,setHikingColorMode,soloOnMap,exitSoloMode,openSettings,closeSettings,renderSettings,setPinShape,openColorSheet,closeColorSheet,confirmColor,setColorTab,sliderChanged,hexChanged,pickColor,openIconSheet,closeIconSheet,confirmIcon,filterIcons,pickIcon,openDateSheet,closeDateSheet,confirmDate,calPrev,calNext,calDay,exportICS,exportTripICS,exportBookedICS,updatePrSchedule,composeDt,clearPrSchedule,tripItems,saveTripItems,addTripItemFromForm,deleteTripItem,setTripItemStatus,openTripLink,planFavFromCard,exportTravelPlanJson,exportTripItemICS,resetFilters,setRegion,setSF,toggleRegions,dualMove,renderFilterSheet,closeAllSheets,closeBackdrop,fitVisible,googleMapsPoint,renderLayers,renderPanel,renderDetail,tcToggle,tcResult,tcReset,tcExport,tcSaveNote,tcClearNote,renderTestTab,openTestPanel,syncTestToggle,APP_VERSION,APP_CHANGELOG,qs,lineStyleBtns,setSort,setScheduleFilter,refreshPoiData,setPoiCat,googleMapsSearch,exportRouteFile,shareRouteFile,shareTestReport,openShareSheet,shareText,prInfoText,filteredCsv,darkenChanged,setHomeField,drawHomePin,togglePois,focusDetailPins,clearPinFocus,openFilterSheet,installCriticalTapGuards});
 
 /* INIT */
 bind();try{renderFilterSheet();}catch(e){console.warn('Initial filter render skipped',e);}renderLayers();setTab('map');syncTestToggle();setTimeout(fitMadeira,300);_updateTestBadge();
