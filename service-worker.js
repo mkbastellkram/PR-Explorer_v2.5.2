@@ -1,15 +1,15 @@
-const APP_VERSION = 'V3.0.2';
-const CACHE_NAME = `pr-explorer-${APP_VERSION}-20260603a`;
+const APP_VERSION = 'V3.0.4';
+const CACHE_NAME = `pr-explorer-${APP_VERSION}-20260603c`;
 const CORE_ASSETS = [
   './',
   './index.html',
   './manifest.webmanifest',
   './version.json',
-  './style.css?v=3.0.2-20260603a',
-  './prx-v3.0.2.css?v=3.0.2-20260603a',
-  './app.js?v=3.0.2-20260603a',
-  './prx-v3.0.2.js?v=3.0.2-20260603a',
-  './pr-data.js?v=3.0.2-20260603a',
+  './style.css?v=3.0.4-20260603c',
+  './prx-v3.0.4.css?v=3.0.4-20260603c',
+  './app.js?v=3.0.4-20260603c',
+  './prx-v3.0.4.js?v=3.0.4-20260603c',
+  './pr-data.js?v=3.0.4-20260603c',
   './icon-180.png',
   './icon-192.png',
   './icon-512.png',
@@ -17,9 +17,7 @@ const CORE_ASSETS = [
   './CHANGELOG.md',
   './README_TESTING.md',
   './README_LAYER.md',
-  './CHANGELOG_V3.0.1.md',
-  './PROMPT_CHATGPT_ROADMAP.md',
-  './audit-schema-v3.0.1.json'
+  './PROMPT_CHATGPT_ROADMAP.md'
 ];
 
 self.addEventListener('install', event => {

@@ -1,14 +1,27 @@
 /* ============================================================
    PR Explorer · app.js · Midnight Teal Pro
-   V3.0.2: Audit-, Roadmap- und Bedienfixes
+   V3.0.4: iOS-PWA-Safe-Area-Fix
    ============================================================ */
 'use strict';
 
 const qs  = s => document.querySelector(s);
 const qsa = s => [...document.querySelectorAll(s)];
 
-const APP_VERSION = 'V3.0.2';
+const APP_VERSION = 'V3.0.4';
 const APP_CHANGELOG = [
+  { version:'V3.0.4', date:'2026-06-03', title:'iOS-PWA-Safe-Area-Fix', changes:[
+    'Viewport-Meta-Tag um viewport-fit=cover ergänzt; iOS darf die PWA jetzt in den Home-Indikator-/Rundungsbereich ausdehnen.',
+    'Safe-Area-Logik korrigiert: Hintergrund reicht bis zur Displaykante, bedienbare Elemente erhalten nur innen padding-bottom: env(safe-area-inset-bottom).',
+    'Vorherige harte padding-bottom:0-Regeln aus V3.0.3 entschärft, weil sie die iOS-Safe-Area nicht fachgerecht nutzten.',
+    'Bottom-Navigation und Panels erhalten getrennte Hintergrund- und Inhaltsabstände.'
+  ]},
+  { version:'V3.0.3', date:'2026-06-03', title:'Detail-, Audit-Export-, Zoomslider- und Viewport-Hotfix', changes:[
+    'Doppelter Zoomslider beseitigt: alter V3.0.1/3.0.2-Slider wird beim Aktivieren entfernt; es bleibt nur ein sauberer vertikaler Slider mit + oben und − unten.',
+    'Audit/Test-Schließen blockiert nicht mehr durch Export-/Kopierdialog: Export läuft nur noch über eine ausdrücklich gedrückte Export-Aktion, Schließen bleibt Schließen.',
+    'Viewport-/Safe-Area-Fix verschärft: App-Root, Karte, Panels und Bottom-Navigation werden auf 100dvh und bottom:0 gezwungen.',
+    'Journal-Kacheln repariert: ganze PR-Kachel öffnet wieder die Detailansicht; der kleine Pfeil wird ausgeblendet.',
+    'Weiße Seite beim Öffnen aus Journal/Listen durch stabilere Detailöffnung und Fehlerfang entschärft.'
+  ]},
   { version:'V3.0.2', date:'2026-06-03', title:'Audit-, Roadmap- und Bedienfixes nach Praxistest', changes:[
     'Alter Funktionstest auf erweiterten Audit-Umfang umgestellt; dadurch erzeugt auch der alte Test-Export keinen 0/18-Altbericht mehr.',
     'Kopierbutton oben rechts im Test-/Auditkopf entfernt; Export/Kopieren bleibt über Teilen bzw. Export-Aktion verfügbar.',
@@ -807,7 +820,7 @@ function resetFilters(){ F.region='all';F.status='all';F.schedule='all';S.query=
 /* PANEL */
 function stPillHtml(st){ const d=STATUS_DEF[st]||STATUS_DEF.open;return `<span class="pr-card sf-pill" style="background:${d.dot}22;border:1px solid ${d.dot}44;color:${d.dot}"><span class="dot" style="background:${d.dot}"></span>${d.label}</span>`; }
 function calendarOverviewHtml(){ return tripDayCardsHtml(); }
-function prCardHtml(r,showMapBtn=false){ const st=getSt(r.id),col=levelColor(r.level);const mapBtn=showMapBtn?`<button class="card-map-btn" onclick="event.stopPropagation();soloOnMap('${r.id}')" aria-label="Auf Karte"><svg viewBox="0 0 24 24"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg></button>`:'';return `<div class="pr-card pr-card-v302" onclick="openDetail('${r.id}',true)"><div class="pr-tag" style="background:${col}">${r.id}</div><div class="info"><b>${r.name}</b><span>${regionLabel(r)} · ${fmt(r.distanceKm)} km · ${fmt(r.duration)}</span></div><div class="journal-status-slot">${stPillHtml(st)}</div>${mapBtn}<span class="chevron">›</span></div>`; }
+function prCardHtml(r,showMapBtn=false){ const st=getSt(r.id),col=levelColor(r.level); const rid=String(r.id).replace(/'/g,''); const mapBtn=showMapBtn?`<button class="card-map-btn" onclick="event.stopPropagation();soloOnMap('${rid}')" aria-label="Auf Karte"><svg viewBox="0 0 24 24"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg></button>`:''; return `<div class="pr-card pr-card-v303" role="button" tabindex="0" onclick="try{openDetail('${rid}',true)}catch(e){console.error(e);alert('Detailansicht konnte nicht geöffnet werden: '+(e&&e.message?e.message:e))}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();try{openDetail('${rid}',true)}catch(e){console.error(e)}}"><div class="pr-tag" style="background:${col}">${r.id}</div><div class="info"><b>${r.name}</b><span>${regionLabel(r)} · ${fmt(r.distanceKm)} km · ${fmt(r.duration)}</span></div><div class="journal-status-slot">${stPillHtml(st)}</div>${mapBtn}</div>`; }
 function tripBannerHtml(){ if(!cfg.tripStart||!cfg.tripEnd)return '';const s=new Date(cfg.tripStart),e=new Date(cfg.tripEnd),now=new Date();const days=Math.round((e-s)/86400000)+1,rem=Math.max(0,Math.ceil((e-now)/86400000));const opts={day:'numeric',month:'short'};const sub=now<s?`Ab ${s.toLocaleDateString('de',opts)}`:now>e?'Reise beendet':`Noch ${rem} Tag${rem!==1?'e':''}`;return `<div class="travel-banner"><span class="tb-icon">✈️</span><div class="tb-text"><b>${s.toLocaleDateString('de',opts)} – ${e.toLocaleDateString('de',opts)}</b><small>${sub} · ${days} Tage gesamt</small></div><span class="tb-days">${days}</span></div>`; }
 
 function renderPanel(){

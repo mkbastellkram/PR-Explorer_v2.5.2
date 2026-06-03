@@ -1,7 +1,8 @@
 {
   "name": "PR Explorer Madeira",
-  "version": "V3.0.2",
+  "version": "V3.0.4",
   "date": "2026-06-03",
-  "title": "Audit-, Roadmap- und Bedienfixes nach Praxistest",
-  "cache": "pr-explorer-V3.0.2-20260603a"
+  "title": "iOS-PWA-Safe-Area-Fix",
+  "cache": "pr-explorer-V3.0.4-20260603c",
+  "viewport": "viewport-fit=cover"
 }

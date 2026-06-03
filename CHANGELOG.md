@@ -1,3 +1,21 @@
+# V3.0.4 · iOS-PWA-Safe-Area-Fix
+
+- viewport-fit=cover im viewport-Meta-Tag ergänzt.
+- Safe-Area-Handling für iPhone-PWA korrigiert.
+- Hintergrund läuft bis zur unteren Displaykante.
+- Bottom-Navigation erhält padding-bottom: env(safe-area-inset-bottom), damit Buttons oberhalb des Home-Indikators bleiben.
+- Panels und Settings berücksichtigen Safe-Area getrennt vom Hintergrund.
+- V3.0.3-Regeln, die Safe-Area zu hart auf 0 setzten, werden übersteuert.
+
+# V3.0.3 · Detail-, Audit-Export-, Zoomslider- und Viewport-Hotfix
+
+- Doppelter Zoomslider entfernt; alter prx301-Slider wird zwangsweise ausgeblendet.
+- Audit/Test-Schließen gegen versehentlichen Export-/Kopierdialog abgesichert.
+- Viewport-Fix nochmals härter: 100dvh, bottom:0, keine Bottom-Margins.
+- Journal-Kachel öffnet vollständig per Tippen; Pfeil rechts ausgeblendet.
+- Solo-Kartenbutton bleibt als separater Button erhalten.
+- Detailöffnung aus Journal mit Fehlerfang versehen, damit keine weiße Seite ohne Hinweis bleibt.
+
 # V3.0.2 · Audit-, Roadmap- und Bedienfixes nach Praxistest
 
 - Alter Testbericht auf vollständige V3-Auditstruktur erweitert.
