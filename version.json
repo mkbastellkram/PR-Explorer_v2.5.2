@@ -1,8 +1,8 @@
 {
   "name": "PR Explorer Madeira",
-  "version": "V3.1.1",
+  "version": "V3.1.2",
   "date": "2026-06-03",
-  "title": "HUD-Scope-Fix",
-  "cache": "pr-explorer-v3-1-1-hud-scope-20260603h",
-  "base": "V3.1.0"
+  "title": "Sheet- und Control-Normalisierung",
+  "cache": "pr-explorer-v3-1-2-sheet-control-20260603i",
+  "base": "V3.1.1"
 }

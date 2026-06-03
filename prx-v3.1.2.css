@@ -1,0 +1,520 @@
+/* PR Explorer · V3.1.2 Clean Layer Reset */
+
+/* 1) Layer architecture */
+:root{
+  --prx-z-map:0;
+  --prx-z-map-controls:100;
+  --prx-z-filter:120;
+  --prx-z-bottomnav:200;
+  --prx-z-quicktools:220;
+  --prx-z-panel:300;
+  --prx-z-detail:350;
+  --prx-z-sheet:400;
+  --prx-z-settings:500;
+  --prx-z-backdrop:800;
+  --prx-z-modal:900;
+  --prx-z-toast:1000;
+
+  --prx-bg:#071512;
+  --prx-glass:rgba(7,21,18,.82);
+  --prx-line:rgba(90,200,250,.16);
+  --prx-cyan:#5ac8fa;
+  --prx-sheet-opacity:.88;
+  --prx-safe-bottom:env(safe-area-inset-bottom,0px);
+}
+
+/* 2) Ban old experimental overlays */
+body::before,
+body::after,
+#prx305DockBg,
+#prx306SafeBg,
+#prx304SafeBg,
+#prx303DockBg,
+.prx-safe-overlay,
+.prx-bottom-overlay{
+  content:none !important;
+  display:none !important;
+  visibility:hidden !important;
+  opacity:0 !important;
+  height:0 !important;
+  width:0 !important;
+  pointer-events:none !important;
+  z-index:-9999 !important;
+}
+
+/* 3) Viewport: no forced overlay, only stable background */
+html,body,#app{
+  background:var(--prx-bg) !important;
+  overscroll-behavior:none;
+}
+#map{
+  z-index:var(--prx-z-map) !important;
+}
+
+/* 4) Base app layer order */
+.hero,.top-controls,.map-ctrl,.ctrls{
+  z-index:var(--prx-z-map-controls) !important;
+}
+#filterFab,.filter-fab{
+  z-index:var(--prx-z-filter) !important;
+}
+#bottomNav,.bnav{
+  z-index:var(--prx-z-bottomnav) !important;
+  pointer-events:auto !important;
+}
+.panel{
+  z-index:var(--prx-z-panel) !important;
+  pointer-events:auto !important;
+}
+.panel-detail{
+  z-index:var(--prx-z-detail) !important;
+  pointer-events:auto !important;
+}
+.settings-panel{
+  z-index:var(--prx-z-settings) !important;
+  pointer-events:auto !important;
+}
+.toast,#toast,#prx310-toast{
+  z-index:var(--prx-z-toast) !important;
+}
+
+/* 5) All controls remain tappable */
+button,input,select,textarea,label,a,
+.nav-item,.pr-card,.card-map-btn,.sg-row,.s-tog,.s-range-sl{
+  pointer-events:auto !important;
+}
+
+/* 6) V3 quick tools */
+#prx310-tools{
+  position:fixed;
+  left:24px;
+  bottom:calc(126px + var(--prx-safe-bottom));
+  z-index:var(--prx-z-quicktools);
+  display:flex;
+  gap:10px;
+  align-items:center;
+  pointer-events:auto;
+}
+#prx310-tools button{
+  border:1px solid var(--prx-line);
+  background:rgba(7,21,18,.82);
+  color:#f0faf8;
+  border-radius:22px;
+  padding:11px 17px;
+  font:800 15px -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;
+  box-shadow:0 10px 28px rgba(0,0,0,.26);
+  backdrop-filter:blur(18px) saturate(170%);
+  -webkit-backdrop-filter:blur(18px) saturate(170%);
+}
+#prx310-tools button:active{ transform:scale(.97); }
+
+/* 7) Clean sheet system */
+#prx310-overlay{
+  position:fixed;
+  inset:0;
+  z-index:var(--prx-z-backdrop);
+  display:flex;
+  align-items:flex-end;
+  background:rgba(0,0,0,.38);
+  backdrop-filter:blur(4px);
+  -webkit-backdrop-filter:blur(4px);
+}
+.prx310-sheet{
+  width:100%;
+  max-height:88dvh;
+  overflow:hidden;
+  border-radius:26px 26px 0 0;
+  border:1px solid var(--prx-line);
+  border-bottom:0;
+  background:rgba(7,21,18,var(--prx-sheet-opacity));
+  color:#f0faf8;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;
+  box-shadow:0 -18px 56px rgba(0,0,0,.55);
+}
+.prx310-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  padding:16px 18px 12px;
+  border-bottom:1px solid rgba(90,200,250,.12);
+}
+.prx310-head b{display:block;font-size:18px;}
+.prx310-head small{display:block;color:rgba(240,250,248,.56);font-size:12px;margin-top:2px;}
+.prx310-x{
+  width:38px;height:38px;border-radius:50%;
+  border:1px solid var(--prx-line);
+  background:rgba(90,200,250,.09);
+  color:var(--prx-cyan);
+  font-size:22px;
+}
+.prx310-body{
+  max-height:calc(88dvh - 76px);
+  overflow:auto;
+  padding:14px 16px calc(22px + var(--prx-safe-bottom));
+}
+.prx310-body h3{
+  margin:20px 2px 10px;
+  font-size:13px;
+  text-transform:uppercase;
+  letter-spacing:.09em;
+  color:var(--prx-cyan);
+}
+.prx310-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0;}
+.prx310-actions button,.prx310-actions a,.prx310-card button{
+  border:1px solid var(--prx-line);
+  background:rgba(90,200,250,.08);
+  color:var(--prx-cyan);
+  border-radius:13px;
+  padding:9px 12px;
+  font-weight:800;
+  text-decoration:none;
+}
+.prx310-card{
+  border:1px solid rgba(90,200,250,.12);
+  border-radius:18px;
+  background:rgba(90,200,250,.055);
+  padding:12px;
+  margin:12px 0;
+}
+.prx310-field{display:flex;flex-direction:column;gap:6px;margin:10px 0;}
+.prx310-field span,.prx310-switch span{font-size:12px;color:rgba(240,250,248,.64);font-weight:800;}
+.prx310-field input,.prx310-field textarea,.prx310-field select{
+  width:100%;
+  border:1px solid rgba(90,200,250,.16);
+  background:rgba(0,0,0,.22);
+  border-radius:13px;
+  color:#f0faf8;
+  padding:10px 11px;
+  font:inherit;
+}
+.prx310-field textarea{min-height:68px;resize:vertical;}
+.prx310-switch{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0;padding:10px 0;}
+.prx310-switch input{width:48px;height:28px;}
+.prx310-two{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.prx310-status-row{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;}
+.prx310-status-row button{
+  border:1px solid rgba(90,200,250,.15);
+  background:rgba(255,255,255,.05);
+  color:rgba(240,250,248,.68);
+  border-radius:999px;
+  padding:7px 10px;
+  font-weight:800;
+}
+.prx310-status-row button.on{
+  background:rgba(90,200,250,.2);
+  color:var(--prx-cyan);
+  border-color:var(--prx-cyan);
+}
+
+/* 8) Audit */
+.prx310-audit-item{
+  border:1px solid rgba(90,200,250,.1);
+  border-radius:15px;
+  padding:10px;
+  margin:9px 0;
+  background:rgba(255,255,255,.035);
+}
+.prx310-audit-item label{display:block;font-size:13px;line-height:1.35;margin-bottom:8px;}
+.prx310-audit-item textarea,.prx310-big-note{
+  width:100%;
+  min-height:48px;
+  border:1px solid rgba(90,200,250,.13);
+  background:rgba(0,0,0,.2);
+  color:#f0faf8;
+  border-radius:12px;
+  padding:9px;
+  font:inherit;
+}
+.prx310-big-note{min-height:120px;}
+
+/* 9) Roadmap */
+.prx310-tabs{display:flex;gap:6px;padding:10px 12px;border-bottom:1px solid rgba(90,200,250,.1);overflow:auto;}
+.prx310-tabs button{
+  border:1px solid var(--prx-line);
+  background:rgba(90,200,250,.08);
+  color:var(--prx-cyan);
+  border-radius:13px;
+  padding:9px 12px;
+  font-weight:800;
+}
+.prx310-tabs button.on{background:rgba(90,200,250,.2);color:#f0faf8;}
+.prx310-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0;}
+.prx310-kpis div{background:rgba(90,200,250,.06);border:1px solid rgba(90,200,250,.1);border-radius:14px;padding:10px;}
+.prx310-kpis b{display:block}.prx310-kpis small{color:rgba(240,250,248,.55);font-size:11px;}
+.prx310-plan-item{
+  display:grid;
+  grid-template-columns:34px 1fr auto auto;
+  gap:8px;
+  align-items:center;
+  border:1px solid rgba(90,200,250,.1);
+  border-radius:15px;
+  padding:9px;
+  margin:8px 0;
+  background:rgba(0,0,0,.14);
+}
+.prx310-plan-item b{display:block;font-size:14px;}
+.prx310-plan-item small{display:block;color:rgba(240,250,248,.55);font-size:12px;line-height:1.35;}
+.prx310-plan-item button{
+  border:1px solid rgba(90,200,250,.15);
+  background:rgba(90,200,250,.07);
+  color:var(--prx-cyan);
+  border-radius:10px;
+  padding:7px 9px;
+  font-weight:800;
+}
+
+/* 10) Zoomslider: single clean instance */
+#prx310ZoomSlider{
+  position:fixed;
+  z-index:var(--prx-z-quicktools);
+  right:14px;
+  bottom:calc(134px + var(--prx-safe-bottom));
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+  padding:8px;
+  border-radius:18px;
+  background:rgba(7,21,18,.84);
+  border:1px solid var(--prx-line);
+  pointer-events:auto;
+  backdrop-filter:blur(18px) saturate(170%);
+  -webkit-backdrop-filter:blur(18px) saturate(170%);
+}
+#prx310ZoomSlider button{
+  width:34px;height:32px;border-radius:11px;
+  background:rgba(90,200,250,.13);
+  border:1px solid rgba(90,200,250,.2);
+  color:var(--prx-cyan);
+  font-weight:900;
+  font-size:18px;
+}
+#prx310ZoomSlider input{
+  writing-mode:bt-lr;
+  -webkit-appearance:slider-vertical;
+  width:32px;
+  height:122px;
+}
+
+/* 11) Journal layout clean */
+.pr-card-v310{
+  display:grid !important;
+  grid-template-columns:auto 1fr auto !important;
+  grid-template-rows:auto auto !important;
+  align-items:start !important;
+  gap:7px 10px !important;
+  cursor:pointer !important;
+}
+.pr-card-v310 .pr-tag{grid-column:1!important;grid-row:1!important;align-self:start!important;margin-top:0!important;}
+.pr-card-v310 .info{grid-column:2!important;grid-row:1!important;min-width:0!important;}
+.pr-card-v310 .journal-status-slot{grid-column:1 / 3!important;grid-row:2!important;justify-self:start!important;max-width:100%!important;}
+.pr-card-v310 .card-map-btn{grid-column:3!important;grid-row:1 / 3!important;align-self:start!important;justify-self:end!important;min-width:40px!important;min-height:40px!important;}
+.pr-card-v310 .chevron{display:none!important;}
+
+#prx310-toast{
+  position:fixed;z-index:var(--prx-z-toast);
+  left:50%;bottom:calc(34px + var(--prx-safe-bottom));
+  transform:translateX(-50%) translateY(20px);
+  opacity:0;transition:.22s;
+  background:rgba(7,21,18,.94);
+  border:1px solid rgba(90,200,250,.2);
+  color:#f0faf8;border-radius:999px;
+  padding:10px 14px;font:800 13px -apple-system,BlinkMacSystemFont,sans-serif;
+}
+#prx310-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+@media(max-width:460px){.prx310-two,.prx310-kpis{grid-template-columns:1fr}.prx310-plan-item{grid-template-columns:34px 1fr auto}.prx310-plan-item button{padding:6px 8px}}
+
+
+/* PR Explorer · V3.1.2 HUD Scope Fix
+   Keine Safe-Area-/Dock-Änderungen. Nur Sichtbarkeit der HUD-Elemente.
+*/
+html.prx311-hud-hidden #prx310-tools,
+html.prx311-hud-hidden #prx310ZoomSlider,
+html.prx311-hud-hidden #filterFab,
+html.prx311-hud-hidden .filter-fab,
+html.prx311-hud-hidden #testToggle,
+html.prx311-hud-hidden .test-toggle{
+  opacity:0 !important;
+  visibility:hidden !important;
+  pointer-events:none !important;
+  transform:translateY(10px) scale(.98);
+}
+
+#prx310-tools,
+#prx310ZoomSlider,
+#filterFab,
+.filter-fab,
+#testToggle,
+.test-toggle{
+  transition:opacity .18s ease, transform .18s ease, visibility .18s ease;
+}
+
+/* Bei V3-eigenem Overlay sind die Quicktools immer weg */
+#prx310-overlay ~ #prx310-tools,
+#prx310-overlay ~ #prx310ZoomSlider{
+  display:none !important;
+}
+
+/* Filter-/Panel-Elemente sollen vor der Karte bleiben, aber nicht von V3-HUD überdeckt werden */
+html.prx311-panel-open .panel,
+html.prx311-panel-open .panel-detail,
+html.prx311-panel-open .settings-panel{
+  pointer-events:auto !important;
+}
+
+/* Wenn die Karte frei ist, normal sichtbar */
+html.prx311-map-free #prx310-tools{
+  opacity:1;
+  visibility:visible;
+  pointer-events:auto;
+}
+
+
+/* PR Explorer · V3.1.2 Sheet- und Control-Normalisierung
+   Keine Safe-Area-/Bottom-Dock-Änderungen.
+*/
+
+/* Einheitlicher Sheet-Anfasser */
+.prx312-handle-hit{
+  width:100%;
+  min-height:34px;
+  height:34px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  touch-action:none;
+  cursor:grab;
+  flex:0 0 auto;
+  position:relative;
+  z-index:2;
+}
+.prx312-handle-hit:active{
+  cursor:grabbing;
+}
+.prx312-handle{
+  width:46px;
+  height:5px;
+  border-radius:999px;
+  background:rgba(240,250,248,.38);
+  box-shadow:0 1px 0 rgba(255,255,255,.08) inset;
+}
+.prx312-dragging{
+  transition:none !important;
+  will-change:transform;
+}
+.prx312-can-close{
+  transform:translateY(4px);
+}
+
+/* V3-Sheets bekommen sauberen Griff oberhalb des Headers */
+.prx310-sheet > .prx312-handle-hit{
+  border-radius:26px 26px 0 0;
+  background:linear-gradient(to bottom, rgba(255,255,255,.04), rgba(255,255,255,0));
+}
+
+/* Alte Panels / Detail / Settings ebenfalls Griff-tauglich machen */
+.panel > .prx312-handle-hit,
+.panel-detail > .prx312-handle-hit,
+.settings-panel > .prx312-handle-hit{
+  min-height:34px;
+}
+
+/* Einheitliche Touchflächen für X/Close */
+.prx310-x,
+.close,
+.close-btn,
+.sheet-close,
+.detail-close,
+button[aria-label*="Schließen"],
+button[title*="Schließen"]{
+  min-width:44px !important;
+  min-height:44px !important;
+  touch-action:manipulation !important;
+}
+
+/* Sichtbare iOS-artige Switches, auch wenn native Checkbox vorher unsichtbar war */
+.prx310-switch{
+  min-height:48px;
+}
+.prx310-switch input[type="checkbox"],
+#prx310Body input[type="checkbox"],
+#prx312ZoomSwitchNative{
+  appearance:none !important;
+  -webkit-appearance:none !important;
+  display:inline-block !important;
+  opacity:1 !important;
+  visibility:visible !important;
+  position:relative !important;
+  width:54px !important;
+  min-width:54px !important;
+  height:32px !important;
+  border-radius:999px !important;
+  border:1px solid rgba(90,200,250,.24) !important;
+  background:rgba(255,255,255,.14) !important;
+  box-shadow:inset 0 2px 8px rgba(0,0,0,.34) !important;
+  vertical-align:middle !important;
+  cursor:pointer !important;
+  touch-action:manipulation !important;
+}
+.prx310-switch input[type="checkbox"]::after,
+#prx310Body input[type="checkbox"]::after,
+#prx312ZoomSwitchNative::after{
+  content:"";
+  position:absolute;
+  width:26px;
+  height:26px;
+  left:2px;
+  top:2px;
+  border-radius:50%;
+  background:#f0faf8;
+  box-shadow:0 3px 8px rgba(0,0,0,.34);
+  transition:transform .18s ease, background .18s ease;
+}
+.prx310-switch input[type="checkbox"]:checked,
+#prx310Body input[type="checkbox"]:checked,
+#prx312ZoomSwitchNative:checked{
+  background:rgba(90,200,250,.48) !important;
+  border-color:rgba(90,200,250,.72) !important;
+}
+.prx310-switch input[type="checkbox"]:checked::after,
+#prx310Body input[type="checkbox"]:checked::after,
+#prx312ZoomSwitchNative:checked::after{
+  transform:translateX(22px);
+  background:white;
+}
+
+/* Falls ein Switch technisch existiert, aber in altem Layout keinen Platz bekam */
+.prx312-switch-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  min-height:52px;
+  padding:10px 0;
+}
+.prx312-switch-row span{
+  color:rgba(240,250,248,.76);
+  font-weight:800;
+  font-size:14px;
+}
+
+/* Einheitliche Buttons */
+.prx310-actions button,
+.prx310-actions a,
+.prx310-card button,
+.prx310-tabs button{
+  min-height:44px;
+  touch-action:manipulation;
+}
+
+/* Sheet-Inhalte nicht vom Griff verdecken */
+.prx310-body{
+  scroll-padding-top:12px;
+}
+
+/* Bei geöffnetem V3 Overlay sind Zusatz-HUDs weiterhin aus */
+#prx310-overlay ~ #prx310-tools,
+#prx310-overlay ~ #prx310ZoomSlider{
+  display:none !important;
+}

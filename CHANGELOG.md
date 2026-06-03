@@ -1,3 +1,11 @@
+# V3.1.2 · Sheet- und Control-Normalisierung
+
+- Einheitliche Sheet-Anfasser ergänzt.
+- Größere Touchzonen für Anfasser und Schließen-Buttons.
+- Swipe/Drag-nach-unten zum Schließen ergänzt.
+- Zoomslider-Schalter sichtbar als iOS-artiger Switch normalisiert.
+- Keine Safe-Area-/Bottom-Dock-Änderungen.
+
 # V3.1.1 · HUD-Scope-Fix
 
 - Roadmap/Audit/V3-HUD nur noch bei freier Kartenansicht sichtbar.

@@ -1,15 +1,15 @@
-const APP_VERSION = 'V3.1.1';
-const CACHE_NAME = 'pr-explorer-v3-1-1-hud-scope-20260603h';
+const APP_VERSION = 'V3.1.2';
+const CACHE_NAME = 'pr-explorer-v3-1-2-sheet-control-20260603i';
 const CORE_ASSETS = [
   './',
   './index.html',
   './manifest.webmanifest',
   './version.json',
-  './style.css?v=3.1.1-20260603h',
-  './prx-v3.1.1.css?v=3.1.1-20260603h',
-  './app.js?v=3.1.1-20260603h',
-  './prx-v3.1.1.js?v=3.1.1-20260603h',
-  './pr-data.js?v=3.1.1-20260603h',
+  './style.css?v=3.1.2-20260603i',
+  './prx-v3.1.2.css?v=3.1.2-20260603i',
+  './app.js?v=3.1.2-20260603i',
+  './prx-v3.1.2.js?v=3.1.2-20260603i',
+  './pr-data.js?v=3.1.2-20260603i',
   './icon-180.png',
   './icon-192.png',
   './icon-512.png',

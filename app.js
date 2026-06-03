@@ -1,14 +1,22 @@
 /* ============================================================
    PR Explorer · app.js · Midnight Teal Pro
-   V3.1.1: HUD-Scope-Fix
+   V3.1.2: Sheet- und Control-Normalisierung
    ============================================================ */
 'use strict';
 
 const qs  = s => document.querySelector(s);
 const qsa = s => [...document.querySelectorAll(s)];
 
-const APP_VERSION = 'V3.1.1';
+const APP_VERSION = 'V3.1.2';
 const APP_CHANGELOG = [
+  { version:'V3.1.2', date:'2026-06-03', title:'Sheet- und Control-Normalisierung', changes:[
+    'Einheitliche Sheet-Anfasser mit größerer Touch-Zone ergänzt.',
+    'Swipe-/Drag-nach-unten zum Schließen für V3-Sheets, Panels, Detail- und Einstellungsflächen ergänzt.',
+    'Schließen-Buttons und Anfasser erhalten einheitliche Mindest-Touchflächen.',
+    'Zoomslider-Schalter als sichtbarer iOS-artiger Switch normalisiert; unsichtbare Checkbox-Zustände werden vermieden.',
+    'Ähnliche Bereiche erhalten konsistentere Sheet-Struktur und Bedienlogik.',
+    'Keine Safe-Area- oder Bottom-Dock-Änderungen.'
+  ]},
   { version:'V3.1.1', date:'2026-06-03', title:'HUD-Scope-Fix', changes:[
     'Roadmap/Audit/V3-Entwicklungs-HUD wird nur noch auf der freien Kartenansicht angezeigt.',
     'Zoomslider wird nur noch angezeigt, wenn Karte aktiv, Zoomslider aktiviert und kein Panel/Sheet/Detail/Filter/Einstellungen offen ist.',
