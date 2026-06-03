@@ -1,12 +1,61 @@
-const APP_VERSION = 'V3.0.7';
-const CACHE_NAME = `pr-explorer-${APP_VERSION}-20260603f`;
+const APP_VERSION = 'V3.1.0';
+const CACHE_NAME = 'pr-explorer-v3-1-0-clean-20260603g';
 const CORE_ASSETS = [
- './','./index.html','./manifest.webmanifest','./version.json',
- './style.css?v=3.0.7-20260603f','./prx-v3.0.7.css?v=3.0.7-20260603f','./app.js?v=3.0.7-20260603f','./prx-v3.0.7.js?v=3.0.7-20260603f','./pr-data.js?v=3.0.7-20260603f',
- './icon-180.png','./icon-192.png','./icon-512.png','./README.md','./CHANGELOG.md','./README_TESTING.md','./README_LAYER.md','./PROMPT_CHATGPT_ROADMAP.md'
+  './',
+  './index.html',
+  './manifest.webmanifest',
+  './version.json',
+  './style.css?v=3.1.0-20260603g',
+  './prx-v3.1.0.css?v=3.1.0-20260603g',
+  './app.js?v=3.1.0-20260603g',
+  './prx-v3.1.0.js?v=3.1.0-20260603g',
+  './pr-data.js?v=3.1.0-20260603g',
+  './icon-180.png',
+  './icon-192.png',
+  './icon-512.png',
+  './README.md',
+  './CHANGELOG.md',
+  './README_TESTING.md',
+  './README_LAYER.md',
+  './PROMPT_CHATGPT_ROADMAP.md'
 ];
-self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(CORE_ASSETS)));});
-self.addEventListener('activate',e=>{e.waitUntil((async()=>{const n=await caches.keys();await Promise.all(n.filter(x=>x!==CACHE_NAME&&x.startsWith('pr-explorer-')).map(x=>caches.delete(x)));await self.clients.claim();})());});
-async function networkFirst(r){const c=await caches.open(CACHE_NAME);try{const res=await fetch(r,{cache:'no-store'});if(res&&res.ok)c.put(r,res.clone());return res;}catch(e){return await c.match(r,{ignoreSearch:false})||await c.match('./index.html');}}
-async function cacheFirst(r){const c=await caches.open(CACHE_NAME);const m=await c.match(r,{ignoreSearch:false});if(m)return m;const res=await fetch(r);if(res&&res.ok&&r.method==='GET')c.put(r,res.clone());return res;}
-self.addEventListener('fetch',e=>{const r=e.request;if(r.method!=='GET')return;const u=new URL(r.url);if(r.mode==='navigate'||u.pathname.endsWith('/index.html')){e.respondWith(networkFirst(r));return;}e.respondWith(cacheFirst(r));});
+
+self.addEventListener('install', event => {
+  self.skipWaiting();
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(CORE_ASSETS)));
+});
+self.addEventListener('activate', event => {
+  event.waitUntil((async () => {
+    const names = await caches.keys();
+    await Promise.all(names.filter(name => name !== CACHE_NAME && name.startsWith('pr-explorer-')).map(name => caches.delete(name)));
+    await self.clients.claim();
+  })());
+});
+async function networkFirst(request) {
+  const cache = await caches.open(CACHE_NAME);
+  try {
+    const response = await fetch(request, { cache: 'no-store' });
+    if (response && response.ok) cache.put(request, response.clone());
+    return response;
+  } catch (e) {
+    return await cache.match(request, { ignoreSearch: false }) || await cache.match('./index.html');
+  }
+}
+async function cacheFirst(request) {
+  const cache = await caches.open(CACHE_NAME);
+  const cached = await cache.match(request, { ignoreSearch: false });
+  if (cached) return cached;
+  const response = await fetch(request);
+  if (response && response.ok && request.method === 'GET') cache.put(request, response.clone());
+  return response;
+}
+self.addEventListener('fetch', event => {
+  const req = event.request;
+  if (req.method !== 'GET') return;
+  const url = new URL(req.url);
+  if (req.mode === 'navigate' || url.pathname.endsWith('/index.html')) {
+    event.respondWith(networkFirst(req));
+    return;
+  }
+  event.respondWith(cacheFirst(req));
+});

@@ -1,18 +1,11 @@
-# V3.0.7 · Overlay-Entfernung und Bedien-Recovery
+# V3.1.0 · Clean Layer Reset
 
-- Schwarzes fixes body::after-Overlay aus V3.0.6 vollständig deaktiviert.
-- Experimentelle Bottom-Docks aus V3.0.4/V3.0.5 werden entfernt.
-- Navigation und Zusatzbuttons erhalten hohe z-index-Werte.
-- Keine optische Safe-Area-Manipulation mehr durch Pseudo-Elemente.
-
-# V3.0.6 · Recovery nach Safe-Area-Regression
-
-- V3.0.4 und V3.0.5 wegen deaktivierter Schalter verworfen.
-- Recovery basiert bewusst wieder auf V3.0.3.
-- viewport-fit=cover bleibt erhalten.
-- Keine großflächigen Safe-Area-/Dock-Overlays.
-- Touch-Events für Schalter, Buttons, Navigation und Formularfelder explizit wieder aktiviert.
-- Untere Restfläche wird nur farblich angeglichen, ohne Bedienebene darüber.
+- Alte V3.0.x-Hotfixdateien aus dem Upload-Paket entfernt.
+- Z-Index-System neu definiert.
+- Experimentelle Safe-Area-/Dock-/Pseudo-Overlays verboten.
+- Aktives Zusatzmodul konsolidiert auf prx-v3.1.0.js und prx-v3.1.0.css.
+- Service Worker cached nur aktive V3.1.0-Dateien.
+- Bedienbarkeit hat Vorrang vor optischer Safe-Area-Finalisierung.
 
 # V3.0.3 · Detail-, Audit-Export-, Zoomslider- und Viewport-Hotfix
 

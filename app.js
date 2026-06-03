@@ -1,27 +1,21 @@
 /* ============================================================
    PR Explorer · app.js · Midnight Teal Pro
-   V3.0.7: Overlay-Entfernung und Bedien-Recovery
+   V3.1.0: Clean Layer Reset
    ============================================================ */
 'use strict';
 
 const qs  = s => document.querySelector(s);
 const qsa = s => [...document.querySelectorAll(s)];
 
-const APP_VERSION = 'V3.0.7';
+const APP_VERSION = 'V3.1.0';
 const APP_CHANGELOG = [
-  { version:'V3.0.7', date:'2026-06-03', title:'Overlay-Entfernung und Bedien-Recovery', changes:[
-    'Schwarzes fixes body::after-Overlay aus V3.0.6 vollständig entfernt.',
-    'Keine Safe-Area-Pseudoebene mehr über der Navigation.',
-    'Orphan-Docks aus V3.0.4/V3.0.5 werden entfernt.',
-    'Navigation, Schalter und Zusatzbuttons werden wieder vor allen rein optischen Restflächen gehalten.',
-    'Bedienbarkeit bleibt Priorität; Safe-Area-Optik wird vorerst nicht weiter manipuliert.'
-  ]},
-  { version:'V3.0.6', date:'2026-06-03', title:'Recovery nach Safe-Area-Regression', changes:[
-    'V3.0.4/V3.0.5 wegen deaktivierter Schalter verworfen; Recovery basiert auf der letzten bedienbaren V3.0.3.',
-    'Aggressive 100dvh-/panel-/settings-panel-Overrides aus V3.0.4/V3.0.5 nicht übernommen.',
-    'viewport-fit=cover bleibt im HTML erhalten, aber Safe-Area wird nur noch optisch risikoarm behandelt.',
-    'Bedienbarkeit von Schaltern, Buttons und Formularfeldern hat Priorität vor der unteren Dock-Optik.',
-    'Zoomslider-, Audit- und Journal-Fixes aus V3.0.3 bleiben erhalten.'
+  { version:'V3.1.0', date:'2026-06-03', title:'Clean Layer Reset', changes:[
+    'Alle experimentellen V3.0.x-Safe-Area-/Dock-/Overlay-Hotfixdateien aus dem aktiven Upload-Paket entfernt.',
+    'Z-Index-Architektur zentral neu definiert: Map, Controls, Bottom-Nav, Zusatzbuttons, Panels, Settings, Modals, Toasts.',
+    'Pseudo-Overlays wie body::after, #prx305DockBg und Safe-Area-Docks werden aktiv verboten.',
+    'Bottom-Navigation bleibt bestehend, aber ohne überlagernde Fremdebenen.',
+    'V3-Zusatzfunktionen Roadmap, Audit, V3-Einstellungen, Zoomslider und Journal-Fix werden in einem sauberen Modul neu geladen.',
+    'Service Worker cached nur die aktiven V3.1.0-Dateien.'
   ]},
   { version:'V3.0.3', date:'2026-06-03', title:'Detail-, Audit-Export-, Zoomslider- und Viewport-Hotfix', changes:[
     'Doppelter Zoomslider beseitigt: alter V3.0.1/3.0.2-Slider wird beim Aktivieren entfernt; es bleibt nur ein sauberer vertikaler Slider mit + oben und − unten.',
@@ -324,8 +318,8 @@ const S = { tab:'map', selected:null, query:'', fullscreen:false, panel:false };
 
 /* MAP */
 const map = L.map('map',{zoomControl:false,attributionControl:false,preferCanvas:true,tap:true,doubleClickZoom:true,touchZoom:true}).setView([32.755,-16.93],10);
-window.PRX302_MAP = map; window.PRX301_MAP = map;
-window.PRX301_MAP = map;
+window.PRX310_MAP = map; window.PRX302_MAP = map; window.PRX310_MAP = map; window.PRX301_MAP = map;
+window.PRX310_MAP = map; window.PRX301_MAP = map;
 function initMapPanes(){
   const panes = [
     ['regionPane', 310], ['drivePane', 360], ['trackPane', 410], ['heatPane', 430],

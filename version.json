@@ -1,8 +1,16 @@
 {
   "name": "PR Explorer Madeira",
-  "version": "V3.0.7",
+  "version": "V3.1.0",
   "date": "2026-06-03",
-  "title": "Overlay-Entfernung und Bedien-Recovery",
-  "cache": "pr-explorer-V3.0.7-20260603f",
-  "base": "V3.0.6"
+  "title": "Clean Layer Reset",
+  "cache": "pr-explorer-v3-1-0-clean-20260603g",
+  "activeFiles": [
+    "index.html",
+    "style.css",
+    "prx-v3.1.0.css",
+    "pr-data.js",
+    "prx-v3.1.0.js",
+    "app.js",
+    "service-worker.js"
+  ]
 }
