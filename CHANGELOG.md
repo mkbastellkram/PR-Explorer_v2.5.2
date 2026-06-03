@@ -1,10 +1,12 @@
-# V3.1.2 · Sheet- und Control-Normalisierung
+# V3.2.0 · UI-Flächen-Rebuild
 
-- Einheitliche Sheet-Anfasser ergänzt.
-- Größere Touchzonen für Anfasser und Schließen-Buttons.
-- Swipe/Drag-nach-unten zum Schließen ergänzt.
-- Zoomslider-Schalter sichtbar als iOS-artiger Switch normalisiert.
-- Keine Safe-Area-/Bottom-Dock-Änderungen.
+- Aktive prx-v*-Zusatzdateien vollständig entfernt.
+- Roadmap/Tagesplanung liegt in „Reisen“.
+- Audit/Testbericht liegt in „Optionen“.
+- V3-/Planungseinstellungen liegen in „Optionen“.
+- Zoomslider ist ein direktes Karten-Control in app.js/style.css.
+- Test-Floatingbutton, Roadmap/Audit/V3-Floatingbuttons und Zusatzoverlays entfernt.
+- Keine body::before/body::after- oder Dock-/Safe-Area-Overlays.
 
 # V3.1.1 · HUD-Scope-Fix
 

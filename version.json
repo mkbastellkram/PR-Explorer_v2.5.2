@@ -1,8 +1,14 @@
 {
   "name": "PR Explorer Madeira",
-  "version": "V3.1.2",
+  "version": "V3.2.0",
   "date": "2026-06-03",
-  "title": "Sheet- und Control-Normalisierung",
-  "cache": "pr-explorer-v3-1-2-sheet-control-20260603i",
-  "base": "V3.1.1"
+  "title": "UI-Flächen-Rebuild",
+  "cache": "pr-explorer-v3-2-0-ui-flaechen-20260603k",
+  "activeFiles": [
+    "index.html",
+    "style.css",
+    "pr-data.js",
+    "app.js",
+    "service-worker.js"
+  ]
 }

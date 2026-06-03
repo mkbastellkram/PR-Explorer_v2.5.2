@@ -1,21 +1,21 @@
 /* ============================================================
    PR Explorer · app.js · Midnight Teal Pro
-   V3.1.2: Sheet- und Control-Normalisierung
+   V3.2.0: UI-Flächen-Rebuild
    ============================================================ */
 'use strict';
 
 const qs  = s => document.querySelector(s);
 const qsa = s => [...document.querySelectorAll(s)];
 
-const APP_VERSION = 'V3.1.2';
+const APP_VERSION = 'V3.2.0';
 const APP_CHANGELOG = [
-  { version:'V3.1.2', date:'2026-06-03', title:'Sheet- und Control-Normalisierung', changes:[
-    'Einheitliche Sheet-Anfasser mit größerer Touch-Zone ergänzt.',
-    'Swipe-/Drag-nach-unten zum Schließen für V3-Sheets, Panels, Detail- und Einstellungsflächen ergänzt.',
-    'Schließen-Buttons und Anfasser erhalten einheitliche Mindest-Touchflächen.',
-    'Zoomslider-Schalter als sichtbarer iOS-artiger Switch normalisiert; unsichtbare Checkbox-Zustände werden vermieden.',
-    'Ähnliche Bereiche erhalten konsistentere Sheet-Struktur und Bedienlogik.',
-    'Keine Safe-Area- oder Bottom-Dock-Änderungen.'
+  { version:'V3.2.0', date:'2026-06-03', title:'UI-Flächen-Rebuild', changes:[
+    'Alle aktiven prx-v*-Zusatzmodule entfernt; index.html lädt nur noch style.css, pr-data.js und app.js.',
+    'Roadmap bleibt in der vorhandenen Seite Reisen; kein Roadmap-Floatingbutton mehr.',
+    'Audit/Test wird in Optionen verankert; kein Test-Floatingbutton mehr.',
+    'V3-/Planungseinstellungen werden in Optionen verankert; kein V3-Floatingbutton mehr.',
+    'Zoomslider wird als echtes Karten-Control direkt in app.js erzeugt und nur auf der Karte angezeigt.',
+    'Keine nachträglichen Sheet-Injektionen, keine transparenten Bedienlayer, keine body::before/body::after-Overlays.'
   ]},
   { version:'V3.1.1', date:'2026-06-03', title:'HUD-Scope-Fix', changes:[
     'Roadmap/Audit/V3-Entwicklungs-HUD wird nur noch auf der freien Kartenansicht angezeigt.',
@@ -188,7 +188,8 @@ let cfg = Object.assign({
   poiSize:1.0, poiMode:'near', poiRadiusKm:3.0,
   driveTimeFactor:1.15, parkingBufferMin:15, walkStartBufferMin:10, reminderDayMin:1440, reminderDepartMin:120,
   home:{label:'Pestana Promenade',lat:32.6376,lon:-16.9382,show:true},
-  showTestToggle:true,
+  showTestToggle:false,
+  zoomSliderEnabled:false, bottomSheetOpacity:0.88, fuelConsumptionL100:6.5, mountainCorrectionPercent:30, fuelPrice:1.90,
 }, JSON.parse(localStorage.getItem('prCfg')||'{}'));
 
 // Migration alter V2.4.x-Schalter in einen eindeutigen Hiking-Modus.
@@ -230,6 +231,14 @@ cfg.parkingBufferMin=Number.isFinite(+cfg.parkingBufferMin)?+cfg.parkingBufferMi
 cfg.walkStartBufferMin=Number.isFinite(+cfg.walkStartBufferMin)?+cfg.walkStartBufferMin:10;
 cfg.reminderDayMin=Number.isFinite(+cfg.reminderDayMin)?+cfg.reminderDayMin:1440;
 cfg.reminderDepartMin=Number.isFinite(+cfg.reminderDepartMin)?+cfg.reminderDepartMin:120;
+
+if(typeof cfg.zoomSliderEnabled!=='boolean') cfg.zoomSliderEnabled=false;
+cfg.bottomSheetOpacity=Number.isFinite(+cfg.bottomSheetOpacity)?+cfg.bottomSheetOpacity:0.88;
+cfg.fuelConsumptionL100=Number.isFinite(+cfg.fuelConsumptionL100)?+cfg.fuelConsumptionL100:6.5;
+cfg.mountainCorrectionPercent=Number.isFinite(+cfg.mountainCorrectionPercent)?+cfg.mountainCorrectionPercent:30;
+cfg.fuelPrice=Number.isFinite(+cfg.fuelPrice)?+cfg.fuelPrice:1.90;
+cfg.showTestToggle=false;
+
 
 let prSchedule = JSON.parse(localStorage.getItem('prSchedule')||'{}');
 function savePrSchedule(){ localStorage.setItem('prSchedule', JSON.stringify(prSchedule)); }
@@ -280,7 +289,7 @@ function prPlanControlsHtml(r){ const safe=String(r.id).replace(/[^a-z0-9]+/gi,'
 function unscheduledFavsHtml(){ const rows=unscheduledFavs(); return `<div class="p-section">Favoriten ohne Termin</div>${rows.length?`<div class="list fav-backlog">${rows.map(r=>`<div class="pr-card backlog-card" onclick="openDetail('${r.id}',true)"><div class="pr-tag" style="background:${levelColor(r.level)}">${r.id}</div><div class="info"><b>${r.name}</b><span>${regionLabel(r)} · noch nicht eingeplant</span>${prPlanControlsHtml(r)}</div><span class="chevron">›</span></div>`).join('')}</div>`:'<div class="empty-state">Keine offenen PR-Favoriten ohne Termin.</div>'}`; }
 function eventCardHtml(ev){ if(ev.kind==='pr'){ const r=ev.r; return `<div class="day-event pr ${ev.type}" onclick="openDetail('${r.id}',true)"><div><b>${timeOf(ev.dt)} · ${r.id}</b><span>${htmlEsc(r.name)}</span><small>${scheduleKindLabel(ev.type)} · ${fmt(r.driveMin)} min Anfahrt · ${fmt(r.duration)}</small></div>${stPillHtml(getSt(r.id))}</div>`; } const x=ev.item; return `<div class="day-event item"><div><b>${timeOf(x.dt)} · ${tripItemTitle(x)}</b><span>${htmlEsc(x.cat||'Unternehmung')} · ${x.durationMin||0} min · Fahrt ${x.driveMin||0} min</span>${x.link?`<small>${htmlEsc(x.link).slice(0,80)}</small>`:''}</div><div class="event-actions">${tripStatusPill(x.status)}${x.link?`<button onclick="event.stopPropagation();openTripLink('${x.id}')">Link</button>`:''}<button onclick="event.stopPropagation();exportTripItemICS('${x.id}')">ICS</button><button onclick="event.stopPropagation();deleteTripItem('${x.id}')">×</button></div></div>`; }
 function tripDayCardsHtml(){ const days=tripDays(); if(!days.length)return '<div class="empty-state">Reisezeitraum in den Einstellungen setzen. Danach werden hier automatisch Tageskarten erzeugt.</div>'; return `<div class="trip-days">${days.map(d=>{ const k=dateKey(d), ev=travelEventsForDay(k); return `<div class="trip-day"><div class="trip-day-head"><b>${niceDay(d)}</b><span>${ev.length?ev.length+' Eintrag'+(ev.length>1?'e':''):'frei'}</span></div>${ev.length?ev.map(eventCardHtml).join(''):'<div class="free-slot">Noch keine feste Planung. Geeignet für POI, Reserve oder Ruhetag.</div>'}</div>`; }).join('')}</div>`; }
-function travelPlannerHtml(){ return `${tripBannerHtml()}<div class="trip-toolbar"><button class="mini-btn" onclick="exportTravelPlanJson()">Reiseplan JSON sichern</button><button class="mini-btn" onclick="exportTripICS()">Reisezeitraum ICS</button></div>${tripDayCardsHtml()}${unscheduledFavsHtml()}${tripPlannerFormHtml()}`; }
+function travelPlannerHtml(){ return `<div class="p-section">Roadmap / Tagesplanung</div>${tripBannerHtml()}<div class="trip-toolbar"><button class="mini-btn" onclick="exportTravelPlanJson()">Reiseplan JSON sichern</button><button class="mini-btn" onclick="exportTripICS()">Reisezeitraum ICS</button></div>${tripDayCardsHtml()}${unscheduledFavsHtml()}${tripPlannerFormHtml()}`; }
 
 function saveCfg()    { localStorage.setItem('prCfg',    JSON.stringify(cfg)); }
 function saveFavs()   { localStorage.setItem('prFavs',   JSON.stringify([...favs])); }
@@ -736,7 +745,7 @@ function openTestPanel(){
   renderTestTab();setTimeout(()=>{map.invalidateSize();if(_testActive){const el=qs(`#tc-${_testActive}`);if(el)el.scrollIntoView({behavior:'smooth',block:'center'});}},300);
 }
 function syncTestToggle(){ const t=qs('#testToggle'); if(!t)return; t.classList.toggle('hidden',!cfg.showTestToggle); t.classList.toggle('active',S.tab==='test'); }
-function setTab(tab){ qs('#panel')?.classList.remove('test-panel'); qs('#app')?.classList.remove('test-mode'); S.tab=tab;qsa('#bottomNav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));qs('#testToggle')?.classList.remove('active');qs('#panel').classList.toggle('hidden',tab==='map');qs('#hero').classList.toggle('hide',tab!=='map');qs('.filter-fab')?.classList.toggle('hidden',tab!=='map');S.panel=tab!=='map';syncTestToggle();if(S.panel){renderPanel();setTimeout(()=>map.invalidateSize(),200);} }
+function setTab(tab){ qs('#panel')?.classList.remove('test-panel'); qs('#app')?.classList.remove('test-mode'); S.tab=tab;qsa('#bottomNav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));qs('#testToggle')?.classList.remove('active');qs('#panel').classList.toggle('hidden',tab==='map');qs('#hero').classList.toggle('hide',tab!=='map');qs('.filter-fab')?.classList.toggle('hidden',tab!=='map');S.panel=tab!=='map';syncTestToggle();if(S.panel){renderPanel();setTimeout(()=>map.invalidateSize(),200);} v320SyncUI(); }
 function openDetail(id,zoom=false){
   S.selected=DATA.find(r=>r.id===id);
   if(!S.selected)return;
@@ -795,7 +804,7 @@ function openFilterSheet(){
   }
   setTimeout(()=>map.invalidateSize(),80);
 }
-function closeFilterSheet(){ qs('#filterSheet').classList.add('hidden');qs('#backdrop').classList.add('hidden');renderLayers();renderPanel(); }
+function closeFilterSheet(){ qs('#filterSheet').classList.add('hidden');qs('#backdrop').classList.add('hidden');renderLayers();renderPanel();v320SyncUI(); }
 function _setHtml(sel,html){ const el=qs(sel); if(!el) throw new Error('Container fehlt: '+sel); el.innerHTML=html; return el; }
 function _num(v,def=0){ v=Number(v); return Number.isFinite(v)?v:def; }
 function _normRange(prefix,bounds){
@@ -846,7 +855,7 @@ function renderPanel(){
   if(S.tab==='overview'){ h=`${tripBannerHtml()}<div class="stats"><div class="stat"><b>${DATA.length}</b><small>PR gesamt</small></div><div class="stat"><b>${list.length}</b><small>Sichtbar</small></div><div class="stat"><b>${favs.size}</b><small>Favoriten</small></div></div><button class="btn-primary" onclick="setTab('journal')">Alle PR anzeigen</button>`; }
   else if(S.tab==='journal'){ const sb=cfg.soloMode?`<div class="solo-banner"><span>Solo: ${cfg.soloId}</span><button onclick="exitSoloMode();renderPanel()">× Alle</button></div>`:'';h=`<div class="search-row"><input class="search-input" placeholder="PR suchen…" value="${S.query}" oninput="S.query=this.value;clearTimeout(window.__prxSearchT);window.__prxSearchT=setTimeout(()=>{renderLayers();renderPanel()},450)"></div><div class="sort-row"><span>Sortierung</span><select onchange="setSort(this.value)"><option value="id" ${cfg.sort==='id'?'selected':''}>PR-Nummer</option><option value="name" ${cfg.sort==='name'?'selected':''}>Name</option><option value="distance" ${cfg.sort==='distance'?'selected':''}>Track-Länge</option><option value="drive" ${cfg.sort==='drive'?'selected':''}>Anfahrtszeit</option><option value="elev" ${cfg.sort==='elev'?'selected':''}>Höhenmeter</option><option value="status" ${cfg.sort==='status'?'selected':''}>Status</option></select></div>${sb}<div class="list">${list.map(r=>prCardHtml(r,true)).join('')||'<div class="empty-state">Keine PR gefunden.</div>'}</div>`; }
   else if(S.tab==='trips'){ h=travelPlannerHtml(); }
-  else if(S.tab==='options'){ h=`<div class="p-section">Kartenstil</div><div class="mode-grid">${Object.keys(BASE_LABELS).map(m=>`<button class="mode-chip ${cfg.base===m?'active':''}" onclick="setBase('${m}')">${BASE_LABELS[m]}</button>`).join('')}</div><div class="p-section">Ebenen</div><div class="sg-box" style="border-radius:18px;overflow:hidden;background:rgba(90,200,250,.04);border:1px solid rgba(90,200,250,.1)">${APP_LAYER_KEYS.map(k=>`<div class="opt-row"><span style="font-size:18px;width:28px;text-align:center">${OVERLAY_ICONS[k]}</span><span class="opt-label">${OVERLAY_LABELS[k]}</span><input type="checkbox" class="s-tog" ${cfg.layers[k]?'checked':''} onchange="setLayer('${k}',this.checked)"></div>`).join('')}</div><div class="p-section">POI-Reiseziele</div><div class="vector-info-card"><b>OSM Reise-POIs</b><span>${poiStatusHtml()}</span><button class="mini-btn" onclick="refreshPoiData()">POIs laden / aktualisieren</button><div class="poi-cat-grid">${Object.entries(POI_DEF).map(([k,d])=>`<button class="poi-cat-btn ${cfg.poiCats?.[k]!==false?'active':''}" onclick="setPoiCat('${k}',!(cfg.poiCats?.['${k}']!==false));event.stopPropagation();"><span>${d.icon}</span>${d.label}</button>`).join('')}</div><button class="mini-btn" onclick="googleMapsSearch('Cafe Madeira')">Google-Maps-Suche Test</button></div><div class="p-section">Hiking-Darstellung</div><div class="vector-info-card"><b>${hikingModeLabel()}</b>${hikingModeControlsHtml('panel')}<span>${cfg.hikingMode==='raster'?'Waymarked Trails Raster-Referenz aktiv.':cfg.hikingMode==='vector'?'Editierbare OSM-Vektorlinien aktiv.':cfg.hikingMode==='compare'?'Vergleichsmodus: Raster und Vektor bewusst übereinander.':'Keine zusätzliche Hiking-Ebene aktiv.'}</span></div><div class="p-section">OSM Hiking Vektor</div><div class="vector-info-card"><b>Editierbare Rohdaten-Linien</b><span>${hikingVectorStatusHtml()}</span><button class="mini-btn" onclick="refreshHikingVectorData()">Rohdaten laden / aktualisieren</button></div><button class="btn-primary" style="margin-top:14px" onclick="fitVisible();setTab('map')">Sichtbare PR einpassen</button>`; }
+  else if(S.tab==='options'){ h=`<div class="p-section">Kartenstil</div><div class="mode-grid">${Object.keys(BASE_LABELS).map(m=>`<button class="mode-chip ${cfg.base===m?'active':''}" onclick="setBase('${m}')">${BASE_LABELS[m]}</button>`).join('')}</div><div class="p-section">Ebenen</div><div class="sg-box" style="border-radius:18px;overflow:hidden;background:rgba(90,200,250,.04);border:1px solid rgba(90,200,250,.1)">${APP_LAYER_KEYS.map(k=>`<div class="opt-row"><span style="font-size:18px;width:28px;text-align:center">${OVERLAY_ICONS[k]}</span><span class="opt-label">${OVERLAY_LABELS[k]}</span><input type="checkbox" class="s-tog" ${cfg.layers[k]?'checked':''} onchange="setLayer('${k}',this.checked)"></div>`).join('')}</div><div class="p-section">POI-Reiseziele</div><div class="vector-info-card"><b>OSM Reise-POIs</b><span>${poiStatusHtml()}</span><button class="mini-btn" onclick="refreshPoiData()">POIs laden / aktualisieren</button><div class="poi-cat-grid">${Object.entries(POI_DEF).map(([k,d])=>`<button class="poi-cat-btn ${cfg.poiCats?.[k]!==false?'active':''}" onclick="setPoiCat('${k}',!(cfg.poiCats?.['${k}']!==false));event.stopPropagation();"><span>${d.icon}</span>${d.label}</button>`).join('')}</div><button class="mini-btn" onclick="googleMapsSearch('Cafe Madeira')">Google-Maps-Suche Test</button></div><div class="p-section">Hiking-Darstellung</div><div class="vector-info-card"><b>${hikingModeLabel()}</b>${hikingModeControlsHtml('panel')}<span>${cfg.hikingMode==='raster'?'Waymarked Trails Raster-Referenz aktiv.':cfg.hikingMode==='vector'?'Editierbare OSM-Vektorlinien aktiv.':cfg.hikingMode==='compare'?'Vergleichsmodus: Raster und Vektor bewusst übereinander.':'Keine zusätzliche Hiking-Ebene aktiv.'}</span></div><div class="p-section">OSM Hiking Vektor</div><div class="vector-info-card"><b>Editierbare Rohdaten-Linien</b><span>${hikingVectorStatusHtml()}</span><button class="mini-btn" onclick="refreshHikingVectorData()">Rohdaten laden / aktualisieren</button></div><button class="btn-primary" style="margin-top:14px" onclick="fitVisible();setTab('map')">Sichtbare PR einpassen</button>${v320OptionsHtml()}`; }
   el.innerHTML=h;
 }
 
@@ -1215,6 +1224,50 @@ function initAllSwipe(){
   addSwipeClose(qs('#dateSheet'),closeDateSheet,['down'],true);
 }
 
+
+/* V3.2.0 DIRECT UI FLÄCHEN — keine Zusatzlayer */
+function v320OptionsHtml(){
+  const op = Math.round((cfg.bottomSheetOpacity||0.88)*100);
+  return `<div class="p-section">Planung & Audit</div>
+    <div class="sg-box v320-box">
+      <button class="btn-primary" onclick="setTab('test')">Audit / Testbericht öffnen</button>
+      <button class="mini-btn" onclick="shareTestReport()">Audit teilen</button>
+    </div>
+    <div class="p-section">Karte & Planung</div>
+    <div class="sg-box v320-box">
+      <label class="v320-row"><span>Zoomslider anzeigen</span><input type="checkbox" class="v320-switch" ${cfg.zoomSliderEnabled?'checked':''} onchange="v320SetBool('zoomSliderEnabled',this.checked)"></label>
+      <label class="v320-row"><span>Bottom-Sheet Transparenz <b>${op}%</b></span><input type="range" min="70" max="100" value="${op}" oninput="v320SetOpacity(this.value)"></label>
+      <label class="v320-row"><span>Basisverbrauch l/100 km</span><input class="mini-num" type="number" step="0.1" value="${cfg.fuelConsumptionL100}" onchange="v320SetNum('fuelConsumptionL100',this.value)"></label>
+      <label class="v320-row"><span>Madeira-Bergkorrektur %</span><input class="mini-num" type="number" step="5" value="${cfg.mountainCorrectionPercent}" onchange="v320SetNum('mountainCorrectionPercent',this.value)"></label>
+      <label class="v320-row"><span>Kraftstoffpreis €/l</span><input class="mini-num" type="number" step="0.01" value="${cfg.fuelPrice}" onchange="v320SetNum('fuelPrice',this.value)"></label>
+      <small class="v320-note">V3.2.0: Funktionen sind in Optionen/Reisen verankert. Keine Floating-Buttons, keine Zusatzlayer.</small>
+    </div>`;
+}
+function v320SetBool(key,val){ cfg[key]=!!val; saveCfg(); v320EnsureZoomSlider(); renderPanel(); }
+function v320SetNum(key,val){ const n=Number(val); if(Number.isFinite(n)) cfg[key]=n; saveCfg(); }
+function v320SetOpacity(val){ cfg.bottomSheetOpacity=(Number(val)||88)/100; document.documentElement.style.setProperty('--sheet-opacity', cfg.bottomSheetOpacity); document.documentElement.style.setProperty('--v320-sheet-opacity', cfg.bottomSheetOpacity); saveCfg(); }
+function v320MapFree(){ return S.tab==='map' && !S.panel && qs('#detailPanel')?.classList.contains('hidden') && qs('#filterSheet')?.classList.contains('hidden') && qs('#settingsPanel')?.classList.contains('hidden'); }
+function v320EnsureZoomSlider(){
+  let z=qs('#v320ZoomSlider');
+  if(!cfg.zoomSliderEnabled){ if(z) z.remove(); return; }
+  if(!z){
+    z=document.createElement('div');
+    z.id='v320ZoomSlider';
+    z.innerHTML='<button type="button" data-z="+">+</button><input type="range" min="8" max="18" step="1"><button type="button" data-z="-">−</button>';
+    qs('#app')?.appendChild(z);
+    z.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b)return; b.dataset.z==='+'?map.zoomIn():map.zoomOut(); const i=qs('input',z); if(i)i.value=map.getZoom(); });
+    qs('input',z).addEventListener('input',e=>map.setZoom(Number(e.target.value)));
+  }
+  const i=qs('input',z); if(i)i.value=map.getZoom();
+  z.classList.toggle('hidden', !v320MapFree());
+}
+function v320SyncUI(){
+  // Remove old experimental add-on layers if they survived browser/PWA cache.
+  qsa('#prx310-tools,#prx310-overlay,#prx310ZoomSlider,#prx301-zoom-slider,#prx302ZoomSlider,#prx305DockBg,#prx306SafeBg,#prx304SafeBg,.prx312-handle-hit,.prx312-handle').forEach(el=>el.remove());
+  v320EnsureZoomSlider();
+  document.documentElement.style.setProperty('--v320-sheet-opacity', cfg.bottomSheetOpacity||0.88);
+}
+
 /* TEST TAB */
 const TEST_STEPS=[{cat:'Karte & Navigation',steps:[{id:'map-load',icon:'🗺️',title:'App startet & Topo-Karte lädt',sub:'Topo-Karte als Standard',tap:'App öffnen – warte 2 Sek.',expect:'<b>Topo-Karte</b> erscheint (grün/braun). "MADEIRA / PR Explorer" oben. Teal-Fußleiste.'},{id:'map-pins',icon:'📍',title:'PR-Pins erscheinen',sub:'Label-Tags',tap:'Warte nach dem Laden',expect:'Farbige Tags auf der Karte. Grün=leicht, Orange=mittel, Rot=schwer.'},{id:'map-locate',icon:'📡',title:'Standort-Button',sub:'Linke Pill',tap:'Obere linke Pill → Pfeil-Button',expect:'Browser fragt Standort. Karte springt zu deiner Position.'},{id:'map-fit',icon:'⬜',title:'Route einpassen',sub:'Mittlerer Button',tap:'Obere linke Pill → Rechteck-Button',expect:'Karte zeigt alle sichtbaren PRs.'},{id:'map-fs',icon:'⛶',title:'Vollbild',sub:'Rechter Button',tap:'Obere linke Pill → Pfeile → dann × oben',expect:'Nur Karte sichtbar. × beendet Vollbild.'}]},{cat:'Pin & Detail',steps:[{id:'pin-tap',icon:'👆',title:'Pin → Detail öffnet',sub:'Label-Tag antippen',tap:'Einen PR-Tag antippen',expect:'Detail-Panel von unten. Pin leuchtet Teal.'},{id:'detail-elev',icon:'⛰️',title:'Höhenprofil',sub:'Canvas-Chart',tap:'Im Detail nach unten scrollen',expect:'Teal-Gradient-Chart. Meter-Labels. 4 Stat-Boxen darunter.',note:'Nur bei PRs mit GPX-Daten. Teste PR 1, PR 6.3, PR 10.'},{id:'detail-close',icon:'✕',title:'Schließen-Kreuz im Detail',sub:'Kein Wischen mehr',tap:'Detail-Panel öffnen → Kreuz oben rechts antippen',expect:'Detail-Panel schließt. Alle PR-Pins erscheinen wieder.'},{id:'detail-status',icon:'🚦',title:'Status setzen',sub:'4 Buttons',tap:'"Eingeschränkt" antippen',expect:'Status-Dot am Pin wechselt auf gelb.'},{id:'detail-solo',icon:'🎯',title:'Solo auf Karte',sub:'Karten-Button im Journal',tap:'Journal → Karten-Icon bei einem PR antippen',expect:'Nur dieser PR auf der Karte mit Route + Anfahrt.'}]},{cat:'Filter',steps:[{id:'flt-open',icon:'🔽',title:'Filter öffnen & schließen',sub:'FAB + Wischen',tap:'Trichter antippen → nach unten wischen zum Schließen',expect:'Filter-Sheet öffnet. Schließt per Wischen.'},{id:'flt-region',icon:'🗾',title:'Regions-Filter + Slider-Anpassung',sub:'Dynamische Grenzen',tap:'"Zentrales Hochgebirge" antippen',expect:'Slider passen <b>automatisch</b> Min/Max an.'},{id:'flt-slider',icon:'📏',title:'Dual-Slider',sub:'Zwei Anfasser',tap:'Track-Länge: beide Anfasser verschieben',expect:'Karte aktualisiert live. Anfasser nicht aneinander vorbei.'},{id:'flt-reset',icon:'↺',title:'Filter zurücksetzen',sub:'Reset-Button',tap:'"Filter zurücksetzen"',expect:'Alle PRs wieder sichtbar.'}]},{cat:'Einstellungen',steps:[{id:'set-gpx',icon:'📏',title:'GPX Strichstärke + Stil',sub:'Slider + Stil-Buttons',tap:'Einstellungen → GPX Strichstärke + Stil',expect:'Linien ändern sich live.'},{id:'set-pinsize',icon:'🔎',title:'Pin-Größe',sub:'50%–200%',tap:'Einstellungen → Pin Größe Slider',expect:'Pins werden live größer/kleiner.'},{id:'set-color',icon:'🎨',title:'Farbpicker',sub:'Gitter + RGB-Regler',tap:'GPX Farbe → andere Farbe → Sichern',expect:'GPX-Linien wechseln Farbe sofort.'},{id:'set-date',icon:'📅',title:'Reisezeitraum',sub:'Kalender-Picker',tap:'Zeitraum → zwei Daten → Sichern',expect:'Travel-Banner in Übersicht erscheint.'}]}];
 let _testResults=JSON.parse(localStorage.getItem('prTestResultsPersistent')||localStorage.getItem('prTestResults')||'{}');
@@ -1370,8 +1423,8 @@ const _addCSS=`
 const _styleEl=document.createElement('style');_styleEl.textContent=_addCSS;document.head.appendChild(_styleEl);
 
 /* GLOBALS */
-Object.assign(window,{S,F,cfg,favs,saveFavs,saveCfg,saveStatus,openDetail,closeDetail,setTab,setSt,setBase,setLayer,setHikingMode,setHikingColorMode,soloOnMap,exitSoloMode,openSettings,closeSettings,renderSettings,setPinShape,openColorSheet,closeColorSheet,confirmColor,setColorTab,sliderChanged,hexChanged,pickColor,openIconSheet,closeIconSheet,confirmIcon,filterIcons,pickIcon,openDateSheet,closeDateSheet,confirmDate,calPrev,calNext,calDay,exportICS,exportTripICS,exportBookedICS,updatePrSchedule,composeDt,clearPrSchedule,tripItems,saveTripItems,addTripItemFromForm,deleteTripItem,setTripItemStatus,openTripLink,planFavFromCard,exportTravelPlanJson,exportTripItemICS,resetFilters,setRegion,setSF,toggleRegions,dualMove,renderFilterSheet,closeAllSheets,closeBackdrop,fitVisible,googleMapsPoint,renderLayers,renderPanel,renderDetail,tcToggle,tcResult,tcReset,tcExport,tcSaveNote,tcClearNote,renderTestTab,openTestPanel,syncTestToggle,APP_VERSION,APP_CHANGELOG,qs,lineStyleBtns,setSort,setScheduleFilter,refreshPoiData,setPoiCat,googleMapsSearch,exportRouteFile,shareRouteFile,shareTestReport,openShareSheet,shareText,prInfoText,filteredCsv,darkenChanged,setHomeField,drawHomePin,togglePois,focusDetailPins,clearPinFocus,openFilterSheet,installCriticalTapGuards});
+Object.assign(window,{S,F,cfg,favs,saveFavs,saveCfg,saveStatus,openDetail,closeDetail,setTab,setSt,setBase,setLayer,setHikingMode,setHikingColorMode,soloOnMap,exitSoloMode,openSettings,closeSettings,renderSettings,setPinShape,openColorSheet,closeColorSheet,confirmColor,setColorTab,sliderChanged,hexChanged,pickColor,openIconSheet,closeIconSheet,confirmIcon,filterIcons,pickIcon,openDateSheet,closeDateSheet,confirmDate,calPrev,calNext,calDay,exportICS,exportTripICS,exportBookedICS,updatePrSchedule,composeDt,clearPrSchedule,tripItems,saveTripItems,addTripItemFromForm,deleteTripItem,setTripItemStatus,openTripLink,planFavFromCard,exportTravelPlanJson,exportTripItemICS,resetFilters,setRegion,setSF,toggleRegions,dualMove,renderFilterSheet,closeAllSheets,closeBackdrop,fitVisible,googleMapsPoint,renderLayers,renderPanel,renderDetail,tcToggle,tcResult,tcReset,tcExport,tcSaveNote,tcClearNote,renderTestTab,openTestPanel,syncTestToggle,APP_VERSION,APP_CHANGELOG,qs,lineStyleBtns,setSort,setScheduleFilter,refreshPoiData,setPoiCat,googleMapsSearch,exportRouteFile,shareRouteFile,shareTestReport,openShareSheet,shareText,prInfoText,filteredCsv,darkenChanged,setHomeField,drawHomePin,togglePois,focusDetailPins,clearPinFocus,openFilterSheet,installCriticalTapGuards,v320OptionsHtml,v320SetBool,v320SetNum,v320SetOpacity,v320SyncUI,v320EnsureZoomSlider});
 
 /* INIT */
-bind();try{renderFilterSheet();}catch(e){console.warn('Initial filter render skipped',e);}renderLayers();setTab('map');syncTestToggle();setTimeout(fitMadeira,300);_updateTestBadge();
+bind();try{renderFilterSheet();}catch(e){console.warn('Initial filter render skipped',e);}renderLayers();setTab('map');syncTestToggle();v320SyncUI();setTimeout(fitMadeira,300);_updateTestBadge();
 if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js').catch(()=>{});
