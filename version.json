@@ -1,8 +1,8 @@
 {
   "name": "PR Explorer Madeira",
-  "version": "V3.0.6",
+  "version": "V3.0.7",
   "date": "2026-06-03",
-  "title": "Recovery nach Safe-Area-Regression",
-  "cache": "pr-explorer-V3.0.6-20260603e",
-  "base": "V3.0.3"
+  "title": "Overlay-Entfernung und Bedien-Recovery",
+  "cache": "pr-explorer-V3.0.7-20260603f",
+  "base": "V3.0.6"
 }

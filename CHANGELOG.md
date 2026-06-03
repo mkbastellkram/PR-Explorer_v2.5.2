@@ -1,3 +1,10 @@
+# V3.0.7 · Overlay-Entfernung und Bedien-Recovery
+
+- Schwarzes fixes body::after-Overlay aus V3.0.6 vollständig deaktiviert.
+- Experimentelle Bottom-Docks aus V3.0.4/V3.0.5 werden entfernt.
+- Navigation und Zusatzbuttons erhalten hohe z-index-Werte.
+- Keine optische Safe-Area-Manipulation mehr durch Pseudo-Elemente.
+
 # V3.0.6 · Recovery nach Safe-Area-Regression
 
 - V3.0.4 und V3.0.5 wegen deaktivierter Schalter verworfen.

@@ -1,14 +1,21 @@
 /* ============================================================
    PR Explorer · app.js · Midnight Teal Pro
-   V3.0.6: Recovery nach Safe-Area-Regression
+   V3.0.7: Overlay-Entfernung und Bedien-Recovery
    ============================================================ */
 'use strict';
 
 const qs  = s => document.querySelector(s);
 const qsa = s => [...document.querySelectorAll(s)];
 
-const APP_VERSION = 'V3.0.6';
+const APP_VERSION = 'V3.0.7';
 const APP_CHANGELOG = [
+  { version:'V3.0.7', date:'2026-06-03', title:'Overlay-Entfernung und Bedien-Recovery', changes:[
+    'Schwarzes fixes body::after-Overlay aus V3.0.6 vollständig entfernt.',
+    'Keine Safe-Area-Pseudoebene mehr über der Navigation.',
+    'Orphan-Docks aus V3.0.4/V3.0.5 werden entfernt.',
+    'Navigation, Schalter und Zusatzbuttons werden wieder vor allen rein optischen Restflächen gehalten.',
+    'Bedienbarkeit bleibt Priorität; Safe-Area-Optik wird vorerst nicht weiter manipuliert.'
+  ]},
   { version:'V3.0.6', date:'2026-06-03', title:'Recovery nach Safe-Area-Regression', changes:[
     'V3.0.4/V3.0.5 wegen deaktivierter Schalter verworfen; Recovery basiert auf der letzten bedienbaren V3.0.3.',
     'Aggressive 100dvh-/panel-/settings-panel-Overrides aus V3.0.4/V3.0.5 nicht übernommen.',
