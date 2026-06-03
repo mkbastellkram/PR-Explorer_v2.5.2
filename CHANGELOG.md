@@ -1,11 +1,11 @@
-# V3.0.4 · iOS-PWA-Safe-Area-Fix
+# V3.0.6 · Recovery nach Safe-Area-Regression
 
-- viewport-fit=cover im viewport-Meta-Tag ergänzt.
-- Safe-Area-Handling für iPhone-PWA korrigiert.
-- Hintergrund läuft bis zur unteren Displaykante.
-- Bottom-Navigation erhält padding-bottom: env(safe-area-inset-bottom), damit Buttons oberhalb des Home-Indikators bleiben.
-- Panels und Settings berücksichtigen Safe-Area getrennt vom Hintergrund.
-- V3.0.3-Regeln, die Safe-Area zu hart auf 0 setzten, werden übersteuert.
+- V3.0.4 und V3.0.5 wegen deaktivierter Schalter verworfen.
+- Recovery basiert bewusst wieder auf V3.0.3.
+- viewport-fit=cover bleibt erhalten.
+- Keine großflächigen Safe-Area-/Dock-Overlays.
+- Touch-Events für Schalter, Buttons, Navigation und Formularfelder explizit wieder aktiviert.
+- Untere Restfläche wird nur farblich angeglichen, ohne Bedienebene darüber.
 
 # V3.0.3 · Detail-, Audit-Export-, Zoomslider- und Viewport-Hotfix
 

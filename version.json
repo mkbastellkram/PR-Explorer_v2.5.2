@@ -1,8 +1,8 @@
 {
   "name": "PR Explorer Madeira",
-  "version": "V3.0.4",
+  "version": "V3.0.6",
   "date": "2026-06-03",
-  "title": "iOS-PWA-Safe-Area-Fix",
-  "cache": "pr-explorer-V3.0.4-20260603c",
-  "viewport": "viewport-fit=cover"
+  "title": "Recovery nach Safe-Area-Regression",
+  "cache": "pr-explorer-V3.0.6-20260603e",
+  "base": "V3.0.3"
 }

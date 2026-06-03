@@ -1,19 +1,20 @@
 /* ============================================================
    PR Explorer · app.js · Midnight Teal Pro
-   V3.0.4: iOS-PWA-Safe-Area-Fix
+   V3.0.6: Recovery nach Safe-Area-Regression
    ============================================================ */
 'use strict';
 
 const qs  = s => document.querySelector(s);
 const qsa = s => [...document.querySelectorAll(s)];
 
-const APP_VERSION = 'V3.0.4';
+const APP_VERSION = 'V3.0.6';
 const APP_CHANGELOG = [
-  { version:'V3.0.4', date:'2026-06-03', title:'iOS-PWA-Safe-Area-Fix', changes:[
-    'Viewport-Meta-Tag um viewport-fit=cover ergänzt; iOS darf die PWA jetzt in den Home-Indikator-/Rundungsbereich ausdehnen.',
-    'Safe-Area-Logik korrigiert: Hintergrund reicht bis zur Displaykante, bedienbare Elemente erhalten nur innen padding-bottom: env(safe-area-inset-bottom).',
-    'Vorherige harte padding-bottom:0-Regeln aus V3.0.3 entschärft, weil sie die iOS-Safe-Area nicht fachgerecht nutzten.',
-    'Bottom-Navigation und Panels erhalten getrennte Hintergrund- und Inhaltsabstände.'
+  { version:'V3.0.6', date:'2026-06-03', title:'Recovery nach Safe-Area-Regression', changes:[
+    'V3.0.4/V3.0.5 wegen deaktivierter Schalter verworfen; Recovery basiert auf der letzten bedienbaren V3.0.3.',
+    'Aggressive 100dvh-/panel-/settings-panel-Overrides aus V3.0.4/V3.0.5 nicht übernommen.',
+    'viewport-fit=cover bleibt im HTML erhalten, aber Safe-Area wird nur noch optisch risikoarm behandelt.',
+    'Bedienbarkeit von Schaltern, Buttons und Formularfeldern hat Priorität vor der unteren Dock-Optik.',
+    'Zoomslider-, Audit- und Journal-Fixes aus V3.0.3 bleiben erhalten.'
   ]},
   { version:'V3.0.3', date:'2026-06-03', title:'Detail-, Audit-Export-, Zoomslider- und Viewport-Hotfix', changes:[
     'Doppelter Zoomslider beseitigt: alter V3.0.1/3.0.2-Slider wird beim Aktivieren entfernt; es bleibt nur ein sauberer vertikaler Slider mit + oben und − unten.',
