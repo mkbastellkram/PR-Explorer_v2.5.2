@@ -1173,3 +1173,267 @@ button,input,select,textarea,label,a,.pr-card,.card-map-btn{
 .journal-status-slot{
   margin-top:6px;
 }
+
+
+/* ============================================================
+   V3.2.1 Sheet- und Kartenstil-Fix
+   Keine Safe-Area-/Bottom-Dock-/Overlay-Änderung.
+   ============================================================ */
+
+/* 1) Bottom-Sheets: eine sichtbare Außenfläche, ein sauber begrenzter Scrollbereich */
+.panel,
+.panel-detail{
+  display:flex !important;
+  flex-direction:column !important;
+  overflow:hidden !important;
+  box-sizing:border-box !important;
+  background:var(--surf-1) !important;
+  border-radius:28px 28px 0 0 !important;
+}
+
+/* äußeres Sheet clippt alles innerhalb der Rundung */
+.sheet{
+  overflow:hidden !important;
+  box-sizing:border-box !important;
+  background:linear-gradient(180deg,rgba(14,34,31,.94),rgba(7,19,17,.92)) !important;
+}
+
+/* Griffe und Header bleiben fix, nur Content scrollt */
+.panel > .sheet-bar,
+.panel-detail > .sheet-bar,
+.sheet > .sheet-bar,
+.sheet > .sheet-head{
+  flex:0 0 auto !important;
+}
+
+/* Hauptpanel: Content ist die einzige Scrollfläche */
+#panelContent{
+  flex:1 1 auto !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  -webkit-overflow-scrolling:touch !important;
+  overscroll-behavior:contain !important;
+  padding-bottom:calc(env(safe-area-inset-bottom,0px) + 96px) !important;
+  min-height:0 !important;
+}
+
+/* Detailpanel: Content bleibt innerhalb des dunklen Containers */
+#detailContent{
+  flex:1 1 auto !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  -webkit-overflow-scrolling:touch !important;
+  overscroll-behavior:contain !important;
+  padding-bottom:calc(env(safe-area-inset-bottom,0px) + 28px) !important;
+  min-height:0 !important;
+}
+
+/* Panel selbst scrollt nicht mehr; damit kann keine transparente Inhaltsebene über den Rand laufen */
+.panel{
+  overflow:hidden !important;
+  padding:10px 16px 0 !important;
+  max-height:78dvh !important;
+}
+.panel-detail{
+  overflow:hidden !important;
+  padding:10px 16px 0 !important;
+  max-height:76dvh !important;
+}
+
+/* Sheet-Body ist einzige Scrollfläche innerhalb klassischer Sheets */
+.sheet-body{
+  flex:1 1 auto !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  -webkit-overflow-scrolling:touch !important;
+  overscroll-behavior:contain !important;
+  min-height:0 !important;
+  background:transparent !important;
+}
+
+/* 2) Sheet-Header / Schließen rechts */
+.sheet-head{
+  display:flex !important;
+  align-items:center !important;
+  gap:10px !important;
+  justify-content:flex-start !important;
+}
+.sheet-head .sheet-title{
+  order:1 !important;
+  flex:1 1 auto !important;
+  text-align:left !important;
+}
+.sheet-head .sheet-confirm{
+  order:2 !important;
+  flex:0 0 auto !important;
+}
+.sheet-head .sheet-x{
+  order:3 !important;
+  flex:0 0 auto !important;
+  margin-left:4px !important;
+}
+
+/* Settings: X rechts statt links, ohne Markup-Umbau */
+.settings-nav{
+  display:flex !important;
+  align-items:center !important;
+  gap:10px !important;
+}
+.settings-nav .s-close-btn{
+  order:3 !important;
+  flex:0 0 44px !important;
+  margin-left:auto !important;
+}
+.settings-nav .s-title{
+  order:2 !important;
+  flex:1 1 auto !important;
+  text-align:center !important;
+}
+.settings-nav > div[style*="width:44px"]{
+  order:1 !important;
+  flex:0 0 44px !important;
+}
+
+/* Touchflächen konsistent, aber ohne zusätzliche Layer */
+.panel-close,
+.detail-close,
+.sheet-x,
+.s-close-btn,
+.sheet-confirm{
+  min-width:44px !important;
+  min-height:44px !important;
+  pointer-events:auto !important;
+  touch-action:manipulation !important;
+}
+
+/* 3) Externe Aktivitäten typografisch an PR-Karten angleichen */
+.day-event{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  border:1px solid rgba(90,200,250,.12);
+  background:rgba(90,200,250,.045);
+  border-radius:16px;
+  padding:11px 12px;
+  margin:8px 0;
+}
+
+.day-event .event-main{
+  min-width:0;
+  flex:1 1 auto;
+}
+
+.day-event .event-title-line{
+  display:flex;
+  align-items:baseline;
+  gap:7px;
+  min-width:0;
+}
+
+.day-event .event-time{
+  color:rgba(240,250,248,.56);
+  font-size:12px;
+  font-weight:700;
+  flex:0 0 auto;
+}
+
+.day-event .event-title-line b{
+  color:var(--text);
+  font-size:15px;
+  font-weight:650;
+  line-height:1.25;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.day-event .event-title{
+  display:block;
+  color:rgba(240,250,248,.78);
+  font-size:13px;
+  font-weight:500;
+  margin-top:3px;
+}
+
+.day-event .event-meta,
+.day-event .event-link{
+  display:block;
+  color:rgba(240,250,248,.50);
+  font-size:12px;
+  font-weight:500;
+  line-height:1.35;
+  margin-top:3px;
+}
+
+.day-event.item .event-title-line b{
+  font-weight:600 !important;
+}
+
+.day-event.item .event-meta{
+  font-weight:500 !important;
+}
+
+.event-actions{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:6px;
+  flex-wrap:wrap;
+  max-width:44%;
+}
+
+.event-actions button{
+  min-height:30px;
+  border-radius:10px;
+  border:1px solid rgba(90,200,250,.16);
+  background:rgba(90,200,250,.07);
+  color:var(--teal);
+  font-size:12px;
+  font-weight:700;
+  padding:5px 8px;
+}
+
+.event-actions .event-delete{
+  width:30px;
+  min-width:30px;
+  padding:0;
+  color:rgba(255,255,255,.72);
+}
+
+.trip-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  min-height:28px;
+  border:1px solid;
+  border-radius:999px;
+  padding:4px 9px;
+  font-size:12px;
+  font-weight:700;
+  white-space:nowrap;
+}
+
+.trip-pill i{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  display:inline-block;
+}
+
+/* externe Aktivitäten sollen nicht wie komplett fette Buttons wirken */
+.day-event.item b,
+.day-event.item span,
+.day-event.item small{
+  letter-spacing:0;
+}
+
+/* kleine Displays: Aktionen unter den Text schieben */
+@media(max-width:430px){
+  .day-event{
+    flex-direction:column;
+  }
+  .event-actions{
+    max-width:100%;
+    justify-content:flex-start;
+  }
+}

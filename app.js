@@ -1,14 +1,20 @@
 /* ============================================================
    PR Explorer · app.js · Midnight Teal Pro
-   V3.2.0: UI-Flächen-Rebuild
+   V3.2.1: Sheet- und Kartenstil-Fix
    ============================================================ */
 'use strict';
 
 const qs  = s => document.querySelector(s);
 const qsa = s => [...document.querySelectorAll(s)];
 
-const APP_VERSION = 'V3.2.0';
+const APP_VERSION = 'V3.2.1';
 const APP_CHANGELOG = [
+  { version:'V3.2.1', date:'2026-06-03', title:'Sheet- und Kartenstil-Fix', changes:[
+    'Zweilagige Bottom-Sheet-Wirkung reduziert: äußere Sheets clippen, innere Inhalte scrollen sauber innerhalb der Rundung.',
+    'Schließen-X in Sheet-Headern einheitlicher nach rechts ausgerichtet.',
+    'Externe Aktivitäten typografisch an PR-Karten angenähert: Titel semibold, Metadaten gedimmt, Aktionen weniger dominant.',
+    'Keine Safe-Area-, Bottom-Dock-, Overlay- oder Floatingbutton-Änderungen.'
+  ]},
   { version:'V3.2.0', date:'2026-06-03', title:'UI-Flächen-Rebuild', changes:[
     'Alle aktiven prx-v*-Zusatzmodule entfernt; index.html lädt nur noch style.css, pr-data.js und app.js.',
     'Roadmap bleibt in der vorhandenen Seite Reisen; kein Roadmap-Floatingbutton mehr.',
@@ -287,7 +293,33 @@ function exportTripItemICS(id){ const x=tripItems.find(i=>i.id===id); if(!x){ret
 function tripPlannerFormHtml(){ const days=tripDays(); const defDate=days[0]?dateKey(days[0]):''; return `<div class="trip-add"><div class="trip-add-head"><b>Externe Unternehmung</b><small>Manuell speichern, später einem Reisetag zuordnen.</small></div><input id="tiTitle" class="home-input" placeholder="Titel, z. B. Cabo Girão / Restaurant / Bootstour"><div class="trip-grid"><select id="tiCat"><option value="poi">POI</option><option value="food">Restaurant</option><option value="view">Aussichtspunkt</option><option value="beach">Strand</option><option value="city">Ort / Stadt</option><option value="tour">Tour</option><option value="other">Sonstiges</option></select><select id="tiStatus">${Object.entries(TRIP_STATUS).map(([k,d])=>`<option value="${k}">${d.label}</option>`).join('')}</select></div><div class="trip-grid"><input id="tiDate" type="date" class="home-input" value="${defDate}"><select id="tiHour">${timeSelectOptions('10',0,23,1)}</select><select id="tiMin"><option value="00">00</option><option value="30">30</option></select></div><div class="trip-grid"><input id="tiDur" class="home-input" type="number" min="15" step="15" value="120" placeholder="Dauer min"><input id="tiDrive" class="home-input" type="number" min="0" step="5" value="0" placeholder="Fahrzeit min"></div><input id="tiLink" class="home-input" placeholder="Link Google Maps / Website / Instagram / YouTube"><div class="trip-grid"><input id="tiLat" class="home-input" placeholder="Lat optional"><input id="tiLon" class="home-input" placeholder="Lon optional"></div><button class="btn-primary" onclick="addTripItemFromForm()">Unternehmung speichern</button></div>`; }
 function prPlanControlsHtml(r){ const safe=String(r.id).replace(/[^a-z0-9]+/gi,'-'); const days=tripDays(); return `<div class="plan-mini"><select id="pf-${safe}-date"><option value="">Reisetag wählen</option>${days.map(d=>`<option value="${dateKey(d)}">${niceDay(d)}</option>`).join('')}</select><select id="pf-${safe}-hour">${timeSelectOptions('09',0,23,1)}</select><select id="pf-${safe}-min"><option value="00">00</option><option value="30">30</option></select><button onclick="event.stopPropagation();planFavFromCard('${r.id}')">Planen</button></div>`; }
 function unscheduledFavsHtml(){ const rows=unscheduledFavs(); return `<div class="p-section">Favoriten ohne Termin</div>${rows.length?`<div class="list fav-backlog">${rows.map(r=>`<div class="pr-card backlog-card" onclick="openDetail('${r.id}',true)"><div class="pr-tag" style="background:${levelColor(r.level)}">${r.id}</div><div class="info"><b>${r.name}</b><span>${regionLabel(r)} · noch nicht eingeplant</span>${prPlanControlsHtml(r)}</div><span class="chevron">›</span></div>`).join('')}</div>`:'<div class="empty-state">Keine offenen PR-Favoriten ohne Termin.</div>'}`; }
-function eventCardHtml(ev){ if(ev.kind==='pr'){ const r=ev.r; return `<div class="day-event pr ${ev.type}" onclick="openDetail('${r.id}',true)"><div><b>${timeOf(ev.dt)} · ${r.id}</b><span>${htmlEsc(r.name)}</span><small>${scheduleKindLabel(ev.type)} · ${fmt(r.driveMin)} min Anfahrt · ${fmt(r.duration)}</small></div>${stPillHtml(getSt(r.id))}</div>`; } const x=ev.item; return `<div class="day-event item"><div><b>${timeOf(x.dt)} · ${tripItemTitle(x)}</b><span>${htmlEsc(x.cat||'Unternehmung')} · ${x.durationMin||0} min · Fahrt ${x.driveMin||0} min</span>${x.link?`<small>${htmlEsc(x.link).slice(0,80)}</small>`:''}</div><div class="event-actions">${tripStatusPill(x.status)}${x.link?`<button onclick="event.stopPropagation();openTripLink('${x.id}')">Link</button>`:''}<button onclick="event.stopPropagation();exportTripItemICS('${x.id}')">ICS</button><button onclick="event.stopPropagation();deleteTripItem('${x.id}')">×</button></div></div>`; }
+function eventCardHtml(ev){
+  if(ev.kind==='pr'){
+    const r=ev.r;
+    return `<div class="day-event pr ${ev.type}" onclick="openDetail('${r.id}',true)">
+      <div class="event-main">
+        <div class="event-title-line"><span class="event-time">${timeOf(ev.dt)}</span><b>${r.id}</b></div>
+        <span class="event-title">${htmlEsc(r.name)}</span>
+        <small class="event-meta">${scheduleKindLabel(ev.type)} · ${fmt(r.driveMin)} min Anfahrt · ${fmt(r.duration)}</small>
+      </div>
+      ${stPillHtml(getSt(r.id))}
+    </div>`;
+  }
+  const x=ev.item;
+  return `<div class="day-event item">
+    <div class="event-main">
+      <div class="event-title-line"><span class="event-time">${timeOf(x.dt)}</span><b>${tripItemTitle(x)}</b></div>
+      <span class="event-meta">${htmlEsc(x.cat||'Unternehmung')} · ${x.durationMin||0} min · Fahrt ${x.driveMin||0} min</span>
+      ${x.link?`<small class="event-link">${htmlEsc(x.link).slice(0,80)}</small>`:''}
+    </div>
+    <div class="event-actions">
+      ${tripStatusPill(x.status)}
+      ${x.link?`<button onclick="event.stopPropagation();openTripLink('${x.id}')">Link</button>`:''}
+      <button onclick="event.stopPropagation();exportTripItemICS('${x.id}')">ICS</button>
+      <button class="event-delete" onclick="event.stopPropagation();deleteTripItem('${x.id}')">×</button>
+    </div>
+  </div>`;
+}
 function tripDayCardsHtml(){ const days=tripDays(); if(!days.length)return '<div class="empty-state">Reisezeitraum in den Einstellungen setzen. Danach werden hier automatisch Tageskarten erzeugt.</div>'; return `<div class="trip-days">${days.map(d=>{ const k=dateKey(d), ev=travelEventsForDay(k); return `<div class="trip-day"><div class="trip-day-head"><b>${niceDay(d)}</b><span>${ev.length?ev.length+' Eintrag'+(ev.length>1?'e':''):'frei'}</span></div>${ev.length?ev.map(eventCardHtml).join(''):'<div class="free-slot">Noch keine feste Planung. Geeignet für POI, Reserve oder Ruhetag.</div>'}</div>`; }).join('')}</div>`; }
 function travelPlannerHtml(){ return `<div class="p-section">Roadmap / Tagesplanung</div>${tripBannerHtml()}<div class="trip-toolbar"><button class="mini-btn" onclick="exportTravelPlanJson()">Reiseplan JSON sichern</button><button class="mini-btn" onclick="exportTripICS()">Reisezeitraum ICS</button></div>${tripDayCardsHtml()}${unscheduledFavsHtml()}${tripPlannerFormHtml()}`; }
 

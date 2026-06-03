@@ -1,9 +1,10 @@
 {
   "name": "PR Explorer Madeira",
-  "version": "V3.2.0",
+  "version": "V3.2.1",
   "date": "2026-06-03",
-  "title": "UI-Flächen-Rebuild",
-  "cache": "pr-explorer-v3-2-0-ui-flaechen-20260603k",
+  "title": "Sheet- und Kartenstil-Fix",
+  "cache": "pr-explorer-v3-2-1-sheet-kartenstil-20260603l",
+  "base": "V3.2.0",
   "activeFiles": [
     "index.html",
     "style.css",

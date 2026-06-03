@@ -1,3 +1,11 @@
+# V3.2.1 · Sheet- und Kartenstil-Fix
+
+- Zweilagige Bottom-Sheet-Wirkung reduziert: äußere Sheets clippen, innere Inhalte scrollen.
+- Schließen-X in Sheet-Headern einheitlicher nach rechts ausgerichtet.
+- Externe Aktivitäten typografisch an PR-Karten angenähert.
+- Keine Safe-Area-, Bottom-Dock-, Overlay- oder Floatingbutton-Änderungen.
+- Weiterhin keine aktive prx-v*-Zusatzdatei.
+
 # V3.2.0 · UI-Flächen-Rebuild
 
 - Aktive prx-v*-Zusatzdateien vollständig entfernt.
