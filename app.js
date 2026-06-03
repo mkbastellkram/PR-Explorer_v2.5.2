@@ -1,14 +1,20 @@
 /* ============================================================
    PR Explorer · app.js · Midnight Teal Pro
-   V3.1.0: Clean Layer Reset
+   V3.1.1: HUD-Scope-Fix
    ============================================================ */
 'use strict';
 
 const qs  = s => document.querySelector(s);
 const qsa = s => [...document.querySelectorAll(s)];
 
-const APP_VERSION = 'V3.1.0';
+const APP_VERSION = 'V3.1.1';
 const APP_CHANGELOG = [
+  { version:'V3.1.1', date:'2026-06-03', title:'HUD-Scope-Fix', changes:[
+    'Roadmap/Audit/V3-Entwicklungs-HUD wird nur noch auf der freien Kartenansicht angezeigt.',
+    'Zoomslider wird nur noch angezeigt, wenn Karte aktiv, Zoomslider aktiviert und kein Panel/Sheet/Detail/Filter/Einstellungen offen ist.',
+    'Filter-FAB und Testbutton werden bei geöffneten Panels/Sheets ausgeblendet.',
+    'Keine erneuten Safe-Area- oder Bottom-Dock-Experimente; V3.1.1 ändert ausschließlich Sichtbarkeit und Layer-Scope der HUD-Elemente.'
+  ]},
   { version:'V3.1.0', date:'2026-06-03', title:'Clean Layer Reset', changes:[
     'Alle experimentellen V3.0.x-Safe-Area-/Dock-/Overlay-Hotfixdateien aus dem aktiven Upload-Paket entfernt.',
     'Z-Index-Architektur zentral neu definiert: Map, Controls, Bottom-Nav, Zusatzbuttons, Panels, Settings, Modals, Toasts.',

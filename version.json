@@ -1,16 +1,8 @@
 {
   "name": "PR Explorer Madeira",
-  "version": "V3.1.0",
+  "version": "V3.1.1",
   "date": "2026-06-03",
-  "title": "Clean Layer Reset",
-  "cache": "pr-explorer-v3-1-0-clean-20260603g",
-  "activeFiles": [
-    "index.html",
-    "style.css",
-    "prx-v3.1.0.css",
-    "pr-data.js",
-    "prx-v3.1.0.js",
-    "app.js",
-    "service-worker.js"
-  ]
+  "title": "HUD-Scope-Fix",
+  "cache": "pr-explorer-v3-1-1-hud-scope-20260603h",
+  "base": "V3.1.0"
 }

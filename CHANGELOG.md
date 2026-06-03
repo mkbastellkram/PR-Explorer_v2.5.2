@@ -1,3 +1,10 @@
+# V3.1.1 · HUD-Scope-Fix
+
+- Roadmap/Audit/V3-HUD nur noch bei freier Kartenansicht sichtbar.
+- Zoomslider nur noch bei freier Kartenansicht sichtbar.
+- Filter-FAB und Testbutton werden bei geöffneten Panels/Sheets/Einstellungen ausgeblendet.
+- Keine Safe-Area- oder Bottom-Dock-Änderungen.
+
 # V3.1.0 · Clean Layer Reset
 
 - Alte V3.0.x-Hotfixdateien aus dem Upload-Paket entfernt.
