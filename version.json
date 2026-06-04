@@ -1,10 +1,10 @@
 {
   "name": "PR Explorer Madeira",
-  "version": "V3.2.1",
+  "version": "V3.2.2",
   "date": "2026-06-03",
-  "title": "Sheet- und Kartenstil-Fix",
-  "cache": "pr-explorer-v3-2-1-sheet-kartenstil-20260603l",
-  "base": "V3.2.0",
+  "title": "Navigations- und Rückweg-Logik",
+  "cache": "pr-explorer-v3-2-2-navigation-20260603m",
+  "base": "V3.2.1",
   "activeFiles": [
     "index.html",
     "style.css",

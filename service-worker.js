@@ -1,13 +1,13 @@
-const APP_VERSION = 'V3.2.1';
-const CACHE_NAME = 'pr-explorer-v3-2-1-sheet-kartenstil-20260603l';
+const APP_VERSION = 'V3.2.2';
+const CACHE_NAME = 'pr-explorer-v3-2-2-navigation-20260603m';
 const CORE_ASSETS = [
   './',
   './index.html',
   './manifest.webmanifest',
   './version.json',
-  './style.css?v=3.2.1-20260603l',
-  './app.js?v=3.2.1-20260603l',
-  './pr-data.js?v=3.2.1-20260603l',
+  './style.css?v=3.2.2-20260603m',
+  './app.js?v=3.2.2-20260603m',
+  './pr-data.js?v=3.2.2-20260603m',
   './icon-180.png',
   './icon-192.png',
   './icon-512.png',

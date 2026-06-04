@@ -1,3 +1,12 @@
+# V3.2.2 · Navigations- und Rückweg-Logik
+
+- Interner Rückweg für Journal → Detail → Karte/Solo ergänzt.
+- Detailansicht mit Zurück und Auf-Karte-zeigen.
+- Solo-Kartenmodus mit Zurück und Alle anzeigen.
+- Hauptnavigation bleibt klar getrennt von Detail-/Solo-Rückwegen.
+- Keine Safe-Area-, Bottom-Dock-, Overlay- oder Floating-HUD-Änderungen.
+- Weiterhin keine aktive prx-v*-Zusatzdatei.
+
 # V3.2.1 · Sheet- und Kartenstil-Fix
 
 - Zweilagige Bottom-Sheet-Wirkung reduziert: äußere Sheets clippen, innere Inhalte scrollen.
