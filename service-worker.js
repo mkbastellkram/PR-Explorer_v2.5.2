@@ -1,20 +1,18 @@
-const APP_VERSION = 'V3.2.2';
-const CACHE_NAME = 'pr-explorer-v3-2-2-navigation-20260603m';
+const APP_VERSION = 'V3.2.3';
+const CACHE_NAME = 'pr-explorer-v3-2-3-recovery-20260603n';
 const CORE_ASSETS = [
   './',
   './index.html',
   './manifest.webmanifest',
   './version.json',
-  './style.css?v=3.2.2-20260603m',
-  './app.js?v=3.2.2-20260603m',
-  './pr-data.js?v=3.2.2-20260603m',
+  './style.css?v=3.2.3-20260603n',
+  './app.js?v=3.2.3-20260603n',
+  './pr-data.js?v=3.2.3-20260603n',
   './icon-180.png',
   './icon-192.png',
   './icon-512.png',
   './README.md',
   './CHANGELOG.md',
-  './README_TESTING.md',
-  './README_LAYER.md',
   './PROMPT_CHATGPT_ROADMAP.md'
 ];
 
@@ -22,6 +20,7 @@ self.addEventListener('install', event => {
   self.skipWaiting();
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(CORE_ASSETS)));
 });
+
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
     const names = await caches.keys();
@@ -29,6 +28,7 @@ self.addEventListener('activate', event => {
     await self.clients.claim();
   })());
 });
+
 async function networkFirst(request) {
   const cache = await caches.open(CACHE_NAME);
   try {
@@ -39,6 +39,7 @@ async function networkFirst(request) {
     return await cache.match(request, { ignoreSearch: false }) || await cache.match('./index.html');
   }
 }
+
 async function cacheFirst(request) {
   const cache = await caches.open(CACHE_NAME);
   const cached = await cache.match(request, { ignoreSearch: false });
@@ -47,6 +48,7 @@ async function cacheFirst(request) {
   if (response && response.ok && request.method === 'GET') cache.put(request, response.clone());
   return response;
 }
+
 self.addEventListener('fetch', event => {
   const req = event.request;
   if (req.method !== 'GET') return;

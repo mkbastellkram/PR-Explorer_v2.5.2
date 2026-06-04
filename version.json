@@ -1,9 +1,9 @@
 {
   "name": "PR Explorer Madeira",
-  "version": "V3.2.2",
+  "version": "V3.2.3",
   "date": "2026-06-03",
-  "title": "Navigations- und Rückweg-Logik",
-  "cache": "pr-explorer-v3-2-2-navigation-20260603m",
+  "title": "Recovery zurück auf V3.2.1",
+  "cache": "pr-explorer-v3-2-3-recovery-20260603n",
   "base": "V3.2.1",
   "activeFiles": [
     "index.html",

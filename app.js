@@ -1,20 +1,20 @@
 /* ============================================================
    PR Explorer · app.js · Midnight Teal Pro
-   V3.2.2: Navigations- und Rückweg-Logik
+   V3.2.3: Recovery zurück auf V3.2.1
    ============================================================ */
 'use strict';
 
 const qs  = s => document.querySelector(s);
 const qsa = s => [...document.querySelectorAll(s)];
 
-const APP_VERSION = 'V3.2.2';
+const APP_VERSION = 'V3.2.3';
 const APP_CHANGELOG = [
-  { version:'V3.2.2', date:'2026-06-03', title:'Navigations- und Rückweg-Logik', changes:[
-    'Interner Rückweg für Journal → Detail → Karte/Solo ergänzt.',
-    'Detailansicht erhält Kopfzeile mit Zurück und Auf-Karte-zeigen.',
-    'Solo-Kartenmodus erhält eine kleine Kartenleiste mit Zurück und Alle anzeigen.',
-    'Bottom-Navigation setzt bewusst neue Hauptbereiche und zerstört keine Detail-Rückwege mehr unkontrolliert.',
-    'Keine Safe-Area-, Bottom-Dock-, Overlay- oder Floating-HUD-Änderungen.'
+  { version:'V3.2.3', date:'2026-06-03', title:'Recovery zurück auf V3.2.1', changes:[
+    'V3.2.2 verworfen, weil die Navigationslogik die Karteninitialisierung/Grundfunktion beschädigt hat.',
+    'Recovery basiert vollständig auf dem funktionierenden V3.2.1-Stand.',
+    'Karte, PR-Pins, Reisen, Optionen, Sheet-Struktur und externe Aktivitäten entsprechen wieder V3.2.1.',
+    'Keine V3.2.2-Navigationsfunktionen enthalten.',
+    'Weiterhin keine aktiven prx-v*-Zusatzdateien.'
   ]},
   { version:'V3.2.1', date:'2026-06-03', title:'Sheet- und Kartenstil-Fix', changes:[
     'Zweilagige Bottom-Sheet-Wirkung reduziert: äußere Sheets clippen, innere Inhalte scrollen sauber innerhalb der Rundung.',
@@ -377,7 +377,6 @@ function fmtMin(v) { if(!v)return '–'; const h=Math.floor(v/60),m=v%60; return
 const F = { region:'all', status:'all', schedule:'all', distMin:0, distMax:999, driveKmMin:0, driveKmMax:999, driveMinMin:0, driveMinMax:9999, elevUpMin:0, elevUpMax:99999 };
 let _fb = {};
 const S = { tab:'map', selected:null, query:'', fullscreen:false, panel:false };
-const V322_NAV = { detailFrom:null, soloFrom:null, lastMainTab:'map' };
 
 /* MAP */
 const map = L.map('map',{zoomControl:false,attributionControl:false,preferCanvas:true,tap:true,doubleClickZoom:true,touchZoom:true}).setView([32.755,-16.93],10);
@@ -771,16 +770,8 @@ function focusDetailPins(id){
 }
 function clearPinFocus(){ lgMarkers.eachLayer(m=>{const el=m.getElement();if(el){el.classList.remove('pin-sel','pin-hidden');}}); }
 function highlightPin(id){ focusDetailPins(id); }
-function soloOnMap(id){
-  v322SoloOnMap(id,{fromTab:S.tab,fromDetail:null});
-}
-function exitSoloMode(){
-  cfg.soloMode=false;
-  cfg.soloId=null;
-  saveCfg();
-  renderLayers();
-  v322SyncSoloBar();
-}
+function soloOnMap(id){ cfg.soloMode=true;cfg.soloId=id;cfg.layers.tracks=true;cfg.layers.drive=true;cfg.layers.markers=true;saveCfg();renderLayers();setTab('map');const r=DATA.find(x=>x.id===id);if(r){setTimeout(()=>{const b=routeBounds(r);if(isValidBounds(b))map.flyToBounds(b,mapSafeFitOptions(false));toast(`${id} · Tippe Karte für alle PR`);},200);} }
+function exitSoloMode(){ cfg.soloMode=false;cfg.soloId=null;saveCfg();renderLayers(); }
 
 /* UI */
 function toast(t){ const el=qs('#toast');el.textContent=t;el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),2200); }
@@ -793,39 +784,10 @@ function openTestPanel(){
   renderTestTab();setTimeout(()=>{map.invalidateSize();if(_testActive){const el=qs(`#tc-${_testActive}`);if(el)el.scrollIntoView({behavior:'smooth',block:'center'});}},300);
 }
 function syncTestToggle(){ const t=qs('#testToggle'); if(!t)return; t.classList.toggle('hidden',!cfg.showTestToggle); t.classList.toggle('active',S.tab==='test'); }
-function setTab(tab){
-  qs('#panel')?.classList.remove('test-panel');
-  qs('#app')?.classList.remove('test-mode');
-  if(tab!==S.tab && tab!=='map') V322_NAV.lastMainTab=tab;
-  // Hauptnavigation schließt eine offene Detailansicht bewusst, ohne den internen Rückweg zu benutzen.
-  if(!qs('#detailPanel')?.classList.contains('hidden')){
-    v322CloseDetailRaw();
-  }
-  S.tab=tab;
-  qsa('#bottomNav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
-  qs('#testToggle')?.classList.remove('active');
-  qs('#panel').classList.toggle('hidden',tab==='map');
-  qs('#hero').classList.toggle('hide',tab!=='map');
-  qs('.filter-fab')?.classList.toggle('hidden',tab!=='map');
-  S.panel=tab!=='map';
-  syncTestToggle();
-  if(S.panel){renderPanel();setTimeout(()=>map.invalidateSize(),200);}
-  v320SyncUI();
-  v322SyncSoloBar();
-}
-function openDetailfunction openDetail(id,zoom=false,navOpts={}){
-  const next = DATA.find(r=>r.id===id);
-  if(!next)return;
-  if(!navOpts.silent){
-    V322_NAV.detailFrom = {
-      tab: S.tab,
-      query: S.query,
-      panelScroll: qs('#panelContent') ? qs('#panelContent').scrollTop : 0,
-      soloMode: !!cfg.soloMode,
-      soloId: cfg.soloId || null
-    };
-  }
-  S.selected=next;
+function setTab(tab){ qs('#panel')?.classList.remove('test-panel'); qs('#app')?.classList.remove('test-mode'); S.tab=tab;qsa('#bottomNav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));qs('#testToggle')?.classList.remove('active');qs('#panel').classList.toggle('hidden',tab==='map');qs('#hero').classList.toggle('hide',tab!=='map');qs('.filter-fab')?.classList.toggle('hidden',tab!=='map');S.panel=tab!=='map';syncTestToggle();if(S.panel){renderPanel();setTimeout(()=>map.invalidateSize(),200);} v320SyncUI(); }
+function openDetail(id,zoom=false){
+  S.selected=DATA.find(r=>r.id===id);
+  if(!S.selected)return;
   closeAllSheets(false);
   qs('#panel').classList.add('hidden');
   qs('#detailPanel').classList.remove('hidden');
@@ -833,18 +795,8 @@ function openDetailfunction openDetail(id,zoom=false,navOpts={}){
   renderDetail();
   if(zoom){const b=routeBounds(S.selected);if(isValidBounds(b))map.flyToBounds(b,mapSafeFitOptions(true));}
   setTimeout(()=>{focusDetailPins(id);drawElevProfile(S.selected,'elevCanvas');},200);
-  v322SyncSoloBar();
 }
-function v322CloseDetailRaw(){
-  qs('#detailPanel').classList.add('hidden');
-  S.selected=null;
-  clearPinFocus();
-  drawPois();
-  v322SyncSoloBar();
-}
-function closeDetail(){
-  v322BackFromDetail();
-}
+function closeDetail(){ qs('#detailPanel').classList.add('hidden');S.selected=null;clearPinFocus();drawPois(); }
 function setFullscreen(on){ S.fullscreen=on;qs('#app').classList.toggle('fullscreen',on);qs('#fullscreenClose').classList.toggle('hidden',!on);closeDetail();qs('#panel').classList.add('hidden');S.panel=false;setTimeout(()=>map.invalidateSize(),200); }
 function pxHeight(sel){ const el=qs(sel); return el && !el.classList.contains('hidden') ? Math.ceil(el.getBoundingClientRect().height||0) : 0; }
 function mapSafeFitOptions(detail=false){ const top=Math.max(112,pxHeight('#hero')+26); const bottomNav=pxHeight('#bottomNav')||72; const test=(cfg.showTestToggle&&!qs('#testToggle')?.classList.contains('hidden'))?(pxHeight('#testToggle')+8):0; const detailPanel=detail?Math.min(Math.round(window.innerHeight*0.46),pxHeight('#detailPanel')||280):0; const bottom=Math.max(150,bottomNav+test+detailPanel+42); return {paddingTopLeft:[34,top],paddingBottomRight:[42,bottom],maxZoom:13,duration:.85}; }
@@ -959,7 +911,6 @@ function renderDetail(){
   const st=getSt(r.id),col=levelColor(r.level),isFav=favs.has(r.id),isLoop=r.loop!==false,hasElev=r.elev&&r.elev.length>2;
   const stBtns=Object.entries(STATUS_DEF).map(([k,d])=>`<button class="st-btn ${st===k?'st-active':''}" data-st="${k}" onclick="setSt('${r.id}','${k}')"><span class="dot"></span>${d.label}</button>`).join('');
   qs('#detailContent').innerHTML=`
-    ${v322DetailNavHtml(r)}
     <div class="d-tag" style="background:${col}">${r.id} · ${fmt(r.level)}</div>
     <div class="d-name">${r.name}</div><div class="d-sub">${regionLabel(r)}</div>
     <div class="d-meta">
@@ -1313,105 +1264,6 @@ function initAllSwipe(){
 }
 
 
-
-/* V3.2.2 NAVIGATION / RÜCKWEG */
-function v322DetailNavHtml(r){
-  const backLabel = (V322_NAV.detailFrom?.tab && V322_NAV.detailFrom.tab !== 'map') ? `Zurück ${v322TabLabel(V322_NAV.detailFrom.tab)}` : 'Zurück';
-  return `<div class="v322-detail-nav">
-    <button class="v322-back" onclick="v322BackFromDetail()">← ${backLabel}</button>
-    <button class="v322-map" onclick="v322ShowDetailOnMap('${r.id}')">Auf Karte zeigen</button>
-  </div>`;
-}
-function v322TabLabel(tab){
-  return ({overview:'Übersicht',journal:'Journal',trips:'Reisen',options:'Optionen',map:'Karte',test:'Audit'})[tab]||'zurück';
-}
-function v322BackFromDetail(){
-  const from = V322_NAV.detailFrom || {tab:'map'};
-  v322CloseDetailRaw();
-  if(from.soloMode && from.soloId){
-    cfg.soloMode=true; cfg.soloId=from.soloId; saveCfg(); renderLayers();
-  }
-  if(from.tab && from.tab !== 'map'){
-    setTab(from.tab);
-    if(typeof from.query==='string') S.query=from.query;
-    setTimeout(()=>{
-      renderPanel();
-      const pc=qs('#panelContent');
-      if(pc && Number.isFinite(from.panelScroll)) pc.scrollTop=from.panelScroll;
-    },80);
-  } else {
-    setTab('map');
-  }
-}
-function v322ShowDetailOnMap(id){
-  const currentId = S.selected?.id || id;
-  V322_NAV.soloFrom = {
-    type:'detail',
-    id:currentId,
-    detailFrom: V322_NAV.detailFrom ? {...V322_NAV.detailFrom} : {tab:'map'}
-  };
-  v322CloseDetailRaw();
-  v322SoloOnMap(currentId,{fromTab:'detail',fromDetail:currentId});
-}
-function v322SoloOnMap(id,opts={}){
-  cfg.soloMode=true;
-  cfg.soloId=id;
-  cfg.layers.tracks=true;
-  cfg.layers.drive=true;
-  cfg.layers.markers=true;
-  saveCfg();
-  renderLayers();
-  setTab('map');
-  const r=DATA.find(x=>x.id===id);
-  if(r){
-    setTimeout(()=>{
-      const b=routeBounds(r);
-      if(isValidBounds(b))map.flyToBounds(b,mapSafeFitOptions(false));
-      toast(`${id} · Soloansicht`);
-    },200);
-  }
-  v322SyncSoloBar();
-}
-function v322BackFromSolo(){
-  const from = V322_NAV.soloFrom;
-  cfg.soloMode=false;
-  cfg.soloId=null;
-  saveCfg();
-  renderLayers();
-  v322SyncSoloBar();
-  if(from?.type==='detail' && from.id){
-    V322_NAV.detailFrom = from.detailFrom || {tab:'map'};
-    openDetail(from.id,false,{silent:true});
-  } else if(from?.tab && from.tab!=='map'){
-    setTab(from.tab);
-  } else {
-    setTab('map');
-  }
-  V322_NAV.soloFrom=null;
-}
-function v322ExitSoloAll(){
-  cfg.soloMode=false;
-  cfg.soloId=null;
-  saveCfg();
-  renderLayers();
-  V322_NAV.soloFrom=null;
-  v322SyncSoloBar();
-  toast('Alle PR wieder sichtbar');
-}
-function v322SyncSoloBar(){
-  let bar=qs('#v322SoloBar');
-  if(!cfg.soloMode || S.tab!=='map'){
-    if(bar)bar.remove();
-    return;
-  }
-  if(!bar){
-    bar=document.createElement('div');
-    bar.id='v322SoloBar';
-    qs('#app')?.appendChild(bar);
-  }
-  bar.innerHTML=`<button onclick="v322BackFromSolo()">← Zurück</button><span>Solo: ${cfg.soloId||''}</span><button onclick="v322ExitSoloAll()">Alle anzeigen</button>`;
-}
-
 /* V3.2.0 DIRECT UI FLÄCHEN — keine Zusatzlayer */
 function v320OptionsHtml(){
   const op = Math.round((cfg.bottomSheetOpacity||0.88)*100);
@@ -1573,7 +1425,7 @@ function bind(){
   bindTap('#detailClose',()=>closeDetail());
   bindTap('#settingsClose',()=>closeSettings());
   qs('#backdrop').onclick=()=>closeAllSheets();
-  map.on('click',()=>{closeAllSheets();clearPinFocus();if(cfg.soloMode){v322ExitSoloAll();}});
+  map.on('click',()=>{closeAllSheets();clearPinFocus();if(cfg.soloMode){exitSoloMode();toast('Alle PR wieder sichtbar');}});
   initAllSwipe();
 }
 
@@ -1610,7 +1462,7 @@ const _addCSS=`
 const _styleEl=document.createElement('style');_styleEl.textContent=_addCSS;document.head.appendChild(_styleEl);
 
 /* GLOBALS */
-Object.assign(window,{S,F,cfg,favs,saveFavs,saveCfg,saveStatus,openDetail,closeDetail,setTab,setSt,setBase,setLayer,setHikingMode,setHikingColorMode,soloOnMap,exitSoloMode,openSettings,closeSettings,renderSettings,setPinShape,openColorSheet,closeColorSheet,confirmColor,setColorTab,sliderChanged,hexChanged,pickColor,openIconSheet,closeIconSheet,confirmIcon,filterIcons,pickIcon,openDateSheet,closeDateSheet,confirmDate,calPrev,calNext,calDay,exportICS,exportTripICS,exportBookedICS,updatePrSchedule,composeDt,clearPrSchedule,tripItems,saveTripItems,addTripItemFromForm,deleteTripItem,setTripItemStatus,openTripLink,planFavFromCard,exportTravelPlanJson,exportTripItemICS,resetFilters,setRegion,setSF,toggleRegions,dualMove,renderFilterSheet,closeAllSheets,closeBackdrop,fitVisible,googleMapsPoint,renderLayers,renderPanel,renderDetail,tcToggle,tcResult,tcReset,tcExport,tcSaveNote,tcClearNote,renderTestTab,openTestPanel,syncTestToggle,APP_VERSION,APP_CHANGELOG,qs,lineStyleBtns,setSort,setScheduleFilter,refreshPoiData,setPoiCat,googleMapsSearch,exportRouteFile,shareRouteFile,shareTestReport,openShareSheet,shareText,prInfoText,filteredCsv,darkenChanged,setHomeField,drawHomePin,togglePois,focusDetailPins,clearPinFocus,openFilterSheet,installCriticalTapGuards,v320OptionsHtml,v320SetBool,v320SetNum,v320SetOpacity,v320SyncUI,v320EnsureZoomSlider,v322BackFromDetail,v322ShowDetailOnMap,v322BackFromSolo,v322ExitSoloAll});
+Object.assign(window,{S,F,cfg,favs,saveFavs,saveCfg,saveStatus,openDetail,closeDetail,setTab,setSt,setBase,setLayer,setHikingMode,setHikingColorMode,soloOnMap,exitSoloMode,openSettings,closeSettings,renderSettings,setPinShape,openColorSheet,closeColorSheet,confirmColor,setColorTab,sliderChanged,hexChanged,pickColor,openIconSheet,closeIconSheet,confirmIcon,filterIcons,pickIcon,openDateSheet,closeDateSheet,confirmDate,calPrev,calNext,calDay,exportICS,exportTripICS,exportBookedICS,updatePrSchedule,composeDt,clearPrSchedule,tripItems,saveTripItems,addTripItemFromForm,deleteTripItem,setTripItemStatus,openTripLink,planFavFromCard,exportTravelPlanJson,exportTripItemICS,resetFilters,setRegion,setSF,toggleRegions,dualMove,renderFilterSheet,closeAllSheets,closeBackdrop,fitVisible,googleMapsPoint,renderLayers,renderPanel,renderDetail,tcToggle,tcResult,tcReset,tcExport,tcSaveNote,tcClearNote,renderTestTab,openTestPanel,syncTestToggle,APP_VERSION,APP_CHANGELOG,qs,lineStyleBtns,setSort,setScheduleFilter,refreshPoiData,setPoiCat,googleMapsSearch,exportRouteFile,shareRouteFile,shareTestReport,openShareSheet,shareText,prInfoText,filteredCsv,darkenChanged,setHomeField,drawHomePin,togglePois,focusDetailPins,clearPinFocus,openFilterSheet,installCriticalTapGuards,v320OptionsHtml,v320SetBool,v320SetNum,v320SetOpacity,v320SyncUI,v320EnsureZoomSlider});
 
 /* INIT */
 bind();try{renderFilterSheet();}catch(e){console.warn('Initial filter render skipped',e);}renderLayers();setTab('map');syncTestToggle();v320SyncUI();setTimeout(fitMadeira,300);_updateTestBadge();

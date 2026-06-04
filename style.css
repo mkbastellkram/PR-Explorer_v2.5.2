@@ -1176,7 +1176,7 @@ button,input,select,textarea,label,a,.pr-card,.card-map-btn{
 
 
 /* ============================================================
-   V3.2.1 Sheet- und Kartenstil-Fix
+   V3.2.3 Recovery auf Basis V3.2.1
    Keine Safe-Area-/Bottom-Dock-/Overlay-Änderung.
    ============================================================ */
 
@@ -1435,102 +1435,5 @@ button,input,select,textarea,label,a,.pr-card,.card-map-btn{
   .event-actions{
     max-width:100%;
     justify-content:flex-start;
-  }
-}
-
-
-/* ============================================================
-   V3.2.2 Navigations- und Rückweg-Logik
-   Keine Safe-Area-/Bottom-Dock-/Overlay-Änderung.
-   ============================================================ */
-
-.v322-detail-nav{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  margin:0 0 12px;
-  padding:4px 0 10px;
-  border-bottom:1px solid rgba(90,200,250,.12);
-}
-
-.v322-detail-nav button{
-  min-height:42px;
-  border-radius:14px;
-  border:1px solid rgba(90,200,250,.16);
-  background:rgba(90,200,250,.075);
-  color:var(--teal);
-  font-weight:800;
-  padding:9px 12px;
-  touch-action:manipulation;
-}
-
-.v322-detail-nav .v322-back{
-  color:rgba(240,250,248,.88);
-  background:rgba(255,255,255,.055);
-}
-
-.v322-detail-nav .v322-map{
-  margin-left:auto;
-}
-
-#v322SoloBar{
-  position:fixed;
-  left:16px;
-  right:16px;
-  bottom:calc(116px + env(safe-area-inset-bottom,0px));
-  z-index:140;
-  min-height:48px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  padding:8px 10px;
-  border-radius:18px;
-  border:1px solid rgba(90,200,250,.16);
-  background:rgba(7,21,18,.86);
-  color:rgba(240,250,248,.88);
-  box-shadow:0 10px 28px rgba(0,0,0,.28);
-  backdrop-filter:blur(18px) saturate(170%);
-  -webkit-backdrop-filter:blur(18px) saturate(170%);
-}
-
-#v322SoloBar span{
-  min-width:0;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-  font-size:13px;
-  font-weight:800;
-  color:rgba(240,250,248,.76);
-}
-
-#v322SoloBar button{
-  min-height:36px;
-  border-radius:12px;
-  border:1px solid rgba(90,200,250,.18);
-  background:rgba(90,200,250,.08);
-  color:var(--teal);
-  font-weight:800;
-  padding:7px 10px;
-  touch-action:manipulation;
-}
-
-#v320ZoomSlider:not(.hidden) + #v322SoloBar,
-#v322SoloBar + #v320ZoomSlider{
-  /* rein defensiv; beide liegen als Kartencontrols, nicht als App-Overlay */
-}
-
-@media(max-width:430px){
-  .v322-detail-nav{
-    flex-wrap:wrap;
-  }
-  .v322-detail-nav button{
-    flex:1 1 auto;
-  }
-  #v322SoloBar{
-    left:12px;
-    right:12px;
-    bottom:calc(112px + env(safe-area-inset-bottom,0px));
   }
 }

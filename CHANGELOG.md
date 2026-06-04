@@ -1,10 +1,9 @@
-# V3.2.2 · Navigations- und Rückweg-Logik
+# V3.2.3 · Recovery zurück auf V3.2.1
 
-- Interner Rückweg für Journal → Detail → Karte/Solo ergänzt.
-- Detailansicht mit Zurück und Auf-Karte-zeigen.
-- Solo-Kartenmodus mit Zurück und Alle anzeigen.
-- Hauptnavigation bleibt klar getrennt von Detail-/Solo-Rückwegen.
-- Keine Safe-Area-, Bottom-Dock-, Overlay- oder Floating-HUD-Änderungen.
+- V3.2.2 verworfen, weil die Navigationsänderung die Grundfunktion beschädigt hat.
+- Recovery basiert wieder auf V3.2.1.
+- Karte, Pins, Reisen, Optionen, Sheet-Fix und externe Aktivitäten sind wieder auf dem funktionierenden Stand.
+- Keine V3.2.2-Navigationslogik enthalten.
 - Weiterhin keine aktive prx-v*-Zusatzdatei.
 
 # V3.2.1 · Sheet- und Kartenstil-Fix
