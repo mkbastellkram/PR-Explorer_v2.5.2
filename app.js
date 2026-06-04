@@ -1,20 +1,20 @@
 /* ============================================================
    PR Explorer · app.js · Midnight Teal Pro
-   V3.2.4: Detail-Parken und Karten-Erkundung
+   V3.2.5: Cache- und Startdiagnose
    ============================================================ */
 'use strict';
 
 const qs  = s => document.querySelector(s);
 const qsa = s => [...document.querySelectorAll(s)];
 
-const APP_VERSION = 'V3.2.4';
+const APP_VERSION = 'V3.2.5';
 const APP_CHANGELOG = [
-  { version:'V3.2.4', date:'2026-06-03', title:'Detail-Parken und Karten-Erkundung', changes:[
-    'Detailansicht kann in eine Warteposition geparkt und aus der Karte wieder geöffnet werden.',
-    'Detailansicht erhält eine kleine Aktionszeile: Parken, Auf Karte, Nahe PRs.',
-    'Solo-/Erkundungsmodus erhält eine Kartenleiste mit Detail, Nahe PRs und X/Ausstieg.',
-    'Nahegelegene PRs können als temporäre Kartenpunkte eingeblendet und besucht werden; Zurück führt zum vorherigen PR.',
-    'Keine Änderung an setTab(), Karteninitialisierung, Safe-Area oder Bottom-Dock.'
+  { version:'V3.2.5', date:'2026-06-04', title:'Cache- und Startdiagnose', changes:[
+    'Service Worker bereinigt: CORE_ASSETS ohne Query-Strings; Cache-Busting bleibt nur in index.html.',
+    'Startdiagnose ergänzt: Leaflet, Daten, Map-Container, Tile-Layer, PR-Datensätze und Marker werden geprüft.',
+    'Debug-Panel in Optionen ergänzt; bei schwerem Startfehler erscheint ein sichtbarer Diagnosehinweis.',
+    'Keine Navigations-, Detail-, Safe-Area-, Bottom-Dock- oder Overlay-Änderungen.',
+    'Basis bleibt der funktionierende V3.2.3/V3.2.1-Stand.'
   ]},
   { version:'V3.2.3', date:'2026-06-03', title:'Recovery zurück auf V3.2.1', changes:[
     'V3.2.2 verworfen, weil die Navigationslogik die Karteninitialisierung/Grundfunktion beschädigt hat.',
@@ -384,7 +384,6 @@ function fmtMin(v) { if(!v)return '–'; const h=Math.floor(v/60),m=v%60; return
 const F = { region:'all', status:'all', schedule:'all', distMin:0, distMax:999, driveKmMin:0, driveKmMax:999, driveMinMin:0, driveMinMax:9999, elevUpMin:0, elevUpMax:99999 };
 let _fb = {};
 const S = { tab:'map', selected:null, query:'', fullscreen:false, panel:false };
-const V324_NAV = { stack:[], nearby:false, parked:false };
 
 /* MAP */
 const map = L.map('map',{zoomControl:false,attributionControl:false,preferCanvas:true,tap:true,doubleClickZoom:true,touchZoom:true}).setView([32.755,-16.93],10);
@@ -778,17 +777,8 @@ function focusDetailPins(id){
 }
 function clearPinFocus(){ lgMarkers.eachLayer(m=>{const el=m.getElement();if(el){el.classList.remove('pin-sel','pin-hidden');}}); }
 function highlightPin(id){ focusDetailPins(id); }
-function soloOnMap(id){
-  cfg.soloMode=true;cfg.soloId=id;cfg.layers.tracks=true;cfg.layers.drive=true;cfg.layers.markers=true;
-  saveCfg();renderLayers();setTab('map');
-  const r=DATA.find(x=>x.id===id);
-  if(r){setTimeout(()=>{const b=routeBounds(r);if(isValidBounds(b))map.flyToBounds(b,mapSafeFitOptions(false));toast(`${id} · Soloansicht`);},200);}
-  v324SyncMapControls();
-} · Tippe Karte für alle PR`);},200);} }
-function exitSoloMode(){
-  cfg.soloMode=false;cfg.soloId=null;saveCfg();renderLayers();
-  v324SyncMapControls();
-}
+function soloOnMap(id){ cfg.soloMode=true;cfg.soloId=id;cfg.layers.tracks=true;cfg.layers.drive=true;cfg.layers.markers=true;saveCfg();renderLayers();setTab('map');const r=DATA.find(x=>x.id===id);if(r){setTimeout(()=>{const b=routeBounds(r);if(isValidBounds(b))map.flyToBounds(b,mapSafeFitOptions(false));toast(`${id} · Tippe Karte für alle PR`);},200);} }
+function exitSoloMode(){ cfg.soloMode=false;cfg.soloId=null;saveCfg();renderLayers(); }
 
 /* UI */
 function toast(t){ const el=qs('#toast');el.textContent=t;el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),2200); }
@@ -805,28 +795,15 @@ function setTab(tab){ qs('#panel')?.classList.remove('test-panel'); qs('#app')?.
 function openDetail(id,zoom=false){
   S.selected=DATA.find(r=>r.id===id);
   if(!S.selected)return;
-  V324_NAV.parked=false;
   closeAllSheets(false);
   qs('#panel').classList.add('hidden');
-  qs('#detailPanel').classList.remove('hidden','detail-parked');
+  qs('#detailPanel').classList.remove('hidden');
   focusDetailPins(id);
   renderDetail();
   if(zoom){const b=routeBounds(S.selected);if(isValidBounds(b))map.flyToBounds(b,mapSafeFitOptions(true));}
-  setTimeout(()=>{focusDetailPins(id);drawElevProfile(S.selected,'elevCanvas');v324SyncMapControls();},200);
+  setTimeout(()=>{focusDetailPins(id);drawElevProfile(S.selected,'elevCanvas');},200);
 }
-function closeDetail(){
-  qs('#detailPanel').classList.add('hidden');
-  qs('#detailPanel').classList.remove('detail-parked');
-  S.selected=null;
-  V324_NAV.parked=false;
-  V324_NAV.nearby=false;
-  V324_NAV.stack=[];
-  clearPinFocus();
-  v324ClearNearby();
-  if(cfg.soloMode){cfg.soloMode=false;cfg.soloId=null;saveCfg();renderLayers();}
-  drawPois();
-  v324SyncMapControls();
-}
+function closeDetail(){ qs('#detailPanel').classList.add('hidden');S.selected=null;clearPinFocus();drawPois(); }
 function setFullscreen(on){ S.fullscreen=on;qs('#app').classList.toggle('fullscreen',on);qs('#fullscreenClose').classList.toggle('hidden',!on);closeDetail();qs('#panel').classList.add('hidden');S.panel=false;setTimeout(()=>map.invalidateSize(),200); }
 function pxHeight(sel){ const el=qs(sel); return el && !el.classList.contains('hidden') ? Math.ceil(el.getBoundingClientRect().height||0) : 0; }
 function mapSafeFitOptions(detail=false){ const top=Math.max(112,pxHeight('#hero')+26); const bottomNav=pxHeight('#bottomNav')||72; const test=(cfg.showTestToggle&&!qs('#testToggle')?.classList.contains('hidden'))?(pxHeight('#testToggle')+8):0; const detailPanel=detail?Math.min(Math.round(window.innerHeight*0.46),pxHeight('#detailPanel')||280):0; const bottom=Math.max(150,bottomNav+test+detailPanel+42); return {paddingTopLeft:[34,top],paddingBottomRight:[42,bottom],maxZoom:13,duration:.85}; }
@@ -924,7 +901,7 @@ function renderPanel(){
   if(S.tab==='overview'){ h=`${tripBannerHtml()}<div class="stats"><div class="stat"><b>${DATA.length}</b><small>PR gesamt</small></div><div class="stat"><b>${list.length}</b><small>Sichtbar</small></div><div class="stat"><b>${favs.size}</b><small>Favoriten</small></div></div><button class="btn-primary" onclick="setTab('journal')">Alle PR anzeigen</button>`; }
   else if(S.tab==='journal'){ const sb=cfg.soloMode?`<div class="solo-banner"><span>Solo: ${cfg.soloId}</span><button onclick="exitSoloMode();renderPanel()">× Alle</button></div>`:'';h=`<div class="search-row"><input class="search-input" placeholder="PR suchen…" value="${S.query}" oninput="S.query=this.value;clearTimeout(window.__prxSearchT);window.__prxSearchT=setTimeout(()=>{renderLayers();renderPanel()},450)"></div><div class="sort-row"><span>Sortierung</span><select onchange="setSort(this.value)"><option value="id" ${cfg.sort==='id'?'selected':''}>PR-Nummer</option><option value="name" ${cfg.sort==='name'?'selected':''}>Name</option><option value="distance" ${cfg.sort==='distance'?'selected':''}>Track-Länge</option><option value="drive" ${cfg.sort==='drive'?'selected':''}>Anfahrtszeit</option><option value="elev" ${cfg.sort==='elev'?'selected':''}>Höhenmeter</option><option value="status" ${cfg.sort==='status'?'selected':''}>Status</option></select></div>${sb}<div class="list">${list.map(r=>prCardHtml(r,true)).join('')||'<div class="empty-state">Keine PR gefunden.</div>'}</div>`; }
   else if(S.tab==='trips'){ h=travelPlannerHtml(); }
-  else if(S.tab==='options'){ h=`<div class="p-section">Kartenstil</div><div class="mode-grid">${Object.keys(BASE_LABELS).map(m=>`<button class="mode-chip ${cfg.base===m?'active':''}" onclick="setBase('${m}')">${BASE_LABELS[m]}</button>`).join('')}</div><div class="p-section">Ebenen</div><div class="sg-box" style="border-radius:18px;overflow:hidden;background:rgba(90,200,250,.04);border:1px solid rgba(90,200,250,.1)">${APP_LAYER_KEYS.map(k=>`<div class="opt-row"><span style="font-size:18px;width:28px;text-align:center">${OVERLAY_ICONS[k]}</span><span class="opt-label">${OVERLAY_LABELS[k]}</span><input type="checkbox" class="s-tog" ${cfg.layers[k]?'checked':''} onchange="setLayer('${k}',this.checked)"></div>`).join('')}</div><div class="p-section">POI-Reiseziele</div><div class="vector-info-card"><b>OSM Reise-POIs</b><span>${poiStatusHtml()}</span><button class="mini-btn" onclick="refreshPoiData()">POIs laden / aktualisieren</button><div class="poi-cat-grid">${Object.entries(POI_DEF).map(([k,d])=>`<button class="poi-cat-btn ${cfg.poiCats?.[k]!==false?'active':''}" onclick="setPoiCat('${k}',!(cfg.poiCats?.['${k}']!==false));event.stopPropagation();"><span>${d.icon}</span>${d.label}</button>`).join('')}</div><button class="mini-btn" onclick="googleMapsSearch('Cafe Madeira')">Google-Maps-Suche Test</button></div><div class="p-section">Hiking-Darstellung</div><div class="vector-info-card"><b>${hikingModeLabel()}</b>${hikingModeControlsHtml('panel')}<span>${cfg.hikingMode==='raster'?'Waymarked Trails Raster-Referenz aktiv.':cfg.hikingMode==='vector'?'Editierbare OSM-Vektorlinien aktiv.':cfg.hikingMode==='compare'?'Vergleichsmodus: Raster und Vektor bewusst übereinander.':'Keine zusätzliche Hiking-Ebene aktiv.'}</span></div><div class="p-section">OSM Hiking Vektor</div><div class="vector-info-card"><b>Editierbare Rohdaten-Linien</b><span>${hikingVectorStatusHtml()}</span><button class="mini-btn" onclick="refreshHikingVectorData()">Rohdaten laden / aktualisieren</button></div><button class="btn-primary" style="margin-top:14px" onclick="fitVisible();setTab('map')">Sichtbare PR einpassen</button>${v320OptionsHtml()}`; }
+  else if(S.tab==='options'){ h=`<div class="p-section">Kartenstil</div><div class="mode-grid">${Object.keys(BASE_LABELS).map(m=>`<button class="mode-chip ${cfg.base===m?'active':''}" onclick="setBase('${m}')">${BASE_LABELS[m]}</button>`).join('')}</div><div class="p-section">Ebenen</div><div class="sg-box" style="border-radius:18px;overflow:hidden;background:rgba(90,200,250,.04);border:1px solid rgba(90,200,250,.1)">${APP_LAYER_KEYS.map(k=>`<div class="opt-row"><span style="font-size:18px;width:28px;text-align:center">${OVERLAY_ICONS[k]}</span><span class="opt-label">${OVERLAY_LABELS[k]}</span><input type="checkbox" class="s-tog" ${cfg.layers[k]?'checked':''} onchange="setLayer('${k}',this.checked)"></div>`).join('')}</div><div class="p-section">POI-Reiseziele</div><div class="vector-info-card"><b>OSM Reise-POIs</b><span>${poiStatusHtml()}</span><button class="mini-btn" onclick="refreshPoiData()">POIs laden / aktualisieren</button><div class="poi-cat-grid">${Object.entries(POI_DEF).map(([k,d])=>`<button class="poi-cat-btn ${cfg.poiCats?.[k]!==false?'active':''}" onclick="setPoiCat('${k}',!(cfg.poiCats?.['${k}']!==false));event.stopPropagation();"><span>${d.icon}</span>${d.label}</button>`).join('')}</div><button class="mini-btn" onclick="googleMapsSearch('Cafe Madeira')">Google-Maps-Suche Test</button></div><div class="p-section">Hiking-Darstellung</div><div class="vector-info-card"><b>${hikingModeLabel()}</b>${hikingModeControlsHtml('panel')}<span>${cfg.hikingMode==='raster'?'Waymarked Trails Raster-Referenz aktiv.':cfg.hikingMode==='vector'?'Editierbare OSM-Vektorlinien aktiv.':cfg.hikingMode==='compare'?'Vergleichsmodus: Raster und Vektor bewusst übereinander.':'Keine zusätzliche Hiking-Ebene aktiv.'}</span></div><div class="p-section">OSM Hiking Vektor</div><div class="vector-info-card"><b>Editierbare Rohdaten-Linien</b><span>${hikingVectorStatusHtml()}</span><button class="mini-btn" onclick="refreshHikingVectorData()">Rohdaten laden / aktualisieren</button></div><button class="btn-primary" style="margin-top:14px" onclick="fitVisible();setTab('map')">Sichtbare PR einpassen</button>${v320OptionsHtml()}${v325DiagnosticsHtml()}`; }
   el.innerHTML=h;
 }
 
@@ -941,7 +918,6 @@ function renderDetail(){
   const st=getSt(r.id),col=levelColor(r.level),isFav=favs.has(r.id),isLoop=r.loop!==false,hasElev=r.elev&&r.elev.length>2;
   const stBtns=Object.entries(STATUS_DEF).map(([k,d])=>`<button class="st-btn ${st===k?'st-active':''}" data-st="${k}" onclick="setSt('${r.id}','${k}')"><span class="dot"></span>${d.label}</button>`).join('');
   qs('#detailContent').innerHTML=`
-    ${v324DetailActionsHtml(r)}
     <div class="d-tag" style="background:${col}">${r.id} · ${fmt(r.level)}</div>
     <div class="d-name">${r.name}</div><div class="d-sub">${regionLabel(r)}</div>
     <div class="d-meta">
@@ -1295,167 +1271,6 @@ function initAllSwipe(){
 }
 
 
-
-/* V3.2.4 DETAIL PARKEN / KARTEN-ERKUNDUNG */
-function v324DetailActionsHtml(r){
-  return `<div class="v324-detail-actions">
-    <button type="button" onclick="v324ParkDetail()">▾ Parken</button>
-    <button type="button" onclick="v324ShowOnMap('${r.id}')">Auf Karte</button>
-    <button type="button" onclick="v324ToggleNearby()">Nahe PRs</button>
-  </div>`;
-}
-function v324IsDetailOpen(){
-  const p=qs('#detailPanel');
-  return !!p && !p.classList.contains('hidden') && !p.classList.contains('detail-parked') && !!S.selected;
-}
-function v324IsDetailParked(){
-  const p=qs('#detailPanel');
-  return !!p && !p.classList.contains('hidden') && p.classList.contains('detail-parked') && !!S.selected;
-}
-function v324ParkDetail(){
-  if(!S.selected)return;
-  const p=qs('#detailPanel');
-  if(!p)return;
-  p.classList.remove('hidden');
-  p.classList.add('detail-parked');
-  V324_NAV.parked=true;
-  setTab('map');
-  v324SyncMapControls();
-}
-function v324RestoreDetail(){
-  if(!S.selected)return;
-  const p=qs('#detailPanel');
-  if(!p)return;
-  p.classList.remove('hidden','detail-parked');
-  V324_NAV.parked=false;
-  renderDetail();
-  focusDetailPins(S.selected.id);
-  setTimeout(()=>{drawElevProfile(S.selected,'elevCanvas');v324SyncMapControls();},80);
-}
-function v324MaybeParkDetailFromMap(){
-  if(v324IsDetailOpen()){
-    v324ParkDetail();
-    return true;
-  }
-  return false;
-}
-function v324ShowOnMap(id){
-  const r=DATA.find(x=>x.id===id)||(S.selected&&DATA.find(x=>x.id===S.selected.id));
-  if(!r)return;
-  S.selected=r;
-  cfg.soloMode=true;
-  cfg.soloId=r.id;
-  cfg.layers.tracks=true;
-  cfg.layers.drive=true;
-  cfg.layers.markers=true;
-  saveCfg();
-  renderLayers();
-  setTab('map');
-  v324ParkDetail();
-  setTimeout(()=>{const b=routeBounds(r);if(isValidBounds(b))map.flyToBounds(b,mapSafeFitOptions(false));},160);
-}
-function v324HardExit(){
-  closeDetail();
-  setTab('map');
-  toast('Soloansicht beendet');
-}
-function v324EnsureMapBar(){
-  let bar=qs('#v324MapBar');
-  if(!bar){
-    bar=document.createElement('div');
-    bar.id='v324MapBar';
-    qs('#app')?.appendChild(bar);
-  }
-  return bar;
-}
-function v324SyncMapControls(){
-  let bar=qs('#v324MapBar');
-  const show=!!S.selected && S.tab==='map' && (v324IsDetailParked() || cfg.soloMode);
-  if(!show){
-    if(bar)bar.classList.add('hidden');
-    return;
-  }
-  bar=v324EnsureMapBar();
-  bar.classList.remove('hidden');
-  bar.innerHTML=`<button type="button" onclick="v324RestoreDetail()">ⓘ Detail</button>
-    <button type="button" onclick="v324ToggleNearby()">${V324_NAV.nearby?'Nahe aus':'Nahe PRs'}</button>
-    ${V324_NAV.stack.length?'<button type="button" onclick="v324BackPr()">← Vorheriger</button>':''}
-    <button type="button" class="v324-exit" onclick="v324HardExit()">×</button>`;
-}
-function v324Distance(a,b,c,d){
-  if(![a,b,c,d].every(Number.isFinite))return Infinity;
-  const R=6371,to=x=>x*Math.PI/180;
-  const dLat=to(c-a),dLon=to(d-b);
-  const s=Math.sin(dLat/2)**2+Math.cos(to(a))*Math.cos(to(c))*Math.sin(dLon/2)**2;
-  return R*2*Math.atan2(Math.sqrt(s),Math.sqrt(1-s));
-}
-function v324Lat(r){return Number(r.lat??r.startLat??r.start_lat??(r.start&&r.start[0]));}
-function v324Lon(r){return Number(r.lon??r.startLon??r.start_lon??(r.start&&r.start[1]));}
-function v324NearbyList(){
-  if(!S.selected)return [];
-  const a=v324Lat(S.selected),b=v324Lon(S.selected);
-  return DATA.filter(x=>x.id!==S.selected.id).map(x=>({r:x,d:v324Distance(a,b,v324Lat(x),v324Lon(x))})).filter(o=>Number.isFinite(o.d)).sort((x,y)=>x.d-y.d).slice(0,5);
-}
-function v324NearbyLayer(){
-  if(!window.__v324NearbyLayer) window.__v324NearbyLayer=L.layerGroup().addTo(map);
-  return window.__v324NearbyLayer;
-}
-function v324ClearNearby(){
-  if(window.__v324NearbyLayer) window.__v324NearbyLayer.clearLayers();
-}
-function v324ToggleNearby(){
-  if(!S.selected)return;
-  V324_NAV.nearby=!V324_NAV.nearby;
-  if(!V324_NAV.nearby){v324ClearNearby();v324SyncMapControls();return;}
-  const layer=v324NearbyLayer();
-  layer.clearLayers();
-  v324NearbyList().forEach(o=>{
-    const lat=v324Lat(o.r),lon=v324Lon(o.r);
-    if(!Number.isFinite(lat)||!Number.isFinite(lon))return;
-    const m=L.circleMarker([lat,lon],{radius:9,color:'#5ac8fa',weight:2,fillColor:'#102f2b',fillOpacity:.92});
-    m.bindTooltip(`${o.r.id} · ${o.d.toFixed(1)} km`,{permanent:false,direction:'top'});
-    m.on('click',ev=>{if(ev.originalEvent)L.DomEvent.stop(ev.originalEvent);v324VisitNearby(o.r.id);});
-    layer.addLayer(m);
-  });
-  v324SyncMapControls();
-}
-function v324VisitNearby(id){
-  if(!S.selected)return;
-  V324_NAV.stack.push(S.selected.id);
-  const next=DATA.find(x=>x.id===id);
-  if(!next)return;
-  S.selected=next;
-  cfg.soloMode=true;
-  cfg.soloId=next.id;
-  saveCfg();
-  renderLayers();
-  renderDetail();
-  qs('#detailPanel')?.classList.remove('hidden');
-  qs('#detailPanel')?.classList.add('detail-parked');
-  V324_NAV.parked=true;
-  V324_NAV.nearby=false;
-  v324ClearNearby();
-  setTimeout(()=>{const b=routeBounds(next);if(isValidBounds(b))map.flyToBounds(b,mapSafeFitOptions(false));v324SyncMapControls();},120);
-}
-function v324BackPr(){
-  const prev=V324_NAV.stack.pop();
-  if(!prev)return;
-  const r=DATA.find(x=>x.id===prev);
-  if(!r)return;
-  S.selected=r;
-  cfg.soloMode=true;
-  cfg.soloId=r.id;
-  saveCfg();
-  renderLayers();
-  renderDetail();
-  qs('#detailPanel')?.classList.remove('hidden');
-  qs('#detailPanel')?.classList.add('detail-parked');
-  V324_NAV.parked=true;
-  V324_NAV.nearby=false;
-  v324ClearNearby();
-  setTimeout(()=>{const b=routeBounds(r);if(isValidBounds(b))map.flyToBounds(b,mapSafeFitOptions(false));v324SyncMapControls();},120);
-}
-
 /* V3.2.0 DIRECT UI FLÄCHEN — keine Zusatzlayer */
 function v320OptionsHtml(){
   const op = Math.round((cfg.bottomSheetOpacity||0.88)*100);
@@ -1499,11 +1314,68 @@ function v320SyncUI(){
   document.documentElement.style.setProperty('--v320-sheet-opacity', cfg.bottomSheetOpacity||0.88);
 }
 
+
+/* V3.2.5 CACHE- UND STARTDIAGNOSE */
+function v325RunDiagnostics(){
+  const d={version:APP_VERSION,time:new Date().toISOString(),url:location.href,
+    serviceWorkerControlled:!!navigator.serviceWorker?.controller,
+    leafletLoaded:typeof L!=='undefined',
+    mapContainer:!!document.getElementById('map'),
+    dataArrayName:Array.isArray(window.PR_DATA)?'PR_DATA':(Array.isArray(window.DATA)?'DATA':'none'),
+    dataCount:Array.isArray(window.PR_DATA)?window.PR_DATA.length:(Array.isArray(window.DATA)?window.DATA.length:0),
+    appDataCount:Array.isArray(window.DATA)?window.DATA.length:0,
+    mapObject:typeof map!=='undefined'&&!!map,
+    mapHasSize:false,tilePanes:0,markerLikeLayers:0,errors:[]};
+  try{
+    if(d.mapObject){
+      const s=map.getSize(); d.mapHasSize=!!(s&&s.x>20&&s.y>20);
+      d.tilePanes=document.querySelectorAll('.leaflet-tile-pane img,.leaflet-tile-pane .leaflet-tile').length;
+      let c=0; map.eachLayer(layer=>{try{if(layer instanceof L.Marker||layer instanceof L.CircleMarker||layer instanceof L.Polyline)c++;}catch(_){}}); d.markerLikeLayers=c;
+    }
+  }catch(e){d.errors.push('Map-Check: '+(e?.message||e));}
+  if(!d.leafletLoaded)d.errors.push('Leaflet ist nicht geladen.');
+  if(!d.mapContainer)d.errors.push('Map-Container #map fehlt.');
+  if(d.dataCount<=0&&d.appDataCount<=0)d.errors.push('Keine PR-Daten gefunden.');
+  if(d.mapObject&&!d.mapHasSize)d.errors.push('Leaflet-Map hat keine nutzbare Größe.');
+  if(d.mapObject&&d.markerLikeLayers<=0)d.errors.push('Keine Marker/Tracks als Leaflet-Layer erkannt.');
+  window.__PRX_LAST_DIAG=d; localStorage.setItem('prx_last_start_diagnose',JSON.stringify(d,null,2)); return d;
+}
+function v325DiagnosticsText(d){
+  return [`PR Explorer · Startdiagnose ${d.version}`,`Zeit: ${new Date(d.time).toLocaleString('de-DE')}`,`Status: ${d.errors.length?'FEHLER / PRÜFEN':'OK'}`,'',
+  `Service Worker kontrolliert: ${d.serviceWorkerControlled?'ja':'nein / erster Start'}`,`Leaflet geladen: ${d.leafletLoaded?'ja':'nein'}`,
+  `Map-Container vorhanden: ${d.mapContainer?'ja':'nein'}`,`Datenquelle: ${d.dataArrayName}`,`PR-Datensätze: ${d.dataCount||d.appDataCount}`,
+  `Map-Objekt: ${d.mapObject?'ja':'nein'}`,`Map-Größe nutzbar: ${d.mapHasSize?'ja':'nein'}`,`Tile-Elemente: ${d.tilePanes}`,`Marker/Track-Layer: ${d.markerLikeLayers}`,'','Fehler:',
+  ...(d.errors.length?d.errors.map(e=>'- '+e):['- keine']),'',`URL: ${d.url}`].join('\n');
+}
+function v325DiagnosticsHtml(){
+  const d=v325RunDiagnostics(), state=d.errors.length?'warn':'ok';
+  return `<div class="p-section">Startdiagnose</div><div class="sg-box v325-diag ${state}">
+    <div class="v325-diag-head"><b>${d.errors.length?'Prüfen':'OK'}</b><span>${APP_VERSION}</span></div>
+    <div class="v325-grid">
+      <span>Leaflet</span><b>${d.leafletLoaded?'ja':'nein'}</b><span>Daten</span><b>${d.dataCount||d.appDataCount}</b>
+      <span>Map</span><b>${d.mapObject?'ja':'nein'}</b><span>Map-Größe</span><b>${d.mapHasSize?'ja':'nein'}</b>
+      <span>Tiles</span><b>${d.tilePanes}</b><span>Layer</span><b>${d.markerLikeLayers}</b><span>SW</span><b>${d.serviceWorkerControlled?'aktiv':'nicht aktiv'}</b>
+    </div>${d.errors.length?`<div class="v325-errors">${d.errors.map(e=>`<p>${htmlEsc(e)}</p>`).join('')}</div>`:`<p class="v325-ok">Karte/Daten wirken initialisiert.</p>`}
+    <div class="v325-actions"><button class="mini-btn" onclick="v325CopyDiagnostics()">Diagnose kopieren</button><button class="mini-btn" onclick="v325HardReload()">Hard Reload</button></div>
+  </div>`;
+}
+function v325CopyDiagnostics(){
+  const txt=v325DiagnosticsText(v325RunDiagnostics());
+  navigator.clipboard?.writeText(txt).then(()=>toast('Diagnose kopiert')).catch(()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('Diagnose kopiert');});
+}
+function v325HardReload(){ location.href=location.pathname+'?v='+Date.now(); }
+function v325ShowStartupWarningIfNeeded(){
+  setTimeout(()=>{const d=v325RunDiagnostics(); const severe=!d.leafletLoaded||!d.mapContainer||(d.dataCount<=0&&d.appDataCount<=0)||!d.mapObject;
+    if(!severe)return; let box=document.getElementById('v325StartupWarn'); if(!box){box=document.createElement('div');box.id='v325StartupWarn';
+      box.innerHTML=`<b>Startproblem erkannt</b><p>Karte/Daten konnten nicht sauber initialisiert werden.</p><button onclick="setTab('options')">Diagnose öffnen</button><button onclick="this.parentElement.remove()">Schließen</button>`;
+      document.body.appendChild(box);}},1800);
+}
+
 /* TEST TAB */
 const TEST_STEPS=[{cat:'Karte & Navigation',steps:[{id:'map-load',icon:'🗺️',title:'App startet & Topo-Karte lädt',sub:'Topo-Karte als Standard',tap:'App öffnen – warte 2 Sek.',expect:'<b>Topo-Karte</b> erscheint (grün/braun). "MADEIRA / PR Explorer" oben. Teal-Fußleiste.'},{id:'map-pins',icon:'📍',title:'PR-Pins erscheinen',sub:'Label-Tags',tap:'Warte nach dem Laden',expect:'Farbige Tags auf der Karte. Grün=leicht, Orange=mittel, Rot=schwer.'},{id:'map-locate',icon:'📡',title:'Standort-Button',sub:'Linke Pill',tap:'Obere linke Pill → Pfeil-Button',expect:'Browser fragt Standort. Karte springt zu deiner Position.'},{id:'map-fit',icon:'⬜',title:'Route einpassen',sub:'Mittlerer Button',tap:'Obere linke Pill → Rechteck-Button',expect:'Karte zeigt alle sichtbaren PRs.'},{id:'map-fs',icon:'⛶',title:'Vollbild',sub:'Rechter Button',tap:'Obere linke Pill → Pfeile → dann × oben',expect:'Nur Karte sichtbar. × beendet Vollbild.'}]},{cat:'Pin & Detail',steps:[{id:'pin-tap',icon:'👆',title:'Pin → Detail öffnet',sub:'Label-Tag antippen',tap:'Einen PR-Tag antippen',expect:'Detail-Panel von unten. Pin leuchtet Teal.'},{id:'detail-elev',icon:'⛰️',title:'Höhenprofil',sub:'Canvas-Chart',tap:'Im Detail nach unten scrollen',expect:'Teal-Gradient-Chart. Meter-Labels. 4 Stat-Boxen darunter.',note:'Nur bei PRs mit GPX-Daten. Teste PR 1, PR 6.3, PR 10.'},{id:'detail-close',icon:'✕',title:'Schließen-Kreuz im Detail',sub:'Kein Wischen mehr',tap:'Detail-Panel öffnen → Kreuz oben rechts antippen',expect:'Detail-Panel schließt. Alle PR-Pins erscheinen wieder.'},{id:'detail-status',icon:'🚦',title:'Status setzen',sub:'4 Buttons',tap:'"Eingeschränkt" antippen',expect:'Status-Dot am Pin wechselt auf gelb.'},{id:'detail-solo',icon:'🎯',title:'Solo auf Karte',sub:'Karten-Button im Journal',tap:'Journal → Karten-Icon bei einem PR antippen',expect:'Nur dieser PR auf der Karte mit Route + Anfahrt.'}]},{cat:'Filter',steps:[{id:'flt-open',icon:'🔽',title:'Filter öffnen & schließen',sub:'FAB + Wischen',tap:'Trichter antippen → nach unten wischen zum Schließen',expect:'Filter-Sheet öffnet. Schließt per Wischen.'},{id:'flt-region',icon:'🗾',title:'Regions-Filter + Slider-Anpassung',sub:'Dynamische Grenzen',tap:'"Zentrales Hochgebirge" antippen',expect:'Slider passen <b>automatisch</b> Min/Max an.'},{id:'flt-slider',icon:'📏',title:'Dual-Slider',sub:'Zwei Anfasser',tap:'Track-Länge: beide Anfasser verschieben',expect:'Karte aktualisiert live. Anfasser nicht aneinander vorbei.'},{id:'flt-reset',icon:'↺',title:'Filter zurücksetzen',sub:'Reset-Button',tap:'"Filter zurücksetzen"',expect:'Alle PRs wieder sichtbar.'}]},{cat:'Einstellungen',steps:[{id:'set-gpx',icon:'📏',title:'GPX Strichstärke + Stil',sub:'Slider + Stil-Buttons',tap:'Einstellungen → GPX Strichstärke + Stil',expect:'Linien ändern sich live.'},{id:'set-pinsize',icon:'🔎',title:'Pin-Größe',sub:'50%–200%',tap:'Einstellungen → Pin Größe Slider',expect:'Pins werden live größer/kleiner.'},{id:'set-color',icon:'🎨',title:'Farbpicker',sub:'Gitter + RGB-Regler',tap:'GPX Farbe → andere Farbe → Sichern',expect:'GPX-Linien wechseln Farbe sofort.'},{id:'set-date',icon:'📅',title:'Reisezeitraum',sub:'Kalender-Picker',tap:'Zeitraum → zwei Daten → Sichern',expect:'Travel-Banner in Übersicht erscheint.'}]}];
 let _testResults=JSON.parse(localStorage.getItem('prTestResultsPersistent')||localStorage.getItem('prTestResults')||'{}');
 let _testActive=null;
-function saveTestResults(){ const v=JSON.stringify(_testResults); localStorage.setItem('prTestResults',v); localStorage.setItem('prTestResultsPersistent',v); _updateTestBadge(); }
+function saveTestResults(){ const v=JSON.stringify(_testResults); localStorage.setItem('prTestResults',v); localStorage.setItem('prTestResultsPersistent',v); _updateTestBadge();v325ShowStartupWarningIfNeeded(); }
 function _updateTestBadge(){ const b=qs('#testBadge');if(!b)return;b.style.display=TEST_STEPS.flatMap(c=>c.steps).some(s=>_testResults[s.id]==='fail')?'block':'none'; }
 function renderTestTab(){
   const el=qs('#panelContent');if(!el)return;
@@ -1617,7 +1489,7 @@ function bind(){
   bindTap('#detailClose',()=>closeDetail());
   bindTap('#settingsClose',()=>closeSettings());
   qs('#backdrop').onclick=()=>closeAllSheets();
-  map.on('click',()=>{closeAllSheets();if(v324MaybeParkDetailFromMap())return;clearPinFocus();if(cfg.soloMode){exitSoloMode();toast('Alle PR wieder sichtbar');}});
+  map.on('click',()=>{closeAllSheets();clearPinFocus();if(cfg.soloMode){exitSoloMode();toast('Alle PR wieder sichtbar');}});
   initAllSwipe();
 }
 
@@ -1654,7 +1526,7 @@ const _addCSS=`
 const _styleEl=document.createElement('style');_styleEl.textContent=_addCSS;document.head.appendChild(_styleEl);
 
 /* GLOBALS */
-Object.assign(window,{S,F,cfg,favs,saveFavs,saveCfg,saveStatus,openDetail,closeDetail,setTab,setSt,setBase,setLayer,setHikingMode,setHikingColorMode,soloOnMap,exitSoloMode,openSettings,closeSettings,renderSettings,setPinShape,openColorSheet,closeColorSheet,confirmColor,setColorTab,sliderChanged,hexChanged,pickColor,openIconSheet,closeIconSheet,confirmIcon,filterIcons,pickIcon,openDateSheet,closeDateSheet,confirmDate,calPrev,calNext,calDay,exportICS,exportTripICS,exportBookedICS,updatePrSchedule,composeDt,clearPrSchedule,tripItems,saveTripItems,addTripItemFromForm,deleteTripItem,setTripItemStatus,openTripLink,planFavFromCard,exportTravelPlanJson,exportTripItemICS,resetFilters,setRegion,setSF,toggleRegions,dualMove,renderFilterSheet,closeAllSheets,closeBackdrop,fitVisible,googleMapsPoint,renderLayers,renderPanel,renderDetail,tcToggle,tcResult,tcReset,tcExport,tcSaveNote,tcClearNote,renderTestTab,openTestPanel,syncTestToggle,APP_VERSION,APP_CHANGELOG,qs,lineStyleBtns,setSort,setScheduleFilter,refreshPoiData,setPoiCat,googleMapsSearch,exportRouteFile,shareRouteFile,shareTestReport,openShareSheet,shareText,prInfoText,filteredCsv,darkenChanged,setHomeField,drawHomePin,togglePois,focusDetailPins,clearPinFocus,openFilterSheet,installCriticalTapGuards,v320OptionsHtml,v320SetBool,v320SetNum,v320SetOpacity,v320SyncUI,v320EnsureZoomSlider,v324ParkDetail,v324RestoreDetail,v324ShowOnMap,v324ToggleNearby,v324HardExit,v324BackPr});
+Object.assign(window,{S,F,cfg,favs,saveFavs,saveCfg,saveStatus,openDetail,closeDetail,setTab,setSt,setBase,setLayer,setHikingMode,setHikingColorMode,soloOnMap,exitSoloMode,openSettings,closeSettings,renderSettings,setPinShape,openColorSheet,closeColorSheet,confirmColor,setColorTab,sliderChanged,hexChanged,pickColor,openIconSheet,closeIconSheet,confirmIcon,filterIcons,pickIcon,openDateSheet,closeDateSheet,confirmDate,calPrev,calNext,calDay,exportICS,exportTripICS,exportBookedICS,updatePrSchedule,composeDt,clearPrSchedule,tripItems,saveTripItems,addTripItemFromForm,deleteTripItem,setTripItemStatus,openTripLink,planFavFromCard,exportTravelPlanJson,exportTripItemICS,resetFilters,setRegion,setSF,toggleRegions,dualMove,renderFilterSheet,closeAllSheets,closeBackdrop,fitVisible,googleMapsPoint,renderLayers,renderPanel,renderDetail,tcToggle,tcResult,tcReset,tcExport,tcSaveNote,tcClearNote,renderTestTab,openTestPanel,syncTestToggle,APP_VERSION,APP_CHANGELOG,qs,lineStyleBtns,setSort,setScheduleFilter,refreshPoiData,setPoiCat,googleMapsSearch,exportRouteFile,shareRouteFile,shareTestReport,openShareSheet,shareText,prInfoText,filteredCsv,darkenChanged,setHomeField,drawHomePin,togglePois,focusDetailPins,clearPinFocus,openFilterSheet,installCriticalTapGuards,v320OptionsHtml,v320SetBool,v320SetNum,v320SetOpacity,v320SyncUI,v320EnsureZoomSlider});
 
 /* INIT */
 bind();try{renderFilterSheet();}catch(e){console.warn('Initial filter render skipped',e);}renderLayers();setTab('map');syncTestToggle();v320SyncUI();setTimeout(fitMadeira,300);_updateTestBadge();
