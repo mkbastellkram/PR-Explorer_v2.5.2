@@ -1,3 +1,13 @@
+# V3.2.4 · Detail-Parken und Karten-Erkundung
+
+- Detailansicht kann über „Parken“ oder Kartentipp in eine Warteposition geschoben werden.
+- Über Kartenleiste „Detail“ lässt sich das Detail wieder öffnen.
+- „Auf Karte“ startet Soloansicht zum aktiven PR.
+- „Nahe PRs“ blendet temporäre nahegelegene PR-Punkte ein.
+- Besuch eines nahen PR legt den vorherigen PR auf einen kleinen Zurück-Stapel.
+- X beendet Detail-/Solo-/Erkundungsmodus hart.
+- Keine Änderung an setTab(), Karteninitialisierung, Safe-Area oder Bottom-Dock.
+
 # V3.2.3 · Recovery zurück auf V3.2.1
 
 - V3.2.2 verworfen, weil die Navigationsänderung die Grundfunktion beschädigt hat.

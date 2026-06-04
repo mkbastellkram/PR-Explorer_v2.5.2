@@ -1,10 +1,10 @@
 {
   "name": "PR Explorer Madeira",
-  "version": "V3.2.3",
+  "version": "V3.2.4",
   "date": "2026-06-03",
-  "title": "Recovery zurück auf V3.2.1",
-  "cache": "pr-explorer-v3-2-3-recovery-20260603n",
-  "base": "V3.2.1",
+  "title": "Detail-Parken und Karten-Erkundung",
+  "cache": "pr-explorer-v3-2-4-detail-parken-20260603o",
+  "base": "V3.2.3",
   "activeFiles": [
     "index.html",
     "style.css",
