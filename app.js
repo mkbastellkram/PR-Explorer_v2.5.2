@@ -7,8 +7,15 @@
 const qs  = s => document.querySelector(s);
 const qsa = s => [...document.querySelectorAll(s)];
 
-const APP_VERSION = 'V3.2.17';
+const APP_VERSION = 'V3.2.18';
 const APP_CHANGELOG = [
+  { version:'V3.2.18', date:'2026-06-04', title:'Webcams final', changes:[
+    'webcam-data.js mit 20 Madeira-Webcams und echten YouTube-IDs eingebunden.',
+    'Webcam-Layer ist über Optionen/Ebenen aktivierbar und standardmäßig aus.',
+    'Webcam-Popups zeigen Thumbnail und Live-Link.',
+    'Detailansicht zeigt vier nächste Webcams im 2×2 Grid.',
+    'Keine Änderung an Wetter, PR-Statuslogik, Dashboard, POI-Daten, setTab(), openDetail() oder pr-data.js.'
+  ]},
   { version:'V3.2.17', date:'2026-06-04', title:'POI-Layer + Dashboard-Patch', changes:[
     'poi-data.js mit 90 Sehenswürdigkeiten eingebunden.',
     'Leaflet-Layer Sehenswürdigkeiten mit kategorisierten Markern ergänzt.',
@@ -518,15 +525,15 @@ const OVERLAY_TILES = {
 };
 const OVERLAY_LABELS = {
   tracks:'GPX Wanderwege', drive:'KML Anfahrten', heat:'Heatmap', markers:'PR-Pins',
-  pois:'OSM Reise-POIs', sights:'Sehenswürdigkeiten', hiking:'Hiking Referenzkarte', hikingVector:'Editierbare Hiking-Linien'
+  pois:'OSM Reise-POIs', sights:'Sehenswürdigkeiten', hiking:'Hiking Referenzkarte', hikingVector:'Editierbare Hiking-Linien', webcams:'Webcams'
 };
-const OVERLAY_ICONS = { tracks:'🗺️', drive:'🚗', heat:'🔥', markers:'📍', regions:'🌐', pois:'☕', sights:'🏛', hiking:'🥾', hikingVector:'〰️' };
-const APP_LAYER_KEYS = ['tracks','drive','heat','markers','pois','sights'];
+const OVERLAY_ICONS = { tracks:'🗺️', drive:'🚗', heat:'🔥', markers:'📍', regions:'🌐', pois:'☕', sights:'🏛', hiking:'🥾', hikingVector:'〰️', webcams:'📷' };
+const APP_LAYER_KEYS = ['tracks','drive','heat','markers','pois','sights','webcams'];
 if(!TILES[cfg.base]) cfg.base='topo';
 APP_LAYER_KEYS.forEach(k=>{ if(typeof cfg.layers[k] !== 'boolean') cfg.layers[k]=false; });
 ['tracks','drive','markers'].forEach(k=>{ if(typeof cfg.layers[k] !== 'boolean') cfg.layers[k]=true; });
 let activeBase = TILES[cfg.base||'topo'].addTo(map); if(cfg.base==='hybrid') HYBRID_LABELS.addTo(map);
-const lgTrack=L.layerGroup().addTo(map), lgDrive=L.layerGroup().addTo(map), lgHeat=L.layerGroup().addTo(map), lgHikingCasing=L.layerGroup().addTo(map), lgHikingCore=L.layerGroup().addTo(map), lgHikingLabels=L.layerGroup().addTo(map), lgMarkers=L.layerGroup().addTo(map), lgPois=L.layerGroup().addTo(map), lgSights=L.layerGroup().addTo(map), lgHome=L.layerGroup().addTo(map), lgRegions=L.layerGroup().addTo(map);
+const lgTrack=L.layerGroup().addTo(map), lgDrive=L.layerGroup().addTo(map), lgHeat=L.layerGroup().addTo(map), lgHikingCasing=L.layerGroup().addTo(map), lgHikingCore=L.layerGroup().addTo(map), lgHikingLabels=L.layerGroup().addTo(map), lgMarkers=L.layerGroup().addTo(map), lgPois=L.layerGroup().addTo(map), lgSights=L.layerGroup().addTo(map), lgWebcams=L.layerGroup().addTo(map), lgHome=L.layerGroup().addTo(map), lgRegions=L.layerGroup().addTo(map);
 let locMarker=null, locCircle=null;
 
 function syncOverlayTiles(){
@@ -545,7 +552,7 @@ function setBase(b){
   if(b==='hybrid') HYBRID_LABELS.addTo(map);
   syncOverlayTiles(); renderHikingVectorLayers(); renderPanel();
 }
-function setLayer(k,on){ cfg.layers[k]=!!on; if(k==='regions')toggleRegions(); else if(k==='pois'){ togglePois(); } else if(k==='sights'){ drawStaticSights(); } else if(k==='hiking'||k==='hikingVector'){ cfg.hikingMode = cfg.layers.hikingVector ? 'vector' : (cfg.layers.hiking ? 'raster' : 'off'); syncOverlayTiles(); renderHikingVectorLayers(); } else if(OVERLAY_TILES[k])syncOverlayTiles(); else renderLayers(); saveCfg(); renderPanel(); }
+function setLayer(k,on){ cfg.layers[k]=!!on; if(k==='regions')toggleRegions(); else if(k==='pois'){ togglePois(); } else if(k==='sights'){ drawStaticSights(); } else if(k==='webcams'){ drawWebcams(); } else if(k==='hiking'||k==='hikingVector'){ cfg.hikingMode = cfg.layers.hikingVector ? 'vector' : (cfg.layers.hiking ? 'raster' : 'off'); syncOverlayTiles(); renderHikingVectorLayers(); } else if(OVERLAY_TILES[k])syncOverlayTiles(); else renderLayers(); saveCfg(); renderPanel(); }
 function setHikingMode(mode){
   cfg.hikingMode = ['off','raster','vector','compare'].includes(mode) ? mode : 'off';
   applyHikingModeToLegacyLayers();
@@ -809,6 +816,19 @@ function setPoiCat(cat,on){ if(!cfg.poiCats)cfg.poiCats={}; cfg.poiCats[cat]=!!o
 function poiStatusHtml(){ const n=poiGeojson?.features?.length||0; const d=poiGeojson?.loadedAt?new Date(poiGeojson.loadedAt).toLocaleString('de',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'}):'nicht geladen'; return `${n} POIs · ${d}${poiError?` · Fehler: ${poiError}`:''}`; }
 
 
+
+/* V3.2.18 WEBCAMS FINAL */
+const webcamIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="13" fill="#0F2027" stroke="#2DD4BF" stroke-width="1.5"/><rect x="7" y="10" width="10" height="8" rx="1.5" fill="#2DD4BF"/><polygon points="17,12 21,10 21,18 17,16" fill="#2DD4BF"/><circle cx="12" cy="14" r="2" fill="#0F2027"/></svg>`;
+function webcamThumbUrl(cam){return cam?.youtubeId?`https://img.youtube.com/vi/${encodeURIComponent(cam.youtubeId)}/mqdefault.jpg`:'';}
+function prxWebcamStartCoords(trail){const lat=Number(trail?.startLat??trail?.lat??trail?.start_lat??trail?.start?.[0]??trail?.coords?.[0]);const lng=Number(trail?.startLng??trail?.startLon??trail?.lon??trail?.lng??trail?.start_lng??trail?.start?.[1]??trail?.coords?.[1]);return Number.isFinite(lat)&&Number.isFinite(lng)?{lat,lng}:null;}
+function webcamHaversineKm(lat1,lng1,lat2,lng2){if(typeof haversineKm==='function')return haversineKm(lat1,lng1,lat2,lng2);const R=6371,dLat=(lat2-lat1)*Math.PI/180,dLng=(lng2-lng1)*Math.PI/180,a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
+function getNearestWebcams(trailLat,trailLng,maxKm=25,count=4){const cams=Array.isArray(window.MADEIRA_WEBCAMS)?window.MADEIRA_WEBCAMS:[];return cams.map(cam=>({...cam,distanzKm:webcamHaversineKm(trailLat,trailLng,cam.lat,cam.lng)})).filter(cam=>cam.distanzKm<=maxKm).sort((a,b)=>a.distanzKm-b.distanzKm).slice(0,count);}
+function makeWebcamIcon(){return L.divIcon({className:'',html:webcamIconSvg,iconSize:[28,28],iconAnchor:[14,14],popupAnchor:[0,-16]});}
+function webcamPopupHtml(cam){const thumb=webcamThumbUrl(cam);return `<div class="webcam-popup"><strong>${htmlEsc(cam.name)}</strong><span class="webcam-popup-region">${htmlEsc(cam.region||'')}</span>${thumb?`<img class="webcam-popup-thumb" src="${htmlEsc(thumb)}" alt="${htmlEsc(cam.name)}" loading="lazy">`:''}<span class="webcam-popup-desc">${htmlEsc(cam.beschreibung||'')}</span><a href="${htmlEsc(cam.watchUrl||cam.youtubeUrl||cam.embedUrl||'#')}" target="_blank" rel="noopener" class="webcam-popup-link">▶ Live ansehen</a></div>`;}
+function drawWebcams(){lgWebcams.clearLayers();if(!cfg.layers.webcams)return;const cams=Array.isArray(window.MADEIRA_WEBCAMS)?window.MADEIRA_WEBCAMS:[];const ico=makeWebcamIcon();cams.forEach(cam=>{if(!Number.isFinite(+cam.lat)||!Number.isFinite(+cam.lng))return;L.marker([+cam.lat,+cam.lng],{icon:ico,keyboard:false,pane:'poiPane'}).bindPopup(webcamPopupHtml(cam),{maxWidth:220}).addTo(lgWebcams);});}
+function prxWebcamContainerHtml(){return `<div id="webcamContainer" class="webcam-container"></div>`;}
+function renderNearbyWebcams(trail){const container=document.getElementById('webcamContainer');if(!container||!trail)return;const coords=prxWebcamStartCoords(trail);if(!coords){container.innerHTML='';return;}const nearest=getNearestWebcams(coords.lat,coords.lng,25,4);if(!nearest.length){container.innerHTML='';return;}const items=nearest.map(cam=>{const thumb=webcamThumbUrl(cam),url=cam.watchUrl||cam.youtubeUrl||cam.embedUrl||'#';return `<a href="${htmlEsc(url)}" target="_blank" rel="noopener" class="webcam-card">${thumb?`<img class="webcam-card-thumb" src="${htmlEsc(thumb)}" alt="${htmlEsc(cam.name)}" loading="lazy">`:`<div class="webcam-card-thumb webcam-card-thumb-empty">📷</div>`}<span class="webcam-card-name">${htmlEsc(cam.name)}</span><span class="webcam-card-meta">${htmlEsc(cam.region||'')} · ${cam.distanzKm.toFixed(1)} km</span><span class="webcam-card-cta">▶ Live</span></a>`;}).join('');container.innerHTML=`<div class="webcam-section"><div class="webcam-section-header"><span class="webcam-section-title">📷 Webcams in der Nähe</span><span class="webcam-section-sub">${nearest.length} Kameras</span></div><div class="webcam-grid">${items}</div></div>`;}
+
 /* V3.2.17 STATIC SEHENSWÜRDIGKEITEN-LAYER */
 const SIGHT_CAT = {
   aussicht:{emoji:'🔭',farbe:'#60A5FA',label:'Aussicht'}, natur:{emoji:'🌿',farbe:'#4ADE80',label:'Natur'}, kultur:{emoji:'🏛',farbe:'#FB923C',label:'Kultur'}, kirche:{emoji:'⛪',farbe:'#FBBF24',label:'Kirche'}, museum:{emoji:'🖼',farbe:'#C084FC',label:'Museum'}, strand:{emoji:'🏖',farbe:'#2DD4BF',label:'Strand'}, dorf:{emoji:'🏘',farbe:'#F8FAFC',label:'Dorf'}, pool:{emoji:'💧',farbe:'#38BDF8',label:'Pool'}
@@ -905,7 +925,7 @@ function openDetail(id,zoom=false){
   focusDetailPins(id);
   renderDetail();
   if(zoom){const b=routeBounds(S.selected);if(isValidBounds(b))map.flyToBounds(b,mapSafeFitOptions(true));}
-  setTimeout(()=>{focusDetailPins(id);drawElevProfile(S.selected,'elevCanvas');initWeatherForTrail(S.selected);},200);
+  setTimeout(()=>{focusDetailPins(id);drawElevProfile(S.selected,'elevCanvas');initWeatherForTrail(S.selected);renderNearbyWebcams(S.selected);},200);
 }
 function closeDetail(){ qs('#detailPanel').classList.add('hidden');S.selected=null;V329_DETAIL_CONTEXT.active=false;V329_DETAIL_CONTEXT.activeId=null;v329SyncDetailReturnButton();clearPinFocus();drawPois(); }
 function setFullscreen(on){ S.fullscreen=on;qs('#app').classList.toggle('fullscreen',on);qs('#fullscreenClose').classList.toggle('hidden',!on);closeDetail();qs('#panel').classList.add('hidden');S.panel=false;setTimeout(()=>map.invalidateSize(),200); }
@@ -1041,7 +1061,7 @@ function renderDetail(){
       <span class="d-pill" style="background:${STATUS_DEF[st].dot}22;border-color:${STATUS_DEF[st].dot}44;color:${STATUS_DEF[st].dot}">● ${STATUS_DEF[st].label}</span>
     </div>
     ${hasElev?`<div class="elev-wrap"><div class="elev-title">Höhenprofil</div><canvas id="elevCanvas" class="elev-canvas" width="300" height="100"></canvas>
-    ${prxWeatherContainerHtml()}<div class="elev-stats"><div class="elev-stat"><b>${fmt(r.elevMin||r.low)} m</b><small>Tiefpunkt</small></div><div class="elev-stat"><b>${fmt(r.elevMax||r.high)} m</b><small>Hochpunkt</small></div><div class="elev-stat"><b>↑ ${fmt(r.elevUp)} m</b><small>Aufstieg</small></div><div class="elev-stat"><b>↓ ${fmt(r.elevDown)} m</b><small>Abstieg</small></div></div></div>`:''}
+    ${prxWeatherContainerHtml()}${prxWebcamContainerHtml()}<div class="elev-stats"><div class="elev-stat"><b>${fmt(r.elevMin||r.low)} m</b><small>Tiefpunkt</small></div><div class="elev-stat"><b>${fmt(r.elevMax||r.high)} m</b><small>Hochpunkt</small></div><div class="elev-stat"><b>↑ ${fmt(r.elevUp)} m</b><small>Aufstieg</small></div><div class="elev-stat"><b>↓ ${fmt(r.elevDown)} m</b><small>Abstieg</small></div></div></div>`:''}
     <div class="p-section">Status setzen</div>
     <div class="status-btns">${stBtns}</div>
 

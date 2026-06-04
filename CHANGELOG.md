@@ -1,3 +1,11 @@
+# V3.2.18 · Webcams final
+
+- `webcam-data.js` mit 20 Madeira-Webcams eingebunden.
+- Webcam-Layer „📷 Webcams“ in Optionen/Ebenen ergänzt.
+- Webcam-Popups zeigen Thumbnail und Live-Link.
+- Detail-Sheet zeigt vier nächste Webcams im 2×2 Grid.
+- Keine Änderung an Wetter, PR-Statuslogik, Dashboard, POI-Daten, `setTab()`, `openDetail()` oder `pr-data.js`.
+
 # V3.2.17 · POI-Layer + Dashboard-Patch
 
 - `poi-data.js` mit 90 Sehenswürdigkeiten eingebunden.

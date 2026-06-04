@@ -1,10 +1,10 @@
 {
   "name": "PR Explorer Madeira",
-  "version": "V3.2.17",
+  "version": "V3.2.18",
   "date": "2026-06-04",
-  "title": "POI-Layer + Dashboard-Patch",
-  "cache": "pr-explorer-v3-2-17-poi-layer-dashboard-patch-20260604m",
-  "base": "V3.2.16",
+  "title": "Webcams final",
+  "cache": "pr-explorer-v3-2-18-webcams-final-20260604n",
+  "base": "V3.2.17",
   "activeFiles": [
     "index.html",
     "style.css",
@@ -13,8 +13,9 @@
     "events-data.js",
     "markets-data.js",
     "poi-data.js",
+    "webcam-data.js",
     "app.js",
     "service-worker.js"
   ],
-  "scope": "POI layer and vertical dashboard event expansion"
+  "scope": "webcam layer and nearest webcam detail grid"
 }

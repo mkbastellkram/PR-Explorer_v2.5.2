@@ -1,5 +1,5 @@
-const APP_VERSION = 'V3.2.17';
-const CACHE_NAME = 'pr-explorer-v3-2-17-poi-layer-dashboard-patch-20260604m';
+const APP_VERSION = 'V3.2.18';
+const CACHE_NAME = 'pr-explorer-v3-2-18-webcams-final-20260604n';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -12,6 +12,7 @@ const CORE_ASSETS = [
   './events-data.js',
   './markets-data.js',
   './poi-data.js',
+  './webcam-data.js',
   './icon-180.png',
   './icon-192.png',
   './icon-512.png',
