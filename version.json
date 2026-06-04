@@ -1,16 +1,16 @@
 {
   "name": "PR Explorer Madeira",
-  "version": "V3.2.5",
+  "version": "V3.2.8",
   "date": "2026-06-04",
-  "title": "Cache- und Startdiagnose",
-  "cache": "pr-explorer-v3-2-5-cache-startdiagnose-20260604a",
-  "base": "V3.2.3",
-  "serviceWorkerCoreAssets": "canonical paths without query strings",
+  "title": "Detail-Icon tatsächlich aktiv",
+  "cache": "pr-explorer-v3-2-8-detail-icon-aktiv-20260604d",
+  "base": "V3.2.7",
   "activeFiles": [
     "index.html",
     "style.css",
     "pr-data.js",
     "app.js",
     "service-worker.js"
-  ]
+  ],
+  "scope": "activate map icon in renderDetail"
 }
