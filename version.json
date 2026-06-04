@@ -1,10 +1,10 @@
 {
   "name": "PR Explorer Madeira",
-  "version": "V3.2.6",
+  "version": "V3.2.7",
   "date": "2026-06-04",
-  "title": "Detail-Navigation Phase 1",
-  "cache": "pr-explorer-v3-2-6-detail-nav-phase1-20260604b",
-  "base": "V3.2.5",
+  "title": "Detail-Header-Korrektur",
+  "cache": "pr-explorer-v3-2-7-detail-header-20260604c",
+  "base": "V3.2.6",
   "activeFiles": [
     "index.html",
     "style.css",
@@ -12,5 +12,5 @@
     "app.js",
     "service-worker.js"
   ],
-  "scope": "detail back button only"
+  "scope": "detail header only"
 }

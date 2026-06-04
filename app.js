@@ -1,14 +1,21 @@
 /* ============================================================
    PR Explorer · app.js · Midnight Teal Pro
-   V3.2.6: Detail-Navigation Phase 1
+   V3.2.7: Detail-Header-Korrektur
    ============================================================ */
 'use strict';
 
 const qs  = s => document.querySelector(s);
 const qsa = s => [...document.querySelectorAll(s)];
 
-const APP_VERSION = 'V3.2.6';
+const APP_VERSION = 'V3.2.7';
 const APP_CHANGELOG = [
+  { version:'V3.2.7', date:'2026-06-04', title:'Detail-Header-Korrektur', changes:[
+    'Karte-Textbutton aus der oberen Detail-Navigation entfernt, damit er nicht mehr vom Schließen-X überlagert wird.',
+    'Kartenfunktion als Icon-Button im Titelbereich der Detailansicht platziert.',
+    'Karten-Icon nutzt dieselbe Symbolsprache wie die Journal-Kartenbuttons.',
+    'Keine Änderung an Karteninitialisierung, setTab(), Service Worker, Safe-Area oder Bottom-Dock.',
+    'Startdiagnose bleibt enthalten.'
+  ]},
   { version:'V3.2.6', date:'2026-06-04', title:'Detail-Navigation Phase 1', changes:[
     'Detailansicht erhält eine eigene Rückkehr-Zeile mit „Zurück“ und optional „Karte“.',
     'Beim Öffnen eines Details wird die vorherige Hauptfläche gespeichert.',
@@ -1296,9 +1303,18 @@ function v326DetailNavHtml(r){
   const label = v326TabLabel(V326_DETAIL_NAV.fromTab);
   return `<div class="v326-detail-nav">
     <button type="button" class="v326-back" onclick="v326BackFromDetail()">← Zurück ${htmlEsc(label)}</button>
-    <button type="button" class="v326-map" onclick="v326DetailToMap('${r.id}')">Karte</button>
   </div>`;
 }
+
+function v327DetailMapIconHtml(r){
+  return `<button type="button" class="v327-detail-map-icon" aria-label="Auf Karte zeigen" onclick="v326DetailToMap('${r.id}')">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4.5 5.5 9 3.8l6 2.4 4.5-1.7v14L15 20.2l-6-2.4-4.5 1.7v-14Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/>
+      <path d="M9 3.8v14M15 6.2v14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+    </svg>
+  </button>`;
+}
+
 function v326BackFromDetail(){
   const target = V326_DETAIL_NAV.fromTab || 'map';
   // nutzt bewusst bestehendes closeDetail(), kein Umbau der Detail-/Kartenlogik

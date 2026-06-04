@@ -1,3 +1,11 @@
+# V3.2.7 · Detail-Header-Korrektur
+
+- Karte-Textbutton aus der oberen Detail-Navigation entfernt.
+- Kartenfunktion als rundes Karten-Icon im Titelbereich platziert.
+- Schließen-X wird nicht mehr vom Kartenbutton überlagert.
+- Keine Änderung an Karteninitialisierung, Navigationstiefe, Service-Worker-Prinzip, Safe-Area oder Bottom-Dock.
+- Startdiagnose bleibt enthalten.
+
 # V3.2.6 · Detail-Navigation Phase 1
 
 - Detailansicht erhält Zurück zur vorherigen Hauptfläche.

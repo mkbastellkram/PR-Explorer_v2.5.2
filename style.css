@@ -1497,3 +1497,58 @@ button,input,select,textarea,label,a,.pr-card,.card-map-btn{
     flex:1 1 auto;
   }
 }
+
+
+/* ============================================================
+   V3.2.7 Detail-Header-Korrektur
+   Karte-Button raus aus der X-Zone, Icon in den Titelbereich.
+   ============================================================ */
+
+.v326-detail-nav{
+  padding-right:56px;
+}
+.v326-detail-nav .v326-map{
+  display:none !important;
+}
+.v327-detail-title-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 54px;
+  align-items:start;
+  gap:12px;
+  margin-top:2px;
+}
+.v327-detail-title-grid h2{
+  margin-right:0 !important;
+}
+.v327-detail-map-icon{
+  width:52px;
+  height:52px;
+  border-radius:50%;
+  border:1px solid rgba(90,200,250,.22);
+  background:rgba(90,200,250,.09);
+  color:var(--teal);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 8px 22px rgba(0,0,0,.18);
+  touch-action:manipulation;
+  pointer-events:auto;
+}
+.v327-detail-map-icon svg{
+  width:28px;
+  height:28px;
+  display:block;
+}
+.v327-detail-map-icon:active{
+  transform:scale(.97);
+}
+@media(max-width:430px){
+  .v327-detail-title-grid{
+    grid-template-columns:minmax(0,1fr) 50px;
+    gap:10px;
+  }
+  .v327-detail-map-icon{
+    width:50px;
+    height:50px;
+  }
+}
