@@ -1,9 +1,10 @@
-# V3.2.11 · PR-Live-Status-Integration
+# V3.2.12 · PR-Live-Status-Fallback korrekt
 
 - `pr-status-fetcher.js` eingebunden.
-- PR-Live-Status wird nicht-blockierend nach App-Start geladen.
-- `getSt(id)` nutzt Live-Status nur als Fallback; lokale User-Auswahl bleibt vorrangig.
-- Detailansicht zeigt offiziellen Statusblock mit Status, Hinweis und Stand.
+- `getSt(id)` korrigiert: Lokaler User-Status gilt nur, wenn `prStatus[id]` wirklich gesetzt ist.
+- Live-Status wirkt als Fallback; `partial` wird korrekt auf App-Status `limited` gemappt.
+- Detailansicht zeigt offiziellen Statusblock.
+- Optionen zeigen PR-Live-Status-Diagnose mit Stichproben.
 - Service Worker cached `./pr-status-fetcher.js` ohne Query-String.
 - Keine Änderung an `setTab()`, `openDetail()`, Karteninitialisierung, Bottom-Dock oder `pr-data.js`.
 

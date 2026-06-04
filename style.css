@@ -1661,8 +1661,7 @@ button,input,select,textarea,label,a,.pr-card,.card-map-btn{
 
 
 /* ============================================================
-   V3.2.11 PR-Live-Status-Integration
-   Offizieller Status als Fallback/Detailinformation.
+   V3.2.12 PR-Live-Status-Fallback korrekt
    ============================================================ */
 .live-status-block {
   display: flex;
@@ -1675,21 +1674,16 @@ button,input,select,textarea,label,a,.pr-card,.card-map-btn{
   margin: 8px 0;
   font-size: 13px;
 }
-.live-status-head{
-  display:flex;
-  align-items:center;
-  gap:6px;
-}
-.live-status-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex:0 0 8px;
-}
-.live-status-dot.live-open { background: #34c759; }
-.live-status-dot.live-partial { background: #ff9f0a; }
-.live-status-dot.live-closed { background: #ff3b30; }
-.live-status-dot.live-unknown { background: #8e8e93; }
-.live-status-note { color: rgba(255,255,255,.55); font-size: 12px; }
+.live-status-head{ display:flex; align-items:center; gap:6px; }
+.live-status-dot { display:inline-block; width:8px; height:8px; border-radius:50%; flex:0 0 8px; }
+.live-status-dot.live-open { background:#34c759; }
+.live-status-dot.live-partial { background:#ff9f0a; }
+.live-status-dot.live-closed { background:#ff3b30; }
+.live-status-dot.live-unknown { background:#8e8e93; }
+.live-status-note { color:rgba(255,255,255,.55); font-size:12px; }
 .live-status-block small{ color:rgba(255,255,255,.45); font-size:11px; }
+.prx-status-diag table{ width:100%; border-collapse:collapse; font-size:12px; margin:8px 0; }
+.prx-status-diag th,.prx-status-diag td{ text-align:left; padding:5px 4px; border-bottom:1px solid rgba(90,200,250,.10); }
+.prx-status-diag th{ color:rgba(240,250,248,.58); font-weight:800; }
+.prx-status-diag td{ color:rgba(240,250,248,.78); }
+.prx-status-diag small{ color:rgba(240,250,248,.48); line-height:1.35; display:block; }

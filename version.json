@@ -1,9 +1,9 @@
 {
   "name": "PR Explorer Madeira",
-  "version": "V3.2.11",
+  "version": "V3.2.12",
   "date": "2026-06-04",
-  "title": "PR-Live-Status-Integration",
-  "cache": "pr-explorer-v3-2-11-pr-live-status-20260604g",
+  "title": "PR-Live-Status-Fallback korrekt",
+  "cache": "pr-explorer-v3-2-12-pr-live-status-fallback-20260604h",
   "base": "V3.2.10 reviewed",
   "activeFiles": [
     "index.html",
@@ -13,5 +13,5 @@
     "app.js",
     "service-worker.js"
   ],
-  "scope": "non-blocking PR live status integration"
+  "scope": "non-blocking PR live status with correct local fallback"
 }

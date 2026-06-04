@@ -7,13 +7,14 @@
 const qs  = s => document.querySelector(s);
 const qsa = s => [...document.querySelectorAll(s)];
 
-const APP_VERSION = 'V3.2.11';
+const APP_VERSION = 'V3.2.12';
 const APP_CHANGELOG = [
-  { version:'V3.2.11', date:'2026-06-04', title:'PR-Live-Status-Integration', changes:[
-    'pr-status-fetcher.js eingebunden und nicht-blockierend beim App-Start geladen.',
-    'Offizieller PR-Status wird als Fallback genutzt, ohne lokale User-Status zu überschreiben.',
-    'Detailansicht zeigt offiziellen Live-Status mit Hinweis und Aktualisierungsstand.',
-    'Service Worker cached pr-status-fetcher.js ohne Query-String.',
+  { version:'V3.2.12', date:'2026-06-04', title:'PR-Live-Status-Fallback korrekt', changes:[
+    'pr-status-fetcher.js eingebunden und nicht-blockierend geladen.',
+    'getSt(id) nutzt Live-Status nur dann, wenn kein lokaler User-Status in prStatus[id] gespeichert ist.',
+    'Live partial wird korrekt auf existing App-Status limited gemappt.',
+    'Detailansicht zeigt offiziellen Live-Statusblock.',
+    'Optionen enthalten zusätzliche PR-Status-Diagnose mit Stichproben.',
     'Keine Änderung an setTab(), openDetail(), Karteninitialisierung, Bottom-Dock oder pr-data.js.'
   ]},
   { version:'V3.2.10', date:'2026-06-04', title:'Syntax-Recovery & Versionskonsistenz', changes:[
@@ -389,16 +390,20 @@ const STATUS_DEF = {
   booked:  { label:'Gebucht',        dot:'#0a84ff' },
   skip:    { label:'Kein Interesse', dot:'#636366' },
 };
-function getLocalSt(id)   { return prStatus[id]||'open'; }
 function getSt(id){
-  const local = getLocalSt(id);
-  if(local && local !== 'none') return local;
+  // Lokaler User-Status hat Vorrang, aber nur wenn tatsächlich gespeichert.
+  const local = prStatus[id];
+  if(local) return local;
+
+  // Live-Status als Fallback. App-interner Status heißt "limited", nicht "restricted".
   const live = (typeof getPrStatus === 'function') ? getPrStatus(id) : null;
   if(live?.status === 'closed') return 'closed';
-  if(live?.status === 'partial') return 'restricted';
-  return local || 'none';
-}
+  if(live?.status === 'partial') return 'limited';
+  if(live?.status === 'open') return 'open';
 
+  // Default der App bleibt offen, falls kein Live-Status verfügbar ist.
+  return 'open';
+}
 function setSt(id,s) {
   prStatus[id]=s;
   saveStatus();
@@ -954,7 +959,7 @@ function renderPanel(){
   if(S.tab==='overview'){ h=`${tripBannerHtml()}<div class="stats"><div class="stat"><b>${DATA.length}</b><small>PR gesamt</small></div><div class="stat"><b>${list.length}</b><small>Sichtbar</small></div><div class="stat"><b>${favs.size}</b><small>Favoriten</small></div></div><button class="btn-primary" onclick="setTab('journal')">Alle PR anzeigen</button>`; }
   else if(S.tab==='journal'){ const sb=cfg.soloMode?`<div class="solo-banner"><span>Solo: ${cfg.soloId}</span><button onclick="exitSoloMode();renderPanel()">× Alle</button></div>`:'';h=`<div class="search-row"><input class="search-input" placeholder="PR suchen…" value="${S.query}" oninput="S.query=this.value;clearTimeout(window.__prxSearchT);window.__prxSearchT=setTimeout(()=>{renderLayers();renderPanel()},450)"></div><div class="sort-row"><span>Sortierung</span><select onchange="setSort(this.value)"><option value="id" ${cfg.sort==='id'?'selected':''}>PR-Nummer</option><option value="name" ${cfg.sort==='name'?'selected':''}>Name</option><option value="distance" ${cfg.sort==='distance'?'selected':''}>Track-Länge</option><option value="drive" ${cfg.sort==='drive'?'selected':''}>Anfahrtszeit</option><option value="elev" ${cfg.sort==='elev'?'selected':''}>Höhenmeter</option><option value="status" ${cfg.sort==='status'?'selected':''}>Status</option></select></div>${sb}<div class="list">${list.map(r=>prCardHtml(r,true)).join('')||'<div class="empty-state">Keine PR gefunden.</div>'}</div>`; }
   else if(S.tab==='trips'){ h=travelPlannerHtml(); }
-  else if(S.tab==='options'){ h=`<div class="p-section">Kartenstil</div><div class="mode-grid">${Object.keys(BASE_LABELS).map(m=>`<button class="mode-chip ${cfg.base===m?'active':''}" onclick="setBase('${m}')">${BASE_LABELS[m]}</button>`).join('')}</div><div class="p-section">Ebenen</div><div class="sg-box" style="border-radius:18px;overflow:hidden;background:rgba(90,200,250,.04);border:1px solid rgba(90,200,250,.1)">${APP_LAYER_KEYS.map(k=>`<div class="opt-row"><span style="font-size:18px;width:28px;text-align:center">${OVERLAY_ICONS[k]}</span><span class="opt-label">${OVERLAY_LABELS[k]}</span><input type="checkbox" class="s-tog" ${cfg.layers[k]?'checked':''} onchange="setLayer('${k}',this.checked)"></div>`).join('')}</div><div class="p-section">POI-Reiseziele</div><div class="vector-info-card"><b>OSM Reise-POIs</b><span>${poiStatusHtml()}</span><button class="mini-btn" onclick="refreshPoiData()">POIs laden / aktualisieren</button><div class="poi-cat-grid">${Object.entries(POI_DEF).map(([k,d])=>`<button class="poi-cat-btn ${cfg.poiCats?.[k]!==false?'active':''}" onclick="setPoiCat('${k}',!(cfg.poiCats?.['${k}']!==false));event.stopPropagation();"><span>${d.icon}</span>${d.label}</button>`).join('')}</div><button class="mini-btn" onclick="googleMapsSearch('Cafe Madeira')">Google-Maps-Suche Test</button></div><div class="p-section">Hiking-Darstellung</div><div class="vector-info-card"><b>${hikingModeLabel()}</b>${hikingModeControlsHtml('panel')}<span>${cfg.hikingMode==='raster'?'Waymarked Trails Raster-Referenz aktiv.':cfg.hikingMode==='vector'?'Editierbare OSM-Vektorlinien aktiv.':cfg.hikingMode==='compare'?'Vergleichsmodus: Raster und Vektor bewusst übereinander.':'Keine zusätzliche Hiking-Ebene aktiv.'}</span></div><div class="p-section">OSM Hiking Vektor</div><div class="vector-info-card"><b>Editierbare Rohdaten-Linien</b><span>${hikingVectorStatusHtml()}</span><button class="mini-btn" onclick="refreshHikingVectorData()">Rohdaten laden / aktualisieren</button></div><button class="btn-primary" style="margin-top:14px" onclick="fitVisible();setTab('map')">Sichtbare PR einpassen</button>${v320OptionsHtml()}${v325DiagnosticsHtml()}`; }
+  else if(S.tab==='options'){ h=`<div class="p-section">Kartenstil</div><div class="mode-grid">${Object.keys(BASE_LABELS).map(m=>`<button class="mode-chip ${cfg.base===m?'active':''}" onclick="setBase('${m}')">${BASE_LABELS[m]}</button>`).join('')}</div><div class="p-section">Ebenen</div><div class="sg-box" style="border-radius:18px;overflow:hidden;background:rgba(90,200,250,.04);border:1px solid rgba(90,200,250,.1)">${APP_LAYER_KEYS.map(k=>`<div class="opt-row"><span style="font-size:18px;width:28px;text-align:center">${OVERLAY_ICONS[k]}</span><span class="opt-label">${OVERLAY_LABELS[k]}</span><input type="checkbox" class="s-tog" ${cfg.layers[k]?'checked':''} onchange="setLayer('${k}',this.checked)"></div>`).join('')}</div><div class="p-section">POI-Reiseziele</div><div class="vector-info-card"><b>OSM Reise-POIs</b><span>${poiStatusHtml()}</span><button class="mini-btn" onclick="refreshPoiData()">POIs laden / aktualisieren</button><div class="poi-cat-grid">${Object.entries(POI_DEF).map(([k,d])=>`<button class="poi-cat-btn ${cfg.poiCats?.[k]!==false?'active':''}" onclick="setPoiCat('${k}',!(cfg.poiCats?.['${k}']!==false));event.stopPropagation();"><span>${d.icon}</span>${d.label}</button>`).join('')}</div><button class="mini-btn" onclick="googleMapsSearch('Cafe Madeira')">Google-Maps-Suche Test</button></div><div class="p-section">Hiking-Darstellung</div><div class="vector-info-card"><b>${hikingModeLabel()}</b>${hikingModeControlsHtml('panel')}<span>${cfg.hikingMode==='raster'?'Waymarked Trails Raster-Referenz aktiv.':cfg.hikingMode==='vector'?'Editierbare OSM-Vektorlinien aktiv.':cfg.hikingMode==='compare'?'Vergleichsmodus: Raster und Vektor bewusst übereinander.':'Keine zusätzliche Hiking-Ebene aktiv.'}</span></div><div class="p-section">OSM Hiking Vektor</div><div class="vector-info-card"><b>Editierbare Rohdaten-Linien</b><span>${hikingVectorStatusHtml()}</span><button class="mini-btn" onclick="refreshHikingVectorData()">Rohdaten laden / aktualisieren</button></div><button class="btn-primary" style="margin-top:14px" onclick="fitVisible();setTab('map')">Sichtbare PR einpassen</button>${v320OptionsHtml()}${v325DiagnosticsHtml()}${prxStatusDiagnosticsHtml()}`; }
   el.innerHTML=h;
 }
 
@@ -977,6 +982,7 @@ function renderDetail(){
         <div class="d-tag" style="background:${col}">${r.id} · ${fmt(r.level)}</div>
         <div class="d-name">${r.name}</div>
         <div class="d-sub">${regionLabel(r)}</div>
+        ${prxLiveStatusHtml(r.id)}
       </div>
       ${v327DetailMapIconHtml(r)}
     </div>
@@ -988,7 +994,6 @@ function renderDetail(){
       ${!isLoop?'<span class="d-pill warn-pill">⚠️ Kein Rundkurs</span>':''}
       <span class="d-pill" style="background:${STATUS_DEF[st].dot}22;border-color:${STATUS_DEF[st].dot}44;color:${STATUS_DEF[st].dot}">● ${STATUS_DEF[st].label}</span>
     </div>
-    ${prxLiveStatusHtml(r.id)}
     ${hasElev?`<div class="elev-wrap"><div class="elev-title">Höhenprofil</div><canvas id="elevCanvas" class="elev-canvas" width="300" height="100"></canvas><div class="elev-stats"><div class="elev-stat"><b>${fmt(r.elevMin||r.low)} m</b><small>Tiefpunkt</small></div><div class="elev-stat"><b>${fmt(r.elevMax||r.high)} m</b><small>Hochpunkt</small></div><div class="elev-stat"><b>↑ ${fmt(r.elevUp)} m</b><small>Aufstieg</small></div><div class="elev-stat"><b>↓ ${fmt(r.elevDown)} m</b><small>Abstieg</small></div></div></div>`:''}
     <div class="p-section">Status setzen</div>
     <div class="status-btns">${stBtns}</div>
@@ -1475,7 +1480,7 @@ function v320SyncUI(){
 
 
 
-/* V3.2.11 PR-LIVE-STATUS */
+/* V3.2.12 PR-LIVE-STATUS */
 function prxLiveStatusHtml(id){
   const live = (typeof getPrStatus === 'function') ? getPrStatus(id) : null;
   if(!live) return '';
@@ -1490,12 +1495,29 @@ function prxLiveStatusHtml(id){
 function initPrLiveStatus(){
   if(typeof fetchPrStatus !== 'function') return;
   fetchPrStatus().then(map => {
+    window.__PRX_PR_STATUS_COUNT = map ? map.size : 0;
     if(map && map.size > 0){
       try{ renderLayers(); }catch(e){ console.warn('[PR-Status] renderLayers nach Statusupdate fehlgeschlagen', e); }
       try{ renderPanel(); }catch(e){ console.warn('[PR-Status] renderPanel nach Statusupdate fehlgeschlagen', e); }
       try{ if(S.selected) renderDetail(); }catch(e){ console.warn('[PR-Status] renderDetail nach Statusupdate fehlgeschlagen', e); }
     }
   }).catch(err => console.warn('[PR-Status] fetchPrStatus fehlgeschlagen', err));
+}
+function prxStatusDiagnosticsHtml(){
+  const ids = ['PR 1.3','PR 4','PR 7','PR 10','PR 12','PR 20','PR 27','PR 28'];
+  const rows = ids.map(id => {
+    const live = (typeof getPrStatus === 'function') ? getPrStatus(id) : null;
+    const local = prStatus[id] || '';
+    const effective = getSt(id);
+    return `<tr><td>${htmlEsc(id)}</td><td>${live?htmlEsc(live.status):'—'}</td><td>${local?htmlEsc(local):'—'}</td><td>${htmlEsc(effective)}</td></tr>`;
+  }).join('');
+  const count = window.__PRX_PR_STATUS_COUNT || 0;
+  return `<div class="p-section">PR-Live-Status Diagnose</div>
+    <div class="sg-box prx-status-diag">
+      <p>Geladene Live-Status: <b>${count}</b></p>
+      <table><thead><tr><th>PR</th><th>Live</th><th>Lokal</th><th>Effektiv</th></tr></thead><tbody>${rows}</tbody></table>
+      <small>Hinweis: Lokal gespeicherte User-Auswahl hat Vorrang. Nur wenn Lokal leer ist, wirkt Live.</small>
+    </div>`;
 }
 
 /* V3.2.5 CACHE- UND STARTDIAGNOSE */
