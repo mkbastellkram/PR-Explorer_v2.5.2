@@ -1,10 +1,10 @@
 {
   "name": "PR Explorer Madeira",
-  "version": "V3.2.15",
+  "version": "V3.2.16",
   "date": "2026-06-04",
-  "title": "Dashboard Events & Märkte",
-  "cache": "pr-explorer-v3-2-15-dashboard-events-20260604k",
-  "base": "V3.2.14",
+  "title": "Dashboard Events erweitert",
+  "cache": "pr-explorer-v3-2-16-dashboard-events-expanded-20260604l",
+  "base": "V3.2.15",
   "activeFiles": [
     "index.html",
     "style.css",
@@ -15,5 +15,5 @@
     "app.js",
     "service-worker.js"
   ],
-  "scope": "home dashboard events and markets"
+  "scope": "expandable dashboard events with route and info links"
 }

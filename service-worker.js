@@ -1,5 +1,5 @@
-const APP_VERSION = 'V3.2.15';
-const CACHE_NAME = 'pr-explorer-v3-2-15-dashboard-events-20260604k';
+const APP_VERSION = 'V3.2.16';
+const CACHE_NAME = 'pr-explorer-v3-2-16-dashboard-events-expanded-20260604l';
 const CORE_ASSETS = [
   './',
   './index.html',

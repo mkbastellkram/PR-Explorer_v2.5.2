@@ -1962,3 +1962,79 @@ button,input,select,textarea,label,a,.pr-card,.card-map-btn{
   .dashboard-section-header{ align-items:flex-start; flex-direction:column; gap:3px; }
   .dashboard-event-badge{ display:none; }
 }
+
+
+/* ============================================================
+   V3.2.16 Dashboard Events erweitert
+   Expand-Karten mit Route/Info-Aktionen.
+   ============================================================ */
+.dashboard-event-item{
+  background:rgba(255,255,255,0.04);
+  border-radius:10px;
+  border:1px solid transparent;
+  overflow:hidden;
+  transition:border-color .15s ease, background .15s ease;
+}
+.dashboard-event-item.expanded{
+  border-color:rgba(45,212,191,.30);
+  background:rgba(45,212,191,.045);
+}
+.dashboard-event-header{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:9px 8px;
+  cursor:pointer;
+  min-height:44px;
+  -webkit-tap-highlight-color:transparent;
+}
+.dashboard-event-right{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:4px;
+  flex-shrink:0;
+}
+.dashboard-event-chevron{
+  font-size:18px;
+  color:rgba(255,255,255,.32);
+  transition:transform .2s ease;
+  line-height:1;
+}
+.dashboard-event-expand{
+  padding:0 10px 11px 38px;
+}
+.dashboard-event-desc{
+  font-size:12px;
+  color:rgba(255,255,255,.66);
+  line-height:1.5;
+  margin:0 0 10px;
+}
+.dashboard-event-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.dashboard-event-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  padding:7px 12px;
+  border-radius:9px;
+  font-size:12px;
+  font-weight:800;
+  text-decoration:none;
+  min-height:36px;
+  -webkit-tap-highlight-color:transparent;
+}
+.dashboard-event-btn.maps{
+  background:rgba(45,212,191,.15);
+  color:#2DD4BF;
+  border:1px solid rgba(45,212,191,.35);
+}
+.dashboard-event-btn.info{
+  background:rgba(255,255,255,.06);
+  color:rgba(255,255,255,.68);
+  border:1px solid rgba(255,255,255,.12);
+}

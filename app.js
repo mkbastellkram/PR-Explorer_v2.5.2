@@ -7,8 +7,15 @@
 const qs  = s => document.querySelector(s);
 const qsa = s => [...document.querySelectorAll(s)];
 
-const APP_VERSION = 'V3.2.15';
+const APP_VERSION = 'V3.2.16';
 const APP_CHANGELOG = [
+  { version:'V3.2.16', date:'2026-06-04', title:'Dashboard Events erweitert', changes:[
+    'Eventdaten um Koordinaten, Info-Links und Laufzeit-Maps-URLs erweitert.',
+    'Eventkarten im Dashboard sind aufklappbar.',
+    'Aufgeklappte Events zeigen Beschreibung, Route-Button und Mehr-Info-Link.',
+    'Wochenmärkte und KI-Zusammenfassung bleiben erhalten.',
+    'Keine Änderung an Karte, Detail, Wetter, PR-Statuslogik, setTab(), openDetail() oder pr-data.js.'
+  ]},
   { version:'V3.2.15', date:'2026-06-04', title:'Dashboard Events & Märkte', changes:[
     'Home/Übersicht erhält Dashboard-Sektion für Events der nächsten 5 Tage.',
     'Statische Event- und Marktdaten als events-data.js und markets-data.js eingebunden.',
@@ -1614,13 +1621,25 @@ function initDashboard(){
   const eventsHtml = events.length ? events.slice(0,4).map(e=>{
     const end = prxParseDateLocal(e.ende);
     const endTxt = end ? end.toLocaleDateString('de-DE',{day:'numeric',month:'short'}) : '';
-    return `<div class="dashboard-event-item">
-      <span class="dashboard-event-emoji">${htmlEsc(e.emoji || '•')}</span>
-      <div class="dashboard-event-info">
-        <span class="dashboard-event-name">${htmlEsc(e.name || '')}</span>
-        <span class="dashboard-event-meta">${htmlEsc(e.ort || '')}${endTxt ? ` · bis ${htmlEsc(endTxt)}` : ''}</span>
+    return `<div class="dashboard-event-item" data-id="${htmlEsc(e.id || '')}">
+      <div class="dashboard-event-header" role="button" tabindex="0">
+        <span class="dashboard-event-emoji">${htmlEsc(e.emoji || '•')}</span>
+        <div class="dashboard-event-info">
+          <span class="dashboard-event-name">${htmlEsc(e.name || '')}</span>
+          <span class="dashboard-event-meta">${htmlEsc(e.ort || '')}${endTxt ? ` · bis ${htmlEsc(endTxt)}` : ''}</span>
+        </div>
+        <div class="dashboard-event-right">
+          <span class="dashboard-event-badge ${htmlEsc(e.kategorie || 'event')}">${htmlEsc(e.kategorie || 'event')}</span>
+          <span class="dashboard-event-chevron">›</span>
+        </div>
       </div>
-      <span class="dashboard-event-badge ${htmlEsc(e.kategorie || 'event')}">${htmlEsc(e.kategorie || 'event')}</span>
+      <div class="dashboard-event-expand" style="display:none">
+        <p class="dashboard-event-desc">${htmlEsc(e.beschreibung || '')}</p>
+        <div class="dashboard-event-actions">
+          ${e.mapsUrl ? `<a href="${htmlEsc(e.mapsUrl)}" class="dashboard-event-btn maps" target="_blank" rel="noopener">📍 Route</a>` : ''}
+          ${e.infoUrl ? `<a href="${htmlEsc(e.infoUrl)}" class="dashboard-event-btn info" target="_blank" rel="noopener">ℹ️ Mehr Info</a>` : ''}
+        </div>
+      </div>
     </div>`;
   }).join('') : '<p class="dashboard-empty">Keine bekannten Events in den nächsten 5 Tagen.</p>';
 
@@ -1665,6 +1684,23 @@ function initDashboard(){
       <div class="dashboard-markets-list">${marketsHtml}</div>
     </div>
   `;
+
+  container.querySelectorAll('.dashboard-event-item').forEach(el=>{
+    const header = el.querySelector('.dashboard-event-header');
+    const toggle = ()=>{
+      const expand = el.querySelector('.dashboard-event-expand');
+      const chevron = el.querySelector('.dashboard-event-chevron');
+      if(!expand) return;
+      const open = expand.style.display === 'none';
+      expand.style.display = open ? 'block' : 'none';
+      if(chevron) chevron.style.transform = open ? 'rotate(90deg)' : 'none';
+      el.classList.toggle('expanded', open);
+    };
+    header?.addEventListener('click', toggle);
+    header?.addEventListener('keydown', ev=>{
+      if(ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); toggle(); }
+    });
+  });
 
   document.getElementById('aiSummaryBtn')?.addEventListener('click', async()=>{
     const btn = document.getElementById('aiSummaryBtn');

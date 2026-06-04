@@ -1,3 +1,11 @@
+# V3.2.16 · Dashboard Events erweitert
+
+- `events-data.js` um Koordinaten und `infoUrl` erweitert.
+- `mapsUrl` wird zur Laufzeit generiert: iOS Apple Maps, sonst Google Maps.
+- Eventkarten im Dashboard sind per Tap aufklappbar.
+- Aufgeklappte Events zeigen Beschreibung, Route-Button und Mehr-Info-Link.
+- Keine Änderung an Karte, Detail, Wetter, PR-Statuslogik, `setTab()`, `openDetail()` oder `pr-data.js`.
+
 # V3.2.15 · Dashboard Events & Märkte
 
 - `events-data.js` und `markets-data.js` eingebunden.
