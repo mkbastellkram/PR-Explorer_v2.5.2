@@ -7,8 +7,14 @@
 const qs  = s => document.querySelector(s);
 const qsa = s => [...document.querySelectorAll(s)];
 
-const APP_VERSION = 'V3.2.9';
+const APP_VERSION = 'V3.2.10';
 const APP_CHANGELOG = [
+  { version:'V3.2.10', date:'2026-06-04', title:'Syntax-Recovery & Versionskonsistenz', changes:[
+    'Kritischer Syntaxfehler in Funktionsdefinition v327DetailMapIconHtml behoben (ungültiger Bezeichner mit Kommas).',
+    'Comma-Operator in renderDetail() Template-String behoben: Karten-Icon wird jetzt korrekt mit v327DetailMapIconHtml(r) gerendert.',
+    'APP_VERSION, version.json, manifest.webmanifest, service-worker.js und index.html auf V3.2.10 aktualisiert.',
+    'Keine Änderung an Karteninitialisierung, Navigation, Detail-Logik, Service-Worker-Strategie oder CSS.'
+  ]},
   { version:'V3.2.9', date:'2026-06-04', title:'Detail-Karte-Rückkehr', changes:[
     'Karten-Icon in der Detailansicht wechselt zur Karte und merkt sich den aktiven Detail-Kontext.',
     'Auf der Karte erscheint ein kleiner Detail-Rückkehrbutton, solange ein Detail-Kontext aktiv ist.',
@@ -956,7 +962,7 @@ function renderDetail(){
         <div class="d-name">${r.name}</div>
         <div class="d-sub">${regionLabel(r)}</div>
       </div>
-      ${v327DetailMapIconHtml,v329ReturnToDetail,v329SyncDetailReturnButton(r)}
+      ${v327DetailMapIconHtml(r)}
     </div>
     <div class="d-meta">
       <span class="d-pill teal-pill">📏 ${fmtKm(r.distanceKm)}</span>
@@ -1364,7 +1370,7 @@ function v326DetailNavHtml(r){
   </div>`;
 }
 
-function v327DetailMapIconHtml,v329ReturnToDetail,v329SyncDetailReturnButton(r){
+function v327DetailMapIconHtml(r){
   return `<button type="button" class="v327-detail-map-icon" aria-label="Auf Karte zeigen" onclick="v326DetailToMap('${r.id}')">
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M4.5 5.5 9 3.8l6 2.4 4.5-1.7v14L15 20.2l-6-2.4-4.5 1.7v-14Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/>

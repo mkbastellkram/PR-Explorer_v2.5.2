@@ -1,10 +1,10 @@
 {
   "name": "PR Explorer Madeira",
-  "version": "V3.2.9",
+  "version": "V3.2.10",
   "date": "2026-06-04",
-  "title": "Detail-Karte-Rückkehr",
-  "cache": "pr-explorer-v3-2-9-detail-return-20260604e",
-  "base": "V3.2.8",
+  "title": "Syntax-Recovery & Versionskonsistenz",
+  "cache": "pr-explorer-v3-2-10-syntax-fix-20260604",
+  "base": "V3.2.9",
   "activeFiles": [
     "index.html",
     "style.css",
@@ -12,5 +12,5 @@
     "app.js",
     "service-worker.js"
   ],
-  "scope": "detail map return button only"
+  "scope": "syntax fix only, no functional changes"
 }
