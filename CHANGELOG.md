@@ -1,3 +1,13 @@
+# V3.2.13 · Manueller PR-Status im Journal
+
+- Automatischer PR-Live-Status-Abruf beim App-Start deaktiviert.
+- Journal zeigt oben eine Statuskarte mit letztem Abruf und Aktualisieren-Button.
+- Statushinweis wird warnend dargestellt, wenn der letzte Abruf älter als 24 Stunden ist.
+- Button „Status aktualisieren“ lädt den offiziellen Status bewusst neu.
+- Live-Status-Diagnose in Optionen bleibt erhalten.
+- Lokale User-Status bleiben vorrangig.
+- Keine Änderung an `setTab()`, `openDetail()`, Karteninitialisierung, Bottom-Dock oder `pr-data.js`.
+
 # V3.2.12 · PR-Live-Status-Fallback korrekt
 
 - `pr-status-fetcher.js` eingebunden.

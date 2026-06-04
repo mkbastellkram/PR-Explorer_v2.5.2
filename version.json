@@ -1,10 +1,10 @@
 {
   "name": "PR Explorer Madeira",
-  "version": "V3.2.12",
+  "version": "V3.2.13",
   "date": "2026-06-04",
-  "title": "PR-Live-Status-Fallback korrekt",
-  "cache": "pr-explorer-v3-2-12-pr-live-status-fallback-20260604h",
-  "base": "V3.2.10 reviewed",
+  "title": "Manueller PR-Status im Journal",
+  "cache": "pr-explorer-v3-2-13-manual-pr-status-20260604i",
+  "base": "V3.2.12",
   "activeFiles": [
     "index.html",
     "style.css",
@@ -13,5 +13,5 @@
     "app.js",
     "service-worker.js"
   ],
-  "scope": "non-blocking PR live status with correct local fallback"
+  "scope": "manual PR status fetch in journal"
 }

@@ -1,5 +1,5 @@
-const APP_VERSION = 'V3.2.12';
-const CACHE_NAME = 'pr-explorer-v3-2-12-pr-live-status-fallback-20260604h';
+const APP_VERSION = 'V3.2.13';
+const CACHE_NAME = 'pr-explorer-v3-2-13-manual-pr-status-20260604i';
 const CORE_ASSETS = [
   './',
   './index.html',

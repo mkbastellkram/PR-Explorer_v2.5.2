@@ -7,8 +7,16 @@
 const qs  = s => document.querySelector(s);
 const qsa = s => [...document.querySelectorAll(s)];
 
-const APP_VERSION = 'V3.2.12';
+const APP_VERSION = 'V3.2.13';
 const APP_CHANGELOG = [
+  { version:'V3.2.13', date:'2026-06-04', title:'Manueller PR-Status im Journal', changes:[
+    'Automatischer PR-Live-Status-Abruf beim App-Start deaktiviert.',
+    'Journal erhält oben eine Status-Abrufkarte mit letztem Abruf und Aktualisieren-Button.',
+    'Statushinweis wird warnend dargestellt, wenn der letzte Abruf älter als 24 Stunden ist.',
+    'Manueller Abruf aktualisiert Live-Status, Pins, Journal, Panel und Detailansicht.',
+    'Lokale User-Status bleiben weiterhin vorrangig; Live-Status wirkt nur als Fallback.',
+    'Keine Änderung an setTab(), openDetail(), Karteninitialisierung, Bottom-Dock oder pr-data.js.'
+  ]},
   { version:'V3.2.12', date:'2026-06-04', title:'PR-Live-Status-Fallback korrekt', changes:[
     'pr-status-fetcher.js eingebunden und nicht-blockierend geladen.',
     'getSt(id) nutzt Live-Status nur dann, wenn kein lokaler User-Status in prStatus[id] gespeichert ist.',
@@ -834,7 +842,7 @@ function focusDetailPins(id){
 }
 function clearPinFocus(){ lgMarkers.eachLayer(m=>{const el=m.getElement();if(el){el.classList.remove('pin-sel','pin-hidden');}}); }
 function highlightPin(id){ focusDetailPins(id); }
-function soloOnMap(id){ cfg.soloMode=true;cfg.soloId=id;cfg.layers.tracks=true;cfg.layers.drive=true;cfg.layers.markers=true;saveCfg();renderLayers();initPrLiveStatus();setTab('map');const r=DATA.find(x=>x.id===id);if(r){setTimeout(()=>{const b=routeBounds(r);if(isValidBounds(b))map.flyToBounds(b,mapSafeFitOptions(false));toast(`${id} · Tippe Karte für alle PR`);},200);} }
+function soloOnMap(id){ cfg.soloMode=true;cfg.soloId=id;cfg.layers.tracks=true;cfg.layers.drive=true;cfg.layers.markers=true;saveCfg();renderLayers();setTab('map');const r=DATA.find(x=>x.id===id);if(r){setTimeout(()=>{const b=routeBounds(r);if(isValidBounds(b))map.flyToBounds(b,mapSafeFitOptions(false));toast(`${id} · Tippe Karte für alle PR`);},200);} }
 function exitSoloMode(){ cfg.soloMode=false;cfg.soloId=null;saveCfg();renderLayers(); }
 
 /* UI */
@@ -957,7 +965,7 @@ function renderPanel(){
   if(S.tab==='test'){renderTestTab();return;}
   const list=filtered();let h='';
   if(S.tab==='overview'){ h=`${tripBannerHtml()}<div class="stats"><div class="stat"><b>${DATA.length}</b><small>PR gesamt</small></div><div class="stat"><b>${list.length}</b><small>Sichtbar</small></div><div class="stat"><b>${favs.size}</b><small>Favoriten</small></div></div><button class="btn-primary" onclick="setTab('journal')">Alle PR anzeigen</button>`; }
-  else if(S.tab==='journal'){ const sb=cfg.soloMode?`<div class="solo-banner"><span>Solo: ${cfg.soloId}</span><button onclick="exitSoloMode();renderPanel()">× Alle</button></div>`:'';h=`<div class="search-row"><input class="search-input" placeholder="PR suchen…" value="${S.query}" oninput="S.query=this.value;clearTimeout(window.__prxSearchT);window.__prxSearchT=setTimeout(()=>{renderLayers();renderPanel()},450)"></div><div class="sort-row"><span>Sortierung</span><select onchange="setSort(this.value)"><option value="id" ${cfg.sort==='id'?'selected':''}>PR-Nummer</option><option value="name" ${cfg.sort==='name'?'selected':''}>Name</option><option value="distance" ${cfg.sort==='distance'?'selected':''}>Track-Länge</option><option value="drive" ${cfg.sort==='drive'?'selected':''}>Anfahrtszeit</option><option value="elev" ${cfg.sort==='elev'?'selected':''}>Höhenmeter</option><option value="status" ${cfg.sort==='status'?'selected':''}>Status</option></select></div>${sb}<div class="list">${list.map(r=>prCardHtml(r,true)).join('')||'<div class="empty-state">Keine PR gefunden.</div>'}</div>`; }
+  else if(S.tab==='journal'){ const sb=cfg.soloMode?`<div class="solo-banner"><span>Solo: ${cfg.soloId}</span><button onclick="exitSoloMode();renderPanel()">× Alle</button></div>`:'';h=`${prxManualStatusCardHtml()}<div class="search-row"><input class="search-input" placeholder="PR suchen…" value="${S.query}" oninput="S.query=this.value;clearTimeout(window.__prxSearchT);window.__prxSearchT=setTimeout(()=>{renderLayers();renderPanel()},450)"></div><div class="sort-row"><span>Sortierung</span><select onchange="setSort(this.value)"><option value="id" ${cfg.sort==='id'?'selected':''}>PR-Nummer</option><option value="name" ${cfg.sort==='name'?'selected':''}>Name</option><option value="distance" ${cfg.sort==='distance'?'selected':''}>Track-Länge</option><option value="drive" ${cfg.sort==='drive'?'selected':''}>Anfahrtszeit</option><option value="elev" ${cfg.sort==='elev'?'selected':''}>Höhenmeter</option><option value="status" ${cfg.sort==='status'?'selected':''}>Status</option></select></div>${sb}<div class="list">${list.map(r=>prCardHtml(r,true)).join('')||'<div class="empty-state">Keine PR gefunden.</div>'}</div>`; }
   else if(S.tab==='trips'){ h=travelPlannerHtml(); }
   else if(S.tab==='options'){ h=`<div class="p-section">Kartenstil</div><div class="mode-grid">${Object.keys(BASE_LABELS).map(m=>`<button class="mode-chip ${cfg.base===m?'active':''}" onclick="setBase('${m}')">${BASE_LABELS[m]}</button>`).join('')}</div><div class="p-section">Ebenen</div><div class="sg-box" style="border-radius:18px;overflow:hidden;background:rgba(90,200,250,.04);border:1px solid rgba(90,200,250,.1)">${APP_LAYER_KEYS.map(k=>`<div class="opt-row"><span style="font-size:18px;width:28px;text-align:center">${OVERLAY_ICONS[k]}</span><span class="opt-label">${OVERLAY_LABELS[k]}</span><input type="checkbox" class="s-tog" ${cfg.layers[k]?'checked':''} onchange="setLayer('${k}',this.checked)"></div>`).join('')}</div><div class="p-section">POI-Reiseziele</div><div class="vector-info-card"><b>OSM Reise-POIs</b><span>${poiStatusHtml()}</span><button class="mini-btn" onclick="refreshPoiData()">POIs laden / aktualisieren</button><div class="poi-cat-grid">${Object.entries(POI_DEF).map(([k,d])=>`<button class="poi-cat-btn ${cfg.poiCats?.[k]!==false?'active':''}" onclick="setPoiCat('${k}',!(cfg.poiCats?.['${k}']!==false));event.stopPropagation();"><span>${d.icon}</span>${d.label}</button>`).join('')}</div><button class="mini-btn" onclick="googleMapsSearch('Cafe Madeira')">Google-Maps-Suche Test</button></div><div class="p-section">Hiking-Darstellung</div><div class="vector-info-card"><b>${hikingModeLabel()}</b>${hikingModeControlsHtml('panel')}<span>${cfg.hikingMode==='raster'?'Waymarked Trails Raster-Referenz aktiv.':cfg.hikingMode==='vector'?'Editierbare OSM-Vektorlinien aktiv.':cfg.hikingMode==='compare'?'Vergleichsmodus: Raster und Vektor bewusst übereinander.':'Keine zusätzliche Hiking-Ebene aktiv.'}</span></div><div class="p-section">OSM Hiking Vektor</div><div class="vector-info-card"><b>Editierbare Rohdaten-Linien</b><span>${hikingVectorStatusHtml()}</span><button class="mini-btn" onclick="refreshHikingVectorData()">Rohdaten laden / aktualisieren</button></div><button class="btn-primary" style="margin-top:14px" onclick="fitVisible();setTab('map')">Sichtbare PR einpassen</button>${v320OptionsHtml()}${v325DiagnosticsHtml()}${prxStatusDiagnosticsHtml()}`; }
   el.innerHTML=h;
@@ -1503,6 +1511,64 @@ function initPrLiveStatus(){
     }
   }).catch(err => console.warn('[PR-Status] fetchPrStatus fehlgeschlagen', err));
 }
+
+/* V3.2.13 MANUELLER PR-STATUS IM JOURNAL */
+function prxStatusCacheInfo(){
+  try{
+    const raw = localStorage.getItem('prStatusCache');
+    if(!raw) return {ts:null,count:0,ageMs:null,stale:true,text:'Noch nicht abgerufen'};
+    const parsed = JSON.parse(raw);
+    const ts = parsed.ts || null;
+    const count = parsed.data ? Object.keys(parsed.data).length : 0;
+    const ageMs = ts ? Date.now() - ts : null;
+    const stale = !ts || ageMs > 24*60*60*1000;
+    return {ts,count,ageMs,stale,text:ts ? new Date(ts).toLocaleString('de-DE') : 'Noch nicht abgerufen'};
+  }catch(e){
+    return {ts:null,count:0,ageMs:null,stale:true,text:'Cache nicht lesbar'};
+  }
+}
+function prxManualStatusCardHtml(){
+  const info = prxStatusCacheInfo();
+  const liveCount = window.__PRX_PR_STATUS_COUNT || info.count || 0;
+  const cls = info.stale ? 'stale' : 'fresh';
+  const age = info.ageMs==null ? '' : ` · Alter: ${Math.round(info.ageMs/3600000)} h`;
+  return `<div class="journal-status-fetch ${cls}">
+    <div class="jsf-main">
+      <div class="jsf-title">Offizieller PR-Status</div>
+      <div class="jsf-sub">Letzter Abruf: <b>${htmlEsc(info.text)}</b>${htmlEsc(age)}</div>
+      <div class="jsf-sub">Geladene Status: <b>${liveCount}</b></div>
+    </div>
+    <button type="button" onclick="prxManualFetchStatus()">Status aktualisieren</button>
+  </div>`;
+}
+function prxManualFetchStatus(){
+  if(typeof fetchPrStatus !== 'function'){
+    toast('Statusmodul nicht geladen');
+    return;
+  }
+  const oldCache = localStorage.getItem('prStatusCache');
+  try{ localStorage.removeItem('prStatusCache'); }catch(_){}
+  toast('PR-Status wird abgerufen …');
+  fetchPrStatus().then(map=>{
+    if((!map || map.size===0) && oldCache){
+      try{ localStorage.setItem('prStatusCache', oldCache); }catch(_){}
+      return fetchPrStatus();
+    }
+    return map;
+  }).then(map=>{
+    window.__PRX_PR_STATUS_COUNT = map ? map.size : 0;
+    renderLayers();
+    renderPanel();
+    if(S.selected) renderDetail();
+    toast(map && map.size ? `PR-Status aktualisiert: ${map.size}` : 'Kein Live-Status geladen');
+  }).catch(err=>{
+    if(oldCache){ try{ localStorage.setItem('prStatusCache', oldCache); }catch(_){} }
+    console.warn('[PR-Status] Manueller Abruf fehlgeschlagen', err);
+    toast('PR-Status konnte nicht geladen werden');
+    renderPanel();
+  });
+}
+
 function prxStatusDiagnosticsHtml(){
   const ids = ['PR 1.3','PR 4','PR 7','PR 10','PR 12','PR 20','PR 27','PR 28'];
   const rows = ids.map(id => {
