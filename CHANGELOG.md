@@ -1,3 +1,12 @@
+# V3.2.6 · Detail-Navigation Phase 1
+
+- Detailansicht erhält Zurück zur vorherigen Hauptfläche.
+- Herkunft wird beim Öffnen eines Details gespeichert.
+- Zurück schließt nur das Detail und stellt Journal/Reisen/Optionen/Karte wieder her.
+- Button „Karte“ fokussiert den aktiven PR auf der Karte, ohne Solo-/Parkmodus.
+- Keine Änderung an Karteninitialisierung, setTab, Safe-Area, Bottom-Dock oder Service-Worker-Prinzip.
+- Startdiagnose aus V3.2.5 bleibt enthalten.
+
 # V3.2.5 · Cache- und Startdiagnose
 
 - Service Worker CORE_ASSETS ohne Query-Strings.

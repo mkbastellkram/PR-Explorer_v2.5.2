@@ -1,16 +1,16 @@
 {
   "name": "PR Explorer Madeira",
-  "version": "V3.2.5",
+  "version": "V3.2.6",
   "date": "2026-06-04",
-  "title": "Cache- und Startdiagnose",
-  "cache": "pr-explorer-v3-2-5-cache-startdiagnose-20260604a",
-  "base": "V3.2.3",
-  "serviceWorkerCoreAssets": "canonical paths without query strings",
+  "title": "Detail-Navigation Phase 1",
+  "cache": "pr-explorer-v3-2-6-detail-nav-phase1-20260604b",
+  "base": "V3.2.5",
   "activeFiles": [
     "index.html",
     "style.css",
     "pr-data.js",
     "app.js",
     "service-worker.js"
-  ]
+  ],
+  "scope": "detail back button only"
 }
