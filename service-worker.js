@@ -1,5 +1,5 @@
-const APP_VERSION = 'V3.2.16';
-const CACHE_NAME = 'pr-explorer-v3-2-16-dashboard-events-expanded-20260604l';
+const APP_VERSION = 'V3.2.17';
+const CACHE_NAME = 'pr-explorer-v3-2-17-poi-layer-dashboard-patch-20260604m';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -11,6 +11,7 @@ const CORE_ASSETS = [
   './pr-status-fetcher.js',
   './events-data.js',
   './markets-data.js',
+  './poi-data.js',
   './icon-180.png',
   './icon-192.png',
   './icon-512.png',

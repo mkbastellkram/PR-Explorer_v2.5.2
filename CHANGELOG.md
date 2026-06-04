@@ -1,3 +1,11 @@
+# V3.2.17 · POI-Layer + Dashboard-Patch
+
+- `poi-data.js` mit 90 Sehenswürdigkeiten eingebunden.
+- Neuer Layer „🏛 Sehenswürdigkeiten“ in Optionen/Ebenen.
+- POI-Popups mit Route und Wikipedia-Link.
+- Dashboard-Eventkarten öffnen vertikal lesbar.
+- Detail-Sheet-Unterwegs/KML bewusst noch nicht integriert.
+
 # V3.2.16 · Dashboard Events erweitert
 
 - `events-data.js` um Koordinaten und `infoUrl` erweitert.

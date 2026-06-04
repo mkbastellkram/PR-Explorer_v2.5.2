@@ -7,8 +7,14 @@
 const qs  = s => document.querySelector(s);
 const qsa = s => [...document.querySelectorAll(s)];
 
-const APP_VERSION = 'V3.2.16';
+const APP_VERSION = 'V3.2.17';
 const APP_CHANGELOG = [
+  { version:'V3.2.17', date:'2026-06-04', title:'POI-Layer + Dashboard-Patch', changes:[
+    'poi-data.js mit 90 Sehenswürdigkeiten eingebunden.',
+    'Leaflet-Layer Sehenswürdigkeiten mit kategorisierten Markern ergänzt.',
+    'Dashboard-Eventkarten öffnen jetzt vertikal lesbar statt seitlich abgeschnitten.',
+    'Detail-Sheet-Unterwegs/KML/Wikipedia-Thumbnail bewusst noch nicht integriert.'
+  ]},
   { version:'V3.2.16', date:'2026-06-04', title:'Dashboard Events erweitert', changes:[
     'Eventdaten um Koordinaten, Info-Links und Laufzeit-Maps-URLs erweitert.',
     'Eventkarten im Dashboard sind aufklappbar.',
@@ -272,7 +278,7 @@ let cfg = Object.assign({
   splitKmlJumps:true, kmlJumpKm:1.8,
   tripStart:null, tripEnd:null, base:'topo', sort:'id',
   soloMode:false, soloId:null,
-  layers:{ tracks:true, drive:true, heat:false, markers:true, regions:false, hiking:false, hikingVector:false, pois:false },
+  layers:{ tracks:true, drive:true, heat:false, markers:true, regions:false, hiking:false, hikingVector:false, pois:false, sights:false },
   hikingMode:'off',
   hikingVectorLabels:true, hikingVectorWeight:5.5, hikingVectorOpacity:.75,
   hikingVectorOutline:'auto', hikingVectorOutlineWeight:3, hikingVectorColor:'#34c759', hikingVectorColorMode:'uniform',
@@ -512,15 +518,15 @@ const OVERLAY_TILES = {
 };
 const OVERLAY_LABELS = {
   tracks:'GPX Wanderwege', drive:'KML Anfahrten', heat:'Heatmap', markers:'PR-Pins',
-  pois:'OSM Reise-POIs', hiking:'Hiking Referenzkarte', hikingVector:'Editierbare Hiking-Linien'
+  pois:'OSM Reise-POIs', sights:'Sehenswürdigkeiten', hiking:'Hiking Referenzkarte', hikingVector:'Editierbare Hiking-Linien'
 };
-const OVERLAY_ICONS = { tracks:'🗺️', drive:'🚗', heat:'🔥', markers:'📍', regions:'🌐', pois:'☕', hiking:'🥾', hikingVector:'〰️' };
-const APP_LAYER_KEYS = ['tracks','drive','heat','markers','pois'];
+const OVERLAY_ICONS = { tracks:'🗺️', drive:'🚗', heat:'🔥', markers:'📍', regions:'🌐', pois:'☕', sights:'🏛', hiking:'🥾', hikingVector:'〰️' };
+const APP_LAYER_KEYS = ['tracks','drive','heat','markers','pois','sights'];
 if(!TILES[cfg.base]) cfg.base='topo';
 APP_LAYER_KEYS.forEach(k=>{ if(typeof cfg.layers[k] !== 'boolean') cfg.layers[k]=false; });
 ['tracks','drive','markers'].forEach(k=>{ if(typeof cfg.layers[k] !== 'boolean') cfg.layers[k]=true; });
 let activeBase = TILES[cfg.base||'topo'].addTo(map); if(cfg.base==='hybrid') HYBRID_LABELS.addTo(map);
-const lgTrack=L.layerGroup().addTo(map), lgDrive=L.layerGroup().addTo(map), lgHeat=L.layerGroup().addTo(map), lgHikingCasing=L.layerGroup().addTo(map), lgHikingCore=L.layerGroup().addTo(map), lgHikingLabels=L.layerGroup().addTo(map), lgMarkers=L.layerGroup().addTo(map), lgPois=L.layerGroup().addTo(map), lgHome=L.layerGroup().addTo(map), lgRegions=L.layerGroup().addTo(map);
+const lgTrack=L.layerGroup().addTo(map), lgDrive=L.layerGroup().addTo(map), lgHeat=L.layerGroup().addTo(map), lgHikingCasing=L.layerGroup().addTo(map), lgHikingCore=L.layerGroup().addTo(map), lgHikingLabels=L.layerGroup().addTo(map), lgMarkers=L.layerGroup().addTo(map), lgPois=L.layerGroup().addTo(map), lgSights=L.layerGroup().addTo(map), lgHome=L.layerGroup().addTo(map), lgRegions=L.layerGroup().addTo(map);
 let locMarker=null, locCircle=null;
 
 function syncOverlayTiles(){
@@ -539,7 +545,7 @@ function setBase(b){
   if(b==='hybrid') HYBRID_LABELS.addTo(map);
   syncOverlayTiles(); renderHikingVectorLayers(); renderPanel();
 }
-function setLayer(k,on){ cfg.layers[k]=!!on; if(k==='regions')toggleRegions(); else if(k==='pois'){ togglePois(); } else if(k==='hiking'||k==='hikingVector'){ cfg.hikingMode = cfg.layers.hikingVector ? 'vector' : (cfg.layers.hiking ? 'raster' : 'off'); syncOverlayTiles(); renderHikingVectorLayers(); } else if(OVERLAY_TILES[k])syncOverlayTiles(); else renderLayers(); saveCfg(); renderPanel(); }
+function setLayer(k,on){ cfg.layers[k]=!!on; if(k==='regions')toggleRegions(); else if(k==='pois'){ togglePois(); } else if(k==='sights'){ drawStaticSights(); } else if(k==='hiking'||k==='hikingVector'){ cfg.hikingMode = cfg.layers.hikingVector ? 'vector' : (cfg.layers.hiking ? 'raster' : 'off'); syncOverlayTiles(); renderHikingVectorLayers(); } else if(OVERLAY_TILES[k])syncOverlayTiles(); else renderLayers(); saveCfg(); renderPanel(); }
 function setHikingMode(mode){
   cfg.hikingMode = ['off','raster','vector','compare'].includes(mode) ? mode : 'off';
   applyHikingModeToLegacyLayers();
@@ -802,6 +808,16 @@ function togglePois(){ if(cfg.layers.pois){ if(!poiGeojson) refreshPoiData(); el
 function setPoiCat(cat,on){ if(!cfg.poiCats)cfg.poiCats={}; cfg.poiCats[cat]=!!on; saveCfg(); drawPois(); renderSettings(); renderPanel(); }
 function poiStatusHtml(){ const n=poiGeojson?.features?.length||0; const d=poiGeojson?.loadedAt?new Date(poiGeojson.loadedAt).toLocaleString('de',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'}):'nicht geladen'; return `${n} POIs · ${d}${poiError?` · Fehler: ${poiError}`:''}`; }
 
+
+/* V3.2.17 STATIC SEHENSWÜRDIGKEITEN-LAYER */
+const SIGHT_CAT = {
+  aussicht:{emoji:'🔭',farbe:'#60A5FA',label:'Aussicht'}, natur:{emoji:'🌿',farbe:'#4ADE80',label:'Natur'}, kultur:{emoji:'🏛',farbe:'#FB923C',label:'Kultur'}, kirche:{emoji:'⛪',farbe:'#FBBF24',label:'Kirche'}, museum:{emoji:'🖼',farbe:'#C084FC',label:'Museum'}, strand:{emoji:'🏖',farbe:'#2DD4BF',label:'Strand'}, dorf:{emoji:'🏘',farbe:'#F8FAFC',label:'Dorf'}, pool:{emoji:'💧',farbe:'#38BDF8',label:'Pool'}
+};
+function sightMapsUrl(p){return /iPad|iPhone|iPod/.test(navigator.userAgent)?`maps://maps.apple.com/?ll=${p.lat},${p.lng}&q=${encodeURIComponent(p.name)}`:`https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}`;}
+function makeSightIcon(cat){const k=SIGHT_CAT[cat]||SIGHT_CAT.kultur;return L.divIcon({className:'',html:`<div class="sight-marker" style="border-color:${k.farbe}">${k.emoji}</div>`,iconSize:[28,28],iconAnchor:[14,14],popupAnchor:[0,-16]});}
+function sightPopupHtml(p){const k=SIGHT_CAT[p.kategorie]||SIGHT_CAT.kultur;const wiki=p.wikipediaSlug?`https://en.wikipedia.org/wiki/${encodeURIComponent(p.wikipediaSlug)}`:'';return `<div class="poi-popup"><strong>${htmlEsc(p.name)}</strong><span class="poi-popup-badge" style="background:${k.farbe}22;color:${k.farbe}">${k.emoji} ${htmlEsc(k.label)}</span><p class="poi-popup-desc">${htmlEsc(p.beschreibung||'')}</p><div class="poi-popup-actions"><a href="${htmlEsc(sightMapsUrl(p))}" target="_blank" rel="noopener" class="poi-popup-btn">📍 Route</a>${wiki?`<a href="${htmlEsc(wiki)}" target="_blank" rel="noopener" class="poi-popup-btn wiki">🌐 Wikipedia</a>`:''}</div></div>`;}
+function drawStaticSights(){lgSights.clearLayers();if(!cfg.layers.sights)return;const list=Array.isArray(window.MADEIRA_POIS)?window.MADEIRA_POIS:[];list.forEach(p=>{if(!Number.isFinite(+p.lat)||!Number.isFinite(+p.lng))return;L.marker([+p.lat,+p.lng],{icon:makeSightIcon(p.kategorie),keyboard:false,pane:'poiPane'}).bindPopup(sightPopupHtml(p),{maxWidth:240}).addTo(lgSights);});}
+
 function drawHomePin(){
   lgHome.clearLayers();
   const h=cfg.home||{};
@@ -814,7 +830,7 @@ function setHomeField(k,v){
   if(k==='lat'||k==='lon')cfg.home[k]=parseFloat(String(v).replace(',','.'));
   else if(k==='show')cfg.home.show=!!v;
   else cfg.home[k]=v;
-  saveCfg(); drawHomePin(); renderSettings();
+  saveCfg(); drawHomePin();drawStaticSights(); renderSettings();
 }
 
 function googleMapsSearch(q){ const c=map.getCenter(); const url=`https://www.google.com/maps/search/${encodeURIComponent(q)}/@${c.lat.toFixed(5)},${c.lng.toFixed(5)},13z`; window.open(url,'_blank'); }
@@ -829,7 +845,7 @@ function sortList(list){ const mode=cfg.sort||'id'; const idn=r=>parseFloat(Stri
 function setSort(v){ cfg.sort=v; saveCfg(); renderLayers(); renderPanel(); renderFilterSheet?.(); }
 function filtered(){ return sortList(regionFiltered().filter(passRangeFilter)); }
 function extendWithLayerGroupBounds(bounds,lg){ lg.eachLayer(l=>{ try{ if(l.getBounds){ const b=l.getBounds(); if(b&&b.isValid&&b.isValid()) bounds=bounds?bounds.extend(b):b; } else if(l.getLatLng){ bounds=bounds?bounds.extend(l.getLatLng()):L.latLngBounds([l.getLatLng()]); } }catch(e){} }); return bounds; }
-function allBounds(){ let b=null; const pts=[]; const list=cfg.soloMode&&cfg.soloId?DATA.filter(r=>r.id===cfg.soloId):filtered(); list.forEach(r=>{ if(cfg.layers.tracks&&r.track?.length)pts.push(...r.track.map(p=>[p[0],p[1]])); if(cfg.layers.drive&&r.driveRoute?.length)pts.push(...r.driveRoute); if(cfg.layers.markers&&r.lat&&r.lon)pts.push([r.lat,r.lon]); }); if(pts.length)b=L.latLngBounds(pts); if(cfg.layers.hikingVector)b=extendWithLayerGroupBounds(b,lgHikingCore); if(cfg.layers.pois)b=extendWithLayerGroupBounds(b,lgPois); b=extendWithLayerGroupBounds(b,lgHome); if(cfg.layers.regions)b=extendWithLayerGroupBounds(b,lgRegions); return b||L.latLngBounds([[32.60,-17.28],[32.90,-16.58]]); }
+function allBounds(){ let b=null; const pts=[]; const list=cfg.soloMode&&cfg.soloId?DATA.filter(r=>r.id===cfg.soloId):filtered(); list.forEach(r=>{ if(cfg.layers.tracks&&r.track?.length)pts.push(...r.track.map(p=>[p[0],p[1]])); if(cfg.layers.drive&&r.driveRoute?.length)pts.push(...r.driveRoute); if(cfg.layers.markers&&r.lat&&r.lon)pts.push([r.lat,r.lon]); }); if(pts.length)b=L.latLngBounds(pts); if(cfg.layers.hikingVector)b=extendWithLayerGroupBounds(b,lgHikingCore); if(cfg.layers.pois)b=extendWithLayerGroupBounds(b,lgPois); if(cfg.layers.sights)b=extendWithLayerGroupBounds(b,lgSights); b=extendWithLayerGroupBounds(b,lgHome); if(cfg.layers.regions)b=extendWithLayerGroupBounds(b,lgRegions); return b||L.latLngBounds([[32.60,-17.28],[32.90,-16.58]]); }
 function routeBounds(r){ const pts=[]; if(r.track?.length)pts.push(...r.track.map(p=>[p[0],p[1]])); if(r.driveRoute?.length)pts.push(...r.driveRoute); if(r.lat&&r.lon)pts.push([r.lat,r.lon]); return pts.length?L.latLngBounds(pts):null; }
 
 /* LAYERS */
@@ -1607,118 +1623,16 @@ function prxDashboardHtml(){
   return `<div id="dashboardEvents"></div>`;
 }
 function initDashboard(){
-  const container = document.getElementById('dashboardEvents');
-  if(!container) return;
-  const today = new Date();
-  today.setHours(0,0,0,0);
-  const cutoff = new Date(today);
-  cutoff.setDate(cutoff.getDate()+5);
-  const dateRange = `${today.toLocaleDateString('de-DE')} – ${cutoff.toLocaleDateString('de-DE')}`;
-  const events = getUpcomingEvents(5);
-  const markets = getTodaysTomorrowsMarkets();
-  const wochentage = ['So','Mo','Di','Mi','Do','Fr','Sa'];
-
-  const eventsHtml = events.length ? events.slice(0,4).map(e=>{
-    const end = prxParseDateLocal(e.ende);
-    const endTxt = end ? end.toLocaleDateString('de-DE',{day:'numeric',month:'short'}) : '';
-    return `<div class="dashboard-event-item" data-id="${htmlEsc(e.id || '')}">
-      <div class="dashboard-event-header" role="button" tabindex="0">
-        <span class="dashboard-event-emoji">${htmlEsc(e.emoji || '•')}</span>
-        <div class="dashboard-event-info">
-          <span class="dashboard-event-name">${htmlEsc(e.name || '')}</span>
-          <span class="dashboard-event-meta">${htmlEsc(e.ort || '')}${endTxt ? ` · bis ${htmlEsc(endTxt)}` : ''}</span>
-        </div>
-        <div class="dashboard-event-right">
-          <span class="dashboard-event-badge ${htmlEsc(e.kategorie || 'event')}">${htmlEsc(e.kategorie || 'event')}</span>
-          <span class="dashboard-event-chevron">›</span>
-        </div>
-      </div>
-      <div class="dashboard-event-expand" style="display:none">
-        <p class="dashboard-event-desc">${htmlEsc(e.beschreibung || '')}</p>
-        <div class="dashboard-event-actions">
-          ${e.mapsUrl ? `<a href="${htmlEsc(e.mapsUrl)}" class="dashboard-event-btn maps" target="_blank" rel="noopener">📍 Route</a>` : ''}
-          ${e.infoUrl ? `<a href="${htmlEsc(e.infoUrl)}" class="dashboard-event-btn info" target="_blank" rel="noopener">ℹ️ Mehr Info</a>` : ''}
-        </div>
-      </div>
-    </div>`;
-  }).join('') : '<p class="dashboard-empty">Keine bekannten Events in den nächsten 5 Tagen.</p>';
-
-  const marketsHtml = markets
-    .sort((a,b)=>(b.istHeute?1:0)-(a.istHeute?1:0) || (b.istMorgen?1:0)-(a.istMorgen?1:0) || String(a.ort||'').localeCompare(String(b.ort||'')))
-    .map(m=>{
-      const days = Array.isArray(m.wochentag) ? m.wochentag.map(d=>wochentage[d]).join(', ') : '';
-      return `<div class="dashboard-market-item ${m.istHeute?'heute':m.istMorgen?'morgen':''}">
-        <span class="dashboard-market-emoji">${htmlEsc(m.emoji || '🛒')}</span>
-        <div class="dashboard-market-info">
-          <span class="dashboard-market-name">${htmlEsc(m.name || '')}</span>
-          <span class="dashboard-market-meta">${htmlEsc(m.ort || '')} · ${htmlEsc(m.uhrzeit || '')}${days ? ` · ${htmlEsc(days)}` : ''}</span>
-        </div>
-        ${m.istHeute ? '<span class="dashboard-market-tag heute">Heute</span>' : ''}
-        ${m.istMorgen ? '<span class="dashboard-market-tag morgen">Morgen</span>' : ''}
-      </div>`;
-    }).join('');
-
-  container.innerHTML = `
-    <div class="dashboard-section">
-      <div class="dashboard-section-header">
-        <span class="dashboard-section-title">📅 Diese Woche auf Madeira</span>
-        <span class="dashboard-section-sub">${htmlEsc(dateRange)}</span>
-      </div>
-      <div class="dashboard-events-list">${eventsHtml}</div>
-    </div>
-
-    <div class="dashboard-section" id="aiSummarySection">
-      <div class="dashboard-section-header">
-        <span class="dashboard-section-title">✨ KI-Zusammenfassung</span>
-      </div>
-      <div id="aiSummaryContent" class="dashboard-ai-content">
-        <button id="aiSummaryBtn" class="dashboard-ai-btn" type="button">✨ Zusammenfassung laden</button>
-        <button id="aiKeyClearBtn" class="dashboard-ai-keyclear" type="button">API-Key löschen</button>
-      </div>
-    </div>
-
-    <div class="dashboard-section">
-      <div class="dashboard-section-header">
-        <span class="dashboard-section-title">🛒 Wochenmärkte</span>
-      </div>
-      <div class="dashboard-markets-list">${marketsHtml}</div>
-    </div>
-  `;
-
-  container.querySelectorAll('.dashboard-event-item').forEach(el=>{
-    const header = el.querySelector('.dashboard-event-header');
-    const toggle = ()=>{
-      const expand = el.querySelector('.dashboard-event-expand');
-      const chevron = el.querySelector('.dashboard-event-chevron');
-      if(!expand) return;
-      const open = expand.style.display === 'none';
-      expand.style.display = open ? 'block' : 'none';
-      if(chevron) chevron.style.transform = open ? 'rotate(90deg)' : 'none';
-      el.classList.toggle('expanded', open);
-    };
-    header?.addEventListener('click', toggle);
-    header?.addEventListener('keydown', ev=>{
-      if(ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); toggle(); }
-    });
-  });
-
-  document.getElementById('aiSummaryBtn')?.addEventListener('click', async()=>{
-    const btn = document.getElementById('aiSummaryBtn');
-    const content = document.getElementById('aiSummaryContent');
-    if(!btn || !content) return;
-    btn.textContent = '⏳ Wird generiert …';
-    btn.disabled = true;
-    try{
-      const text = await loadAISummary(events,dateRange);
-      content.innerHTML = text ? `<p class="dashboard-ai-text">${htmlEsc(text)}</p>` : `<p class="dashboard-ai-error">Zusammenfassung nicht verfügbar.</p>`;
-    }catch(err){
-      content.innerHTML = `<p class="dashboard-ai-error">Fehler: ${htmlEsc(err.message || 'unbekannt')}</p>`;
-    }
-  });
-  document.getElementById('aiKeyClearBtn')?.addEventListener('click', ()=>{
-    sessionStorage.removeItem('anthropic_key');
-    toast('API-Key gelöscht');
-  });
+  const container=document.getElementById('dashboardEvents'); if(!container)return;
+  const today=new Date(); today.setHours(0,0,0,0); const cutoff=new Date(today); cutoff.setDate(cutoff.getDate()+5);
+  const dateRange=`${today.toLocaleDateString('de-DE')} – ${cutoff.toLocaleDateString('de-DE')}`;
+  const events=getUpcomingEvents(5), markets=getTodaysTomorrowsMarkets(), wochentage=['So','Mo','Di','Mi','Do','Fr','Sa'];
+  const eventsHtml=events.length?events.slice(0,4).map(e=>{const end=prxParseDateLocal(e.ende);const endTxt=end?end.toLocaleDateString('de-DE',{day:'numeric',month:'short'}):'';return `<div class="dashboard-event-item" data-id="${htmlEsc(e.id||'')}"><button type="button" class="dashboard-event-header" aria-expanded="false"><span class="dashboard-event-emoji">${htmlEsc(e.emoji||'•')}</span><span class="dashboard-event-main"><span class="dashboard-event-name">${htmlEsc(e.name||'')}</span><span class="dashboard-event-meta">${htmlEsc(e.ort||'')}${endTxt?` · bis ${htmlEsc(endTxt)}`:''}</span></span><span class="dashboard-event-right"><span class="dashboard-event-badge ${htmlEsc(e.kategorie||'event')}">${htmlEsc(e.kategorie||'event')}</span><span class="dashboard-event-chevron">›</span></span></button><div class="dashboard-event-expand" hidden><p class="dashboard-event-desc">${htmlEsc(e.beschreibung||'')}</p><div class="dashboard-event-actions">${e.mapsUrl?`<a href="${htmlEsc(e.mapsUrl)}" class="dashboard-event-btn maps" target="_blank" rel="noopener">📍 Route</a>`:''}${e.infoUrl?`<a href="${htmlEsc(e.infoUrl)}" class="dashboard-event-btn info" target="_blank" rel="noopener">ℹ️ Mehr Info</a>`:''}</div></div></div>`}).join(''):'<p class="dashboard-empty">Keine bekannten Events in den nächsten 5 Tagen.</p>';
+  const marketsHtml=markets.sort((a,b)=>(b.istHeute?1:0)-(a.istHeute?1:0)||(b.istMorgen?1:0)-(a.istMorgen?1:0)||String(a.ort||'').localeCompare(String(b.ort||''))).map(m=>{const days=Array.isArray(m.wochentag)?m.wochentag.map(d=>wochentage[d]).join(', '):'';return `<div class="dashboard-market-item ${m.istHeute?'heute':m.istMorgen?'morgen':''}"><span class="dashboard-market-emoji">${htmlEsc(m.emoji||'🛒')}</span><div class="dashboard-market-info"><span class="dashboard-market-name">${htmlEsc(m.name||'')}</span><span class="dashboard-market-meta">${htmlEsc(m.ort||'')} · ${htmlEsc(m.uhrzeit||'')}${days?` · ${htmlEsc(days)}`:''}</span></div>${m.istHeute?'<span class="dashboard-market-tag heute">Heute</span>':''}${m.istMorgen?'<span class="dashboard-market-tag morgen">Morgen</span>':''}</div>`}).join('');
+  container.innerHTML=`<div class="dashboard-section"><div class="dashboard-section-header"><span class="dashboard-section-title">📅 Diese Woche auf Madeira</span><span class="dashboard-section-sub">${htmlEsc(dateRange)}</span></div><div class="dashboard-events-list">${eventsHtml}</div></div><div class="dashboard-section" id="aiSummarySection"><div class="dashboard-section-header"><span class="dashboard-section-title">✨ KI-Zusammenfassung</span></div><div id="aiSummaryContent" class="dashboard-ai-content"><button id="aiSummaryBtn" class="dashboard-ai-btn" type="button">✨ Zusammenfassung laden</button><button id="aiKeyClearBtn" class="dashboard-ai-keyclear" type="button">API-Key löschen</button></div></div><div class="dashboard-section"><div class="dashboard-section-header"><span class="dashboard-section-title">🛒 Wochenmärkte</span></div><div class="dashboard-markets-list">${marketsHtml}</div></div>`;
+  container.querySelectorAll('.dashboard-event-item').forEach(el=>{const header=el.querySelector('.dashboard-event-header'),expand=el.querySelector('.dashboard-event-expand'),chev=el.querySelector('.dashboard-event-chevron');header?.addEventListener('click',()=>{const open=expand.hasAttribute('hidden'); if(open){expand.removeAttribute('hidden');header.setAttribute('aria-expanded','true');}else{expand.setAttribute('hidden','');header.setAttribute('aria-expanded','false');} if(chev)chev.style.transform=open?'rotate(90deg)':'none'; el.classList.toggle('expanded',open);});});
+  document.getElementById('aiSummaryBtn')?.addEventListener('click',async()=>{const btn=document.getElementById('aiSummaryBtn'),content=document.getElementById('aiSummaryContent'); if(!btn||!content)return; btn.textContent='⏳ Wird generiert …'; btn.disabled=true; try{const text=await loadAISummary(events,dateRange); content.innerHTML=text?`<p class="dashboard-ai-text">${htmlEsc(text)}</p>`:`<p class="dashboard-ai-error">Zusammenfassung nicht verfügbar.</p>`;}catch(err){content.innerHTML=`<p class="dashboard-ai-error">Fehler: ${htmlEsc(err.message||'unbekannt')}</p>`;}});
+  document.getElementById('aiKeyClearBtn')?.addEventListener('click',()=>{sessionStorage.removeItem('anthropic_key');toast('API-Key gelöscht');});
 }
 
 /* V3.2.14 WETTER IM DETAIL-SHEET */

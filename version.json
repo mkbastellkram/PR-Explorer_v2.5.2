@@ -1,10 +1,10 @@
 {
   "name": "PR Explorer Madeira",
-  "version": "V3.2.16",
+  "version": "V3.2.17",
   "date": "2026-06-04",
-  "title": "Dashboard Events erweitert",
-  "cache": "pr-explorer-v3-2-16-dashboard-events-expanded-20260604l",
-  "base": "V3.2.15",
+  "title": "POI-Layer + Dashboard-Patch",
+  "cache": "pr-explorer-v3-2-17-poi-layer-dashboard-patch-20260604m",
+  "base": "V3.2.16",
   "activeFiles": [
     "index.html",
     "style.css",
@@ -12,8 +12,9 @@
     "pr-status-fetcher.js",
     "events-data.js",
     "markets-data.js",
+    "poi-data.js",
     "app.js",
     "service-worker.js"
   ],
-  "scope": "expandable dashboard events with route and info links"
+  "scope": "POI layer and vertical dashboard event expansion"
 }
