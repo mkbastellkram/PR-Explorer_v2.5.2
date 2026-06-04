@@ -7,8 +7,16 @@
 const qs  = s => document.querySelector(s);
 const qsa = s => [...document.querySelectorAll(s)];
 
-const APP_VERSION = 'V3.2.13';
+const APP_VERSION = 'V3.2.14';
 const APP_CHANGELOG = [
+  { version:'V3.2.14', date:'2026-06-04', title:'Wetter im Detail-Sheet', changes:[
+    'Detailansicht erhält Wettervorschau am Startpunkt über Open-Meteo.',
+    '7-Tage-Streifen mit Temperatur, Wettericon und Regenwahrscheinlichkeit ergänzt.',
+    'Stündliche Canvas-Kurve für Temperatur und Regenwahrscheinlichkeit ergänzt.',
+    'Wetterdaten werden 6 Stunden je Trail im sessionStorage gecached.',
+    'Fehlerfälle degradieren ohne App-Abbruch.',
+    'Keine Änderung an setTab(), openDetail(), Karteninitialisierung, PR-Statuslogik oder pr-data.js.'
+  ]},
   { version:'V3.2.13', date:'2026-06-04', title:'Manueller PR-Status im Journal', changes:[
     'Automatischer PR-Live-Status-Abruf beim App-Start deaktiviert.',
     'Journal erhält oben eine Status-Abrufkarte mit letztem Abruf und Aktualisieren-Button.',
@@ -867,7 +875,7 @@ function openDetail(id,zoom=false){
   focusDetailPins(id);
   renderDetail();
   if(zoom){const b=routeBounds(S.selected);if(isValidBounds(b))map.flyToBounds(b,mapSafeFitOptions(true));}
-  setTimeout(()=>{focusDetailPins(id);drawElevProfile(S.selected,'elevCanvas');},200);
+  setTimeout(()=>{focusDetailPins(id);drawElevProfile(S.selected,'elevCanvas');initWeatherForTrail(S.selected);},200);
 }
 function closeDetail(){ qs('#detailPanel').classList.add('hidden');S.selected=null;V329_DETAIL_CONTEXT.active=false;V329_DETAIL_CONTEXT.activeId=null;v329SyncDetailReturnButton();clearPinFocus();drawPois(); }
 function setFullscreen(on){ S.fullscreen=on;qs('#app').classList.toggle('fullscreen',on);qs('#fullscreenClose').classList.toggle('hidden',!on);closeDetail();qs('#panel').classList.add('hidden');S.panel=false;setTimeout(()=>map.invalidateSize(),200); }
@@ -1002,7 +1010,8 @@ function renderDetail(){
       ${!isLoop?'<span class="d-pill warn-pill">⚠️ Kein Rundkurs</span>':''}
       <span class="d-pill" style="background:${STATUS_DEF[st].dot}22;border-color:${STATUS_DEF[st].dot}44;color:${STATUS_DEF[st].dot}">● ${STATUS_DEF[st].label}</span>
     </div>
-    ${hasElev?`<div class="elev-wrap"><div class="elev-title">Höhenprofil</div><canvas id="elevCanvas" class="elev-canvas" width="300" height="100"></canvas><div class="elev-stats"><div class="elev-stat"><b>${fmt(r.elevMin||r.low)} m</b><small>Tiefpunkt</small></div><div class="elev-stat"><b>${fmt(r.elevMax||r.high)} m</b><small>Hochpunkt</small></div><div class="elev-stat"><b>↑ ${fmt(r.elevUp)} m</b><small>Aufstieg</small></div><div class="elev-stat"><b>↓ ${fmt(r.elevDown)} m</b><small>Abstieg</small></div></div></div>`:''}
+    ${hasElev?`<div class="elev-wrap"><div class="elev-title">Höhenprofil</div><canvas id="elevCanvas" class="elev-canvas" width="300" height="100"></canvas>
+    ${prxWeatherContainerHtml()}<div class="elev-stats"><div class="elev-stat"><b>${fmt(r.elevMin||r.low)} m</b><small>Tiefpunkt</small></div><div class="elev-stat"><b>${fmt(r.elevMax||r.high)} m</b><small>Hochpunkt</small></div><div class="elev-stat"><b>↑ ${fmt(r.elevUp)} m</b><small>Aufstieg</small></div><div class="elev-stat"><b>↓ ${fmt(r.elevDown)} m</b><small>Abstieg</small></div></div></div>`:''}
     <div class="p-section">Status setzen</div>
     <div class="status-btns">${stBtns}</div>
 
@@ -1510,6 +1519,189 @@ function initPrLiveStatus(){
       try{ if(S.selected) renderDetail(); }catch(e){ console.warn('[PR-Status] renderDetail nach Statusupdate fehlgeschlagen', e); }
     }
   }).catch(err => console.warn('[PR-Status] fetchPrStatus fehlgeschlagen', err));
+}
+
+
+/* V3.2.14 WETTER IM DETAIL-SHEET */
+const PRX_WMO_CODES = {
+  0:{icon:'☀️',text:'Klar'},1:{icon:'🌤',text:'Überwiegend klar'},2:{icon:'⛅',text:'Wechselnd bewölkt'},3:{icon:'☁️',text:'Bedeckt'},
+  45:{icon:'🌫',text:'Nebel'},48:{icon:'🌫',text:'Gefrierender Nebel'},51:{icon:'🌦',text:'Leichter Nieselregen'},53:{icon:'🌦',text:'Nieselregen'},
+  61:{icon:'🌧',text:'Leichter Regen'},63:{icon:'🌧',text:'Regen'},65:{icon:'🌧',text:'Starkregen'},71:{icon:'🌨',text:'Leichter Schneefall'},
+  80:{icon:'🌦',text:'Leichte Schauer'},81:{icon:'🌧',text:'Schauer'},82:{icon:'⛈',text:'Starke Schauer'},95:{icon:'⛈',text:'Gewitter'},99:{icon:'⛈',text:'Schweres Gewitter'}
+};
+function prxWeatherIcon(code){ return PRX_WMO_CODES[Number(code)]?.icon || '🌡'; }
+function prxWeatherText(code){ return PRX_WMO_CODES[Number(code)]?.text || 'Unbekannt'; }
+function prxTrailWeatherCoords(r){
+  const lat = Number(r?.startLat ?? r?.lat ?? r?.start_lat ?? r?.start?.[0] ?? r?.coords?.[0]);
+  const lng = Number(r?.startLng ?? r?.startLon ?? r?.lon ?? r?.lng ?? r?.start_lng ?? r?.start?.[1] ?? r?.coords?.[1]);
+  if(!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return {lat,lng};
+}
+function prxWeatherCacheGet(key){
+  try{
+    const raw = sessionStorage.getItem(key);
+    if(!raw) return null;
+    const obj = JSON.parse(raw);
+    if(!obj || Date.now() > obj.expires) return null;
+    return obj.data || null;
+  }catch(_){ return null; }
+}
+function prxWeatherCacheSet(key,data,ttl){
+  try{ sessionStorage.setItem(key, JSON.stringify({data, expires:Date.now()+ttl})); }catch(_){}
+}
+async function prxFetchWeatherForTrail(r){
+  const coords = prxTrailWeatherCoords(r);
+  if(!coords) return null;
+  const cacheKey = `weather_${r.id}_${new Date().toISOString().slice(0,10)}`;
+  const cached = prxWeatherCacheGet(cacheKey);
+  if(cached) return cached;
+  const params = new URLSearchParams({
+    latitude:String(coords.lat),
+    longitude:String(coords.lng),
+    daily:'weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max,windspeed_10m_max',
+    hourly:'temperature_2m,precipitation_probability,weathercode',
+    timezone:'Atlantic/Madeira',
+    forecast_days:'7',
+    windspeed_unit:'kmh',
+    temperature_unit:'celsius'
+  });
+  const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`, {cache:'no-store'});
+  if(!res.ok) throw new Error(`Open-Meteo ${res.status}`);
+  const data = await res.json();
+  prxWeatherCacheSet(cacheKey, data, 6*60*60*1000);
+  return data;
+}
+function prxWeatherContainerHtml(){
+  return `<div id="weatherContainer" class="weather-container"></div>`;
+}
+function prxRenderWeatherStrip(r,data,selectedDay){
+  if(!data?.daily || !data?.hourly) return '';
+  const days = data.daily.time.map((dateStr,i)=>{
+    const date = new Date(`${dateStr}T12:00:00`);
+    const dayName = date.toLocaleDateString('de-DE',{weekday:'short'});
+    const dayNum = date.toLocaleDateString('de-DE',{day:'numeric',month:'short'});
+    const wc = data.daily.weathercode?.[i];
+    const rain = data.daily.precipitation_probability_max?.[i] ?? 0;
+    return `<button type="button" class="weather-day ${i===selectedDay?'active':''}" data-index="${i}">
+      <span class="weather-day-name">${htmlEsc(dayName)}</span>
+      <span class="weather-day-date">${htmlEsc(dayNum)}</span>
+      <span class="weather-day-icon" title="${htmlEsc(prxWeatherText(wc))}">${prxWeatherIcon(wc)}</span>
+      <span class="weather-temp-max">${Math.round(data.daily.temperature_2m_max?.[i] ?? 0)}°</span>
+      <span class="weather-temp-min">${Math.round(data.daily.temperature_2m_min?.[i] ?? 0)}°</span>
+      <span class="weather-rain">${Math.round(rain)}%</span>
+    </button>`;
+  }).join('');
+  const coords = prxTrailWeatherCoords(r);
+  const location = coords ? `${r.name || r.id}` : `${r.name || r.id}`;
+  return `<div class="weather-section">
+    <div class="weather-header">
+      <span class="weather-title">🌤 Wetter am Startpunkt</span>
+      <span class="weather-location">${htmlEsc(location)}</span>
+    </div>
+    <div class="weather-strip">${days}</div>
+    <div class="weather-hourly-title" id="weatherHourlyTitle"></div>
+    <canvas id="weatherCurve" height="128"></canvas>
+    <div class="weather-footer" id="weatherFooter"></div>
+  </div>`;
+}
+function prxDrawWeatherCurve(data,dayIndex){
+  const canvas = document.getElementById('weatherCurve');
+  if(!canvas || !data?.hourly) return;
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = Math.max(280, Math.floor(rect.width || 340));
+  const cssH = 128;
+  canvas.width = Math.floor(cssW*dpr);
+  canvas.height = Math.floor(cssH*dpr);
+  canvas.style.height = `${cssH}px`;
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  const startIdx = dayIndex * 24;
+  const temps24 = (data.hourly.temperature_2m || []).slice(startIdx, startIdx+24);
+  const rain24 = (data.hourly.precipitation_probability || []).slice(startIdx, startIdx+24);
+  const temps = temps24.slice(5,23);
+  const rain = rain24.slice(5,23);
+  if(!temps.length) return;
+  const W = cssW, H = cssH;
+  const pad = {top:16,right:10,bottom:22,left:30};
+  const chartW = W-pad.left-pad.right, chartH = H-pad.top-pad.bottom;
+  const minT = Math.min(...temps)-2, maxT = Math.max(...temps)+2;
+  const span = Math.max(1, maxT-minT);
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='rgba(0,150,255,.12)';
+  rain.forEach((r,i)=>{
+    const x = pad.left + (i/(temps.length-1))*chartW;
+    const barH = (Number(r||0)/100)*chartH;
+    ctx.fillRect(x-7,pad.top+chartH-barH,14,barH);
+  });
+  ctx.strokeStyle='rgba(255,255,255,.10)';
+  ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.moveTo(pad.left,pad.top+chartH);
+  ctx.lineTo(pad.left+chartW,pad.top+chartH);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.strokeStyle='#2DD4BF';
+  ctx.lineWidth=2.5;
+  ctx.lineJoin='round';
+  temps.forEach((t,i)=>{
+    const x = pad.left + (i/(temps.length-1))*chartW;
+    const y = pad.top+chartH-((Number(t)-minT)/span)*chartH;
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+  temps.forEach((t,i)=>{
+    if(i%3!==0) return;
+    const x = pad.left + (i/(temps.length-1))*chartW;
+    const y = pad.top+chartH-((Number(t)-minT)/span)*chartH;
+    ctx.beginPath();
+    ctx.arc(x,y,3,0,Math.PI*2);
+    ctx.fillStyle='#2DD4BF';
+    ctx.fill();
+    ctx.fillStyle='rgba(240,250,248,.88)';
+    ctx.font='10px system-ui,-apple-system,BlinkMacSystemFont,sans-serif';
+    ctx.textAlign='center';
+    ctx.fillText(`${Math.round(t)}°`,x,Math.max(10,y-7));
+    ctx.fillStyle='rgba(240,250,248,.54)';
+    ctx.fillText(`${i+5}h`,x,H-5);
+  });
+}
+function prxWeatherRenderSelected(r,data,selectedDay){
+  const container = document.getElementById('weatherContainer');
+  if(!container) return;
+  container.innerHTML = prxRenderWeatherStrip(r,data,selectedDay);
+  const dateStr = data?.daily?.time?.[selectedDay];
+  const wc = data?.daily?.weathercode?.[selectedDay];
+  const title = document.getElementById('weatherHourlyTitle');
+  if(title && dateStr){
+    const date = new Date(`${dateStr}T12:00:00`);
+    title.textContent = `Stündlich · ${date.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long'})} · ${prxWeatherText(wc)}`;
+  }
+  container.querySelectorAll('.weather-day').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const idx = Number(btn.dataset.index || 0);
+      prxWeatherRenderSelected(r,data,idx);
+    });
+  });
+  requestAnimationFrame(()=>prxDrawWeatherCurve(data,selectedDay));
+}
+async function initWeatherForTrail(r){
+  const container = document.getElementById('weatherContainer');
+  if(!container || !r) return;
+  const coords = prxTrailWeatherCoords(r);
+  if(!coords){
+    container.innerHTML = '';
+    return;
+  }
+  container.innerHTML = '<div class="weather-loading">Wetterdaten laden …</div>';
+  try{
+    const data = await prxFetchWeatherForTrail(r);
+    if(!data) { container.innerHTML=''; return; }
+    prxWeatherRenderSelected(r,data,0);
+  }catch(err){
+    console.warn('[Wetter] nicht verfügbar', err);
+    container.innerHTML = '<p class="weather-unavailable">Wetterdaten derzeit nicht verfügbar.</p>';
+  }
 }
 
 /* V3.2.13 MANUELLER PR-STATUS IM JOURNAL */

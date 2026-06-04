@@ -1,5 +1,5 @@
-const APP_VERSION = 'V3.2.13';
-const CACHE_NAME = 'pr-explorer-v3-2-13-manual-pr-status-20260604i';
+const APP_VERSION = 'V3.2.14';
+const CACHE_NAME = 'pr-explorer-v3-2-14-weather-detail-20260604j';
 const CORE_ASSETS = [
   './',
   './index.html',

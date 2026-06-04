@@ -1,10 +1,10 @@
 {
   "name": "PR Explorer Madeira",
-  "version": "V3.2.13",
+  "version": "V3.2.14",
   "date": "2026-06-04",
-  "title": "Manueller PR-Status im Journal",
-  "cache": "pr-explorer-v3-2-13-manual-pr-status-20260604i",
-  "base": "V3.2.12",
+  "title": "Wetter im Detail-Sheet",
+  "cache": "pr-explorer-v3-2-14-weather-detail-20260604j",
+  "base": "V3.2.13",
   "activeFiles": [
     "index.html",
     "style.css",
@@ -13,5 +13,5 @@
     "app.js",
     "service-worker.js"
   ],
-  "scope": "manual PR status fetch in journal"
+  "scope": "Open-Meteo weather block in detail sheet"
 }

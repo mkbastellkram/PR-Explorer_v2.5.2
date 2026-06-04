@@ -1743,3 +1743,101 @@ button,input,select,textarea,label,a,.pr-card,.card-map-btn{
   }
   .journal-status-fetch button{ width:100%; }
 }
+
+
+/* ============================================================
+   V3.2.14 Wetter im Detail-Sheet
+   Open-Meteo, 7 Tage, Canvas-Kurve.
+   ============================================================ */
+.weather-container{
+  margin:12px 0 4px;
+}
+.weather-section {
+  margin: 12px 0;
+  background: rgba(255,255,255,0.05);
+  border-radius: 14px;
+  border: 1px solid rgba(45, 212, 191, 0.20);
+  padding: 12px;
+}
+.weather-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap:10px;
+  margin-bottom: 12px;
+}
+.weather-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #2DD4BF;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.weather-location {
+  font-size: 11px;
+  color: rgba(255,255,255,0.50);
+  text-align:right;
+  line-height:1.25;
+}
+.weather-strip {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+  -webkit-overflow-scrolling: touch;
+}
+.weather-strip::-webkit-scrollbar{ display:none; }
+.weather-day {
+  flex: 0 0 calc((100% - 36px) / 7);
+  min-width: 46px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 4px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  color:inherit;
+}
+.weather-day.active {
+  background: rgba(45, 212, 191, 0.15);
+  border-color: rgba(45, 212, 191, 0.50);
+}
+.weather-day-name { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.82); }
+.weather-day-date { font-size: 9px; color: rgba(255,255,255,0.44); }
+.weather-day-icon { font-size: 18px; margin: 2px 0; }
+.weather-temp-max { font-size: 12px; font-weight: 800; color: #F8FAFC; }
+.weather-temp-min { font-size: 10px; color: rgba(255,255,255,0.54); }
+.weather-rain { font-size: 9px; color: #60A5FA; }
+.weather-hourly-title{
+  font-size:11px;
+  color:rgba(240,250,248,.62);
+  margin:4px 0 7px;
+}
+#weatherCurve {
+  display: block;
+  width: 100%;
+  border-radius: 10px;
+  background: rgba(0,0,0,0.20);
+}
+.weather-loading,
+.weather-unavailable{
+  margin:10px 0;
+  padding:10px 12px;
+  border-radius:12px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
+  color:rgba(240,250,248,.55);
+  font-size:12px;
+}
+@media(max-width:430px){
+  .weather-day{
+    flex-basis:54px;
+  }
+}

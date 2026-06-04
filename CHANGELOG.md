@@ -1,3 +1,12 @@
+# V3.2.14 · Wetter im Detail-Sheet
+
+- Open-Meteo-Wetterblock in der Detailansicht ergänzt.
+- 7-Tage-Streifen mit Tageswerten, Wettericon und Regenwahrscheinlichkeit.
+- Stündliche Canvas-Kurve für Temperatur und Regenwahrscheinlichkeit.
+- sessionStorage-Cache je Trail/Tag für 6 Stunden.
+- Fehlerfall bleibt weich: Wetterblock zeigt Hinweis oder bleibt leer.
+- Keine Änderung an `setTab()`, `openDetail()`, Karteninitialisierung, PR-Statuslogik oder `pr-data.js`.
+
 # V3.2.13 · Manueller PR-Status im Journal
 
 - Automatischer PR-Live-Status-Abruf beim App-Start deaktiviert.
