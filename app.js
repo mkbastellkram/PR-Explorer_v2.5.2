@@ -1,14 +1,21 @@
 /* ============================================================
    PR Explorer · app.js · Midnight Teal Pro
-   V3.2.8: Detail-Icon tatsächlich aktiv
+   V3.2.9: Detail-Karte-Rückkehr
    ============================================================ */
 'use strict';
 
 const qs  = s => document.querySelector(s);
 const qsa = s => [...document.querySelectorAll(s)];
 
-const APP_VERSION = 'V3.2.8';
+const APP_VERSION = 'V3.2.9';
 const APP_CHANGELOG = [
+  { version:'V3.2.9', date:'2026-06-04', title:'Detail-Karte-Rückkehr', changes:[
+    'Karten-Icon in der Detailansicht wechselt zur Karte und merkt sich den aktiven Detail-Kontext.',
+    'Auf der Karte erscheint ein kleiner Detail-Rückkehrbutton, solange ein Detail-Kontext aktiv ist.',
+    'Detail-Rückkehrbutton öffnet die vorherige Detailansicht wieder.',
+    'Zurück im Detail führt weiterhin zur vorherigen Hauptfläche.',
+    'Keine Änderung an Karteninitialisierung, setTab(), Service Worker, Safe-Area oder Bottom-Dock.'
+  ]},
   { version:'V3.2.8', date:'2026-06-04', title:'Detail-Icon tatsächlich aktiv', changes:[
     'Karten-Icon wird jetzt tatsächlich in renderDetail() eingebunden.',
     'Detailtitelbereich wurde korrekt als Grid mit Text links und Karten-Icon rechts umgesetzt.',
@@ -406,6 +413,7 @@ const F = { region:'all', status:'all', schedule:'all', distMin:0, distMax:999, 
 let _fb = {};
 const S = { tab:'map', selected:null, query:'', fullscreen:false, panel:false };
 const V326_DETAIL_NAV = { fromTab:'map', fromQuery:'', fromScroll:0 };
+const V329_DETAIL_CONTEXT = { activeId:null, active:false };
 
 /* MAP */
 const map = L.map('map',{zoomControl:false,attributionControl:false,preferCanvas:true,tap:true,doubleClickZoom:true,touchZoom:true}).setView([32.755,-16.93],10);
@@ -826,7 +834,7 @@ function openDetail(id,zoom=false){
   if(zoom){const b=routeBounds(S.selected);if(isValidBounds(b))map.flyToBounds(b,mapSafeFitOptions(true));}
   setTimeout(()=>{focusDetailPins(id);drawElevProfile(S.selected,'elevCanvas');},200);
 }
-function closeDetail(){ qs('#detailPanel').classList.add('hidden');S.selected=null;clearPinFocus();drawPois(); }
+function closeDetail(){ qs('#detailPanel').classList.add('hidden');S.selected=null;V329_DETAIL_CONTEXT.active=false;V329_DETAIL_CONTEXT.activeId=null;v329SyncDetailReturnButton();clearPinFocus();drawPois(); }
 function setFullscreen(on){ S.fullscreen=on;qs('#app').classList.toggle('fullscreen',on);qs('#fullscreenClose').classList.toggle('hidden',!on);closeDetail();qs('#panel').classList.add('hidden');S.panel=false;setTimeout(()=>map.invalidateSize(),200); }
 function pxHeight(sel){ const el=qs(sel); return el && !el.classList.contains('hidden') ? Math.ceil(el.getBoundingClientRect().height||0) : 0; }
 function mapSafeFitOptions(detail=false){ const top=Math.max(112,pxHeight('#hero')+26); const bottomNav=pxHeight('#bottomNav')||72; const test=(cfg.showTestToggle&&!qs('#testToggle')?.classList.contains('hidden'))?(pxHeight('#testToggle')+8):0; const detailPanel=detail?Math.min(Math.round(window.innerHeight*0.46),pxHeight('#detailPanel')||280):0; const bottom=Math.max(150,bottomNav+test+detailPanel+42); return {paddingTopLeft:[34,top],paddingBottomRight:[42,bottom],maxZoom:13,duration:.85}; }
@@ -948,7 +956,7 @@ function renderDetail(){
         <div class="d-name">${r.name}</div>
         <div class="d-sub">${regionLabel(r)}</div>
       </div>
-      ${v327DetailMapIconHtml(r)}
+      ${v327DetailMapIconHtml,v329ReturnToDetail,v329SyncDetailReturnButton(r)}
     </div>
     <div class="d-meta">
       <span class="d-pill teal-pill">📏 ${fmtKm(r.distanceKm)}</span>
@@ -1302,6 +1310,43 @@ function initAllSwipe(){
 
 
 
+
+/* V3.2.9 DETAIL-KARTE-RÜCKKEHR */
+function v329EnsureDetailReturnButton(){
+  let btn = qs('#v329DetailReturn');
+  if(!btn){
+    btn = document.createElement('button');
+    btn.id = 'v329DetailReturn';
+    btn.type = 'button';
+    btn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h14v13H5z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M8 9h8M8 12h8M8 15h5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg><span>Detail</span>`;
+    btn.onclick = v329ReturnToDetail;
+    qs('#app')?.appendChild(btn);
+  }
+  return btn;
+}
+function v329SyncDetailReturnButton(){
+  const btn = qs('#v329DetailReturn');
+  const shouldShow = !!(V329_DETAIL_CONTEXT.active && V329_DETAIL_CONTEXT.activeId && S.tab==='map' && qs('#detailPanel')?.classList.contains('hidden'));
+  if(!shouldShow){
+    if(btn) btn.classList.add('hidden');
+    return;
+  }
+  const b = v329EnsureDetailReturnButton();
+  b.classList.remove('hidden');
+}
+function v329ReturnToDetail(){
+  const id = V329_DETAIL_CONTEXT.activeId;
+  if(!id)return;
+  const r = DATA.find(x=>x.id===id);
+  if(!r)return;
+  S.selected = r;
+  qs('#panel')?.classList.add('hidden');
+  qs('#detailPanel')?.classList.remove('hidden');
+  renderDetail();
+  focusDetailPins(id);
+  setTimeout(()=>{drawElevProfile(r,'elevCanvas');v329SyncDetailReturnButton();},120);
+}
+
 /* V3.2.6 DETAIL-NAVIGATION PHASE 1 */
 function v326RememberDetailOrigin(){
   V326_DETAIL_NAV.fromTab = S.tab || 'map';
@@ -1319,7 +1364,7 @@ function v326DetailNavHtml(r){
   </div>`;
 }
 
-function v327DetailMapIconHtml(r){
+function v327DetailMapIconHtml,v329ReturnToDetail,v329SyncDetailReturnButton(r){
   return `<button type="button" class="v327-detail-map-icon" aria-label="Auf Karte zeigen" onclick="v326DetailToMap('${r.id}')">
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M4.5 5.5 9 3.8l6 2.4 4.5-1.7v14L15 20.2l-6-2.4-4.5 1.7v-14Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/>
@@ -1347,16 +1392,19 @@ function v326BackFromDetail(){
   }
 }
 function v326DetailToMap(id){
-  // Phase 1: nur zur Karte wechseln und Detail offen lassen.
-  // Kein Solo-Modus, kein Parken, keine neue Navigation.
-  setTab('map');
   const r = DATA.find(x=>x.id===id) || S.selected;
-  if(r){
-    setTimeout(()=>{
-      const b = routeBounds(r);
-      if(isValidBounds(b)) map.flyToBounds(b,mapSafeFitOptions(false));
-    },120);
-  }
+  if(!r)return;
+  V329_DETAIL_CONTEXT.activeId = r.id;
+  V329_DETAIL_CONTEXT.active = true;
+  qs('#detailPanel').classList.add('hidden');
+  S.selected = r;
+  setTab('map');
+  focusDetailPins(r.id);
+  setTimeout(()=>{
+    const b = routeBounds(r);
+    if(isValidBounds(b)) map.flyToBounds(b,mapSafeFitOptions(false));
+    v329SyncDetailReturnButton();
+  },140);
 }
 
 /* V3.2.0 DIRECT UI FLÄCHEN — keine Zusatzlayer */

@@ -1,3 +1,11 @@
+# V3.2.9 · Detail-Karte-Rückkehr
+
+- Karten-Icon in der Detailansicht wechselt zur Karte und fokussiert den aktiven PR.
+- Detail-Kontext bleibt gespeichert.
+- Auf der Karte erscheint ein kleiner Button „Detail“, solange ein Detail-Kontext aktiv ist.
+- Der Button „Detail“ öffnet die Detailansicht wieder.
+- Keine Änderung an Karteninitialisierung, setTab, Service Worker, Safe-Area oder Bottom-Dock.
+
 # V3.2.8 · Detail-Icon tatsächlich aktiv
 
 - Korrigiert: Karten-Icon wird jetzt tatsächlich in `renderDetail()` eingebunden.

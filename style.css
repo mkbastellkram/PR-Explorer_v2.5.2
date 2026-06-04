@@ -1621,3 +1621,40 @@ button,input,select,textarea,label,a,.pr-card,.card-map-btn{
     height:50px !important;
   }
 }
+
+
+/* ============================================================
+   V3.2.9 Detail-Karte-Rückkehr
+   Kleiner Kartenbutton, kein Navigationsstack, keine Karteninitialisierung.
+   ============================================================ */
+#v329DetailReturn{
+  position:fixed;
+  left:16px;
+  bottom:calc(118px + env(safe-area-inset-bottom,0px));
+  z-index:135;
+  min-height:44px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  border-radius:18px;
+  border:1px solid rgba(90,200,250,.18);
+  background:rgba(7,21,18,.86);
+  color:var(--teal);
+  box-shadow:0 10px 28px rgba(0,0,0,.28);
+  backdrop-filter:blur(18px) saturate(170%);
+  -webkit-backdrop-filter:blur(18px) saturate(170%);
+  padding:8px 12px;
+  font-weight:900;
+  pointer-events:auto;
+  touch-action:manipulation;
+}
+#v329DetailReturn.hidden{display:none !important}
+#v329DetailReturn svg{width:24px;height:24px;display:block}
+#v329DetailReturn span{font-size:14px}
+#v329DetailReturn:active{transform:scale(.97)}
+@media(max-width:430px){
+  #v329DetailReturn{
+    left:12px;
+    bottom:calc(112px + env(safe-area-inset-bottom,0px));
+  }
+}

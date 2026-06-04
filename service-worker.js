@@ -1,5 +1,5 @@
-const APP_VERSION = 'V3.2.8';
-const CACHE_NAME = 'pr-explorer-v3-2-8-detail-icon-aktiv-20260604d';
+const APP_VERSION = 'V3.2.9';
+const CACHE_NAME = 'pr-explorer-v3-2-9-detail-return-20260604e';
 const CORE_ASSETS = [
   './',
   './index.html',
