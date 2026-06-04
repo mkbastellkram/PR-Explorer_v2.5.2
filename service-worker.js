@@ -1,5 +1,5 @@
-const APP_VERSION = 'V3.2.14';
-const CACHE_NAME = 'pr-explorer-v3-2-14-weather-detail-20260604j';
+const APP_VERSION = 'V3.2.15';
+const CACHE_NAME = 'pr-explorer-v3-2-15-dashboard-events-20260604k';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -9,6 +9,8 @@ const CORE_ASSETS = [
   './app.js',
   './pr-data.js',
   './pr-status-fetcher.js',
+  './events-data.js',
+  './markets-data.js',
   './icon-180.png',
   './icon-192.png',
   './icon-512.png',

@@ -7,8 +7,15 @@
 const qs  = s => document.querySelector(s);
 const qsa = s => [...document.querySelectorAll(s)];
 
-const APP_VERSION = 'V3.2.14';
+const APP_VERSION = 'V3.2.15';
 const APP_CHANGELOG = [
+  { version:'V3.2.15', date:'2026-06-04', title:'Dashboard Events & Märkte', changes:[
+    'Home/Übersicht erhält Dashboard-Sektion für Events der nächsten 5 Tage.',
+    'Statische Event- und Marktdaten als events-data.js und markets-data.js eingebunden.',
+    'Wochenmärkte werden mit Heute/Morgen-Hervorhebung angezeigt.',
+    'Optionale KI-Zusammenfassung per Anthropic API-Key in sessionStorage ergänzt.',
+    'Keine Änderung an Karte, Detail, Wetter, PR-Statuslogik, setTab(), openDetail() oder pr-data.js.'
+  ]},
   { version:'V3.2.14', date:'2026-06-04', title:'Wetter im Detail-Sheet', changes:[
     'Detailansicht erhält Wettervorschau am Startpunkt über Open-Meteo.',
     '7-Tage-Streifen mit Temperatur, Wettericon und Regenwahrscheinlichkeit ergänzt.',
@@ -972,7 +979,7 @@ function renderPanel(){
   const el=qs('#panelContent');if(!el)return;
   if(S.tab==='test'){renderTestTab();return;}
   const list=filtered();let h='';
-  if(S.tab==='overview'){ h=`${tripBannerHtml()}<div class="stats"><div class="stat"><b>${DATA.length}</b><small>PR gesamt</small></div><div class="stat"><b>${list.length}</b><small>Sichtbar</small></div><div class="stat"><b>${favs.size}</b><small>Favoriten</small></div></div><button class="btn-primary" onclick="setTab('journal')">Alle PR anzeigen</button>`; }
+  if(S.tab==='overview'){ h=`${tripBannerHtml()}<div class="stats"><div class="stat"><b>${DATA.length}</b><small>PR gesamt</small></div><div class="stat"><b>${list.length}</b><small>Sichtbar</small></div><div class="stat"><b>${favs.size}</b><small>Favoriten</small></div></div>${prxDashboardHtml()}<button class="btn-primary" onclick="setTab('journal')">Alle PR anzeigen</button>`; if(typeof initDashboard==='function') setTimeout(initDashboard,0); }
   else if(S.tab==='journal'){ const sb=cfg.soloMode?`<div class="solo-banner"><span>Solo: ${cfg.soloId}</span><button onclick="exitSoloMode();renderPanel()">× Alle</button></div>`:'';h=`${prxManualStatusCardHtml()}<div class="search-row"><input class="search-input" placeholder="PR suchen…" value="${S.query}" oninput="S.query=this.value;clearTimeout(window.__prxSearchT);window.__prxSearchT=setTimeout(()=>{renderLayers();renderPanel()},450)"></div><div class="sort-row"><span>Sortierung</span><select onchange="setSort(this.value)"><option value="id" ${cfg.sort==='id'?'selected':''}>PR-Nummer</option><option value="name" ${cfg.sort==='name'?'selected':''}>Name</option><option value="distance" ${cfg.sort==='distance'?'selected':''}>Track-Länge</option><option value="drive" ${cfg.sort==='drive'?'selected':''}>Anfahrtszeit</option><option value="elev" ${cfg.sort==='elev'?'selected':''}>Höhenmeter</option><option value="status" ${cfg.sort==='status'?'selected':''}>Status</option></select></div>${sb}<div class="list">${list.map(r=>prCardHtml(r,true)).join('')||'<div class="empty-state">Keine PR gefunden.</div>'}</div>`; }
   else if(S.tab==='trips'){ h=travelPlannerHtml(); }
   else if(S.tab==='options'){ h=`<div class="p-section">Kartenstil</div><div class="mode-grid">${Object.keys(BASE_LABELS).map(m=>`<button class="mode-chip ${cfg.base===m?'active':''}" onclick="setBase('${m}')">${BASE_LABELS[m]}</button>`).join('')}</div><div class="p-section">Ebenen</div><div class="sg-box" style="border-radius:18px;overflow:hidden;background:rgba(90,200,250,.04);border:1px solid rgba(90,200,250,.1)">${APP_LAYER_KEYS.map(k=>`<div class="opt-row"><span style="font-size:18px;width:28px;text-align:center">${OVERLAY_ICONS[k]}</span><span class="opt-label">${OVERLAY_LABELS[k]}</span><input type="checkbox" class="s-tog" ${cfg.layers[k]?'checked':''} onchange="setLayer('${k}',this.checked)"></div>`).join('')}</div><div class="p-section">POI-Reiseziele</div><div class="vector-info-card"><b>OSM Reise-POIs</b><span>${poiStatusHtml()}</span><button class="mini-btn" onclick="refreshPoiData()">POIs laden / aktualisieren</button><div class="poi-cat-grid">${Object.entries(POI_DEF).map(([k,d])=>`<button class="poi-cat-btn ${cfg.poiCats?.[k]!==false?'active':''}" onclick="setPoiCat('${k}',!(cfg.poiCats?.['${k}']!==false));event.stopPropagation();"><span>${d.icon}</span>${d.label}</button>`).join('')}</div><button class="mini-btn" onclick="googleMapsSearch('Cafe Madeira')">Google-Maps-Suche Test</button></div><div class="p-section">Hiking-Darstellung</div><div class="vector-info-card"><b>${hikingModeLabel()}</b>${hikingModeControlsHtml('panel')}<span>${cfg.hikingMode==='raster'?'Waymarked Trails Raster-Referenz aktiv.':cfg.hikingMode==='vector'?'Editierbare OSM-Vektorlinien aktiv.':cfg.hikingMode==='compare'?'Vergleichsmodus: Raster und Vektor bewusst übereinander.':'Keine zusätzliche Hiking-Ebene aktiv.'}</span></div><div class="p-section">OSM Hiking Vektor</div><div class="vector-info-card"><b>Editierbare Rohdaten-Linien</b><span>${hikingVectorStatusHtml()}</span><button class="mini-btn" onclick="refreshHikingVectorData()">Rohdaten laden / aktualisieren</button></div><button class="btn-primary" style="margin-top:14px" onclick="fitVisible();setTab('map')">Sichtbare PR einpassen</button>${v320OptionsHtml()}${v325DiagnosticsHtml()}${prxStatusDiagnosticsHtml()}`; }
@@ -1521,6 +1528,162 @@ function initPrLiveStatus(){
   }).catch(err => console.warn('[PR-Status] fetchPrStatus fehlgeschlagen', err));
 }
 
+
+
+/* V3.2.15 DASHBOARD EVENTS & MÄRKTE */
+function prxParseDateLocal(dateStr){
+  const [y,m,d] = String(dateStr || '').split('-').map(Number);
+  if(!y || !m || !d) return null;
+  return new Date(y, m-1, d);
+}
+function getUpcomingEvents(days = 5){
+  const all = Array.isArray(window.MADEIRA_EVENTS) ? window.MADEIRA_EVENTS : [];
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const cutoff = new Date(today);
+  cutoff.setDate(cutoff.getDate()+days);
+  return all.filter(ev=>{
+    const start = prxParseDateLocal(ev.start);
+    const end = prxParseDateLocal(ev.ende);
+    if(!start || !end) return false;
+    return start <= cutoff && end >= today;
+  }).sort((a,b)=>prxParseDateLocal(a.start)-prxParseDateLocal(b.start));
+}
+function getTodaysTomorrowsMarkets(){
+  const all = Array.isArray(window.MADEIRA_MARKETS) ? window.MADEIRA_MARKETS : [];
+  const today = new Date().getDay();
+  const tomorrow = (today+1)%7;
+  return all.map(m=>({
+    ...m,
+    istHeute:Array.isArray(m.wochentag) && m.wochentag.includes(today),
+    istMorgen:Array.isArray(m.wochentag) && m.wochentag.includes(tomorrow)
+  }));
+}
+function buildEventSummaryPrompt(events,dateRange){
+  const eventList = events.length ? events.map(e=>`- ${e.emoji || ''} ${e.name} (${e.start}–${e.ende}): ${e.beschreibung} — Ort: ${e.ort}`).join('\n') : 'Keine bekannten Großevents in diesem Zeitraum.';
+  return `Du bist ein freundlicher Reisebegleiter für Madeira.
+Schreibe eine kurze, einladende Zusammenfassung auf Deutsch (3-4 Sätze, kein Aufzählungsformat)
+was Besucher auf Madeira in den nächsten 5 Tagen (${dateRange}) erwartet.
+
+Aktuelle Events:
+${eventList}
+
+Stil: warm, informativ, praktisch. Keine Wiederholung der Daten als Liste.
+Falls keine Events: gib einen allgemeinen Wandertipp für die Jahreszeit.`;
+}
+async function loadAISummary(events,dateRange){
+  let apiKey = sessionStorage.getItem('anthropic_key');
+  if(!apiKey){
+    apiKey = prompt('Anthropic API-Key eingeben (wird nur in dieser Browser-Sitzung gespeichert):');
+    if(!apiKey) return null;
+    sessionStorage.setItem('anthropic_key', apiKey);
+  }
+  const response = await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'x-api-key':apiKey,
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-direct-browser-access':'true'
+    },
+    body:JSON.stringify({
+      model:'claude-haiku-4-5-20251001',
+      max_tokens:300,
+      messages:[{role:'user',content:buildEventSummaryPrompt(events,dateRange)}]
+    })
+  });
+  if(!response.ok) throw new Error(`Anthropic ${response.status}`);
+  const data = await response.json();
+  return data?.content?.[0]?.text || null;
+}
+function prxDashboardHtml(){
+  return `<div id="dashboardEvents"></div>`;
+}
+function initDashboard(){
+  const container = document.getElementById('dashboardEvents');
+  if(!container) return;
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const cutoff = new Date(today);
+  cutoff.setDate(cutoff.getDate()+5);
+  const dateRange = `${today.toLocaleDateString('de-DE')} – ${cutoff.toLocaleDateString('de-DE')}`;
+  const events = getUpcomingEvents(5);
+  const markets = getTodaysTomorrowsMarkets();
+  const wochentage = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+
+  const eventsHtml = events.length ? events.slice(0,4).map(e=>{
+    const end = prxParseDateLocal(e.ende);
+    const endTxt = end ? end.toLocaleDateString('de-DE',{day:'numeric',month:'short'}) : '';
+    return `<div class="dashboard-event-item">
+      <span class="dashboard-event-emoji">${htmlEsc(e.emoji || '•')}</span>
+      <div class="dashboard-event-info">
+        <span class="dashboard-event-name">${htmlEsc(e.name || '')}</span>
+        <span class="dashboard-event-meta">${htmlEsc(e.ort || '')}${endTxt ? ` · bis ${htmlEsc(endTxt)}` : ''}</span>
+      </div>
+      <span class="dashboard-event-badge ${htmlEsc(e.kategorie || 'event')}">${htmlEsc(e.kategorie || 'event')}</span>
+    </div>`;
+  }).join('') : '<p class="dashboard-empty">Keine bekannten Events in den nächsten 5 Tagen.</p>';
+
+  const marketsHtml = markets
+    .sort((a,b)=>(b.istHeute?1:0)-(a.istHeute?1:0) || (b.istMorgen?1:0)-(a.istMorgen?1:0) || String(a.ort||'').localeCompare(String(b.ort||'')))
+    .map(m=>{
+      const days = Array.isArray(m.wochentag) ? m.wochentag.map(d=>wochentage[d]).join(', ') : '';
+      return `<div class="dashboard-market-item ${m.istHeute?'heute':m.istMorgen?'morgen':''}">
+        <span class="dashboard-market-emoji">${htmlEsc(m.emoji || '🛒')}</span>
+        <div class="dashboard-market-info">
+          <span class="dashboard-market-name">${htmlEsc(m.name || '')}</span>
+          <span class="dashboard-market-meta">${htmlEsc(m.ort || '')} · ${htmlEsc(m.uhrzeit || '')}${days ? ` · ${htmlEsc(days)}` : ''}</span>
+        </div>
+        ${m.istHeute ? '<span class="dashboard-market-tag heute">Heute</span>' : ''}
+        ${m.istMorgen ? '<span class="dashboard-market-tag morgen">Morgen</span>' : ''}
+      </div>`;
+    }).join('');
+
+  container.innerHTML = `
+    <div class="dashboard-section">
+      <div class="dashboard-section-header">
+        <span class="dashboard-section-title">📅 Diese Woche auf Madeira</span>
+        <span class="dashboard-section-sub">${htmlEsc(dateRange)}</span>
+      </div>
+      <div class="dashboard-events-list">${eventsHtml}</div>
+    </div>
+
+    <div class="dashboard-section" id="aiSummarySection">
+      <div class="dashboard-section-header">
+        <span class="dashboard-section-title">✨ KI-Zusammenfassung</span>
+      </div>
+      <div id="aiSummaryContent" class="dashboard-ai-content">
+        <button id="aiSummaryBtn" class="dashboard-ai-btn" type="button">✨ Zusammenfassung laden</button>
+        <button id="aiKeyClearBtn" class="dashboard-ai-keyclear" type="button">API-Key löschen</button>
+      </div>
+    </div>
+
+    <div class="dashboard-section">
+      <div class="dashboard-section-header">
+        <span class="dashboard-section-title">🛒 Wochenmärkte</span>
+      </div>
+      <div class="dashboard-markets-list">${marketsHtml}</div>
+    </div>
+  `;
+
+  document.getElementById('aiSummaryBtn')?.addEventListener('click', async()=>{
+    const btn = document.getElementById('aiSummaryBtn');
+    const content = document.getElementById('aiSummaryContent');
+    if(!btn || !content) return;
+    btn.textContent = '⏳ Wird generiert …';
+    btn.disabled = true;
+    try{
+      const text = await loadAISummary(events,dateRange);
+      content.innerHTML = text ? `<p class="dashboard-ai-text">${htmlEsc(text)}</p>` : `<p class="dashboard-ai-error">Zusammenfassung nicht verfügbar.</p>`;
+    }catch(err){
+      content.innerHTML = `<p class="dashboard-ai-error">Fehler: ${htmlEsc(err.message || 'unbekannt')}</p>`;
+    }
+  });
+  document.getElementById('aiKeyClearBtn')?.addEventListener('click', ()=>{
+    sessionStorage.removeItem('anthropic_key');
+    toast('API-Key gelöscht');
+  });
+}
 
 /* V3.2.14 WETTER IM DETAIL-SHEET */
 const PRX_WMO_CODES = {

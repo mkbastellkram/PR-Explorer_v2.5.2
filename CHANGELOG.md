@@ -1,3 +1,11 @@
+# V3.2.15 · Dashboard Events & Märkte
+
+- `events-data.js` und `markets-data.js` eingebunden.
+- Home/Übersicht erhält Eventsektion „Diese Woche auf Madeira“.
+- Wochenmärkte werden angezeigt und Heute/Morgen hervorgehoben.
+- Optionale KI-Zusammenfassung per Anthropic API-Key in sessionStorage.
+- Keine Änderung an Karte, Detail, Wetter, PR-Statuslogik, `setTab()`, `openDetail()` oder `pr-data.js`.
+
 # V3.2.14 · Wetter im Detail-Sheet
 
 - Open-Meteo-Wetterblock in der Detailansicht ergänzt.

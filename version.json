@@ -1,17 +1,19 @@
 {
   "name": "PR Explorer Madeira",
-  "version": "V3.2.14",
+  "version": "V3.2.15",
   "date": "2026-06-04",
-  "title": "Wetter im Detail-Sheet",
-  "cache": "pr-explorer-v3-2-14-weather-detail-20260604j",
-  "base": "V3.2.13",
+  "title": "Dashboard Events & Märkte",
+  "cache": "pr-explorer-v3-2-15-dashboard-events-20260604k",
+  "base": "V3.2.14",
   "activeFiles": [
     "index.html",
     "style.css",
     "pr-data.js",
     "pr-status-fetcher.js",
+    "events-data.js",
+    "markets-data.js",
     "app.js",
     "service-worker.js"
   ],
-  "scope": "Open-Meteo weather block in detail sheet"
+  "scope": "home dashboard events and markets"
 }
