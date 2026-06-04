@@ -7,8 +7,15 @@
 const qs  = s => document.querySelector(s);
 const qsa = s => [...document.querySelectorAll(s)];
 
-const APP_VERSION = 'V3.2.10';
+const APP_VERSION = 'V3.2.11';
 const APP_CHANGELOG = [
+  { version:'V3.2.11', date:'2026-06-04', title:'PR-Live-Status-Integration', changes:[
+    'pr-status-fetcher.js eingebunden und nicht-blockierend beim App-Start geladen.',
+    'Offizieller PR-Status wird als Fallback genutzt, ohne lokale User-Status zu überschreiben.',
+    'Detailansicht zeigt offiziellen Live-Status mit Hinweis und Aktualisierungsstand.',
+    'Service Worker cached pr-status-fetcher.js ohne Query-String.',
+    'Keine Änderung an setTab(), openDetail(), Karteninitialisierung, Bottom-Dock oder pr-data.js.'
+  ]},
   { version:'V3.2.10', date:'2026-06-04', title:'Syntax-Recovery & Versionskonsistenz', changes:[
     'Kritischer Syntaxfehler in Funktionsdefinition v327DetailMapIconHtml behoben (ungültiger Bezeichner mit Kommas).',
     'Comma-Operator in renderDetail() Template-String behoben: Karten-Icon wird jetzt korrekt mit v327DetailMapIconHtml(r) gerendert.',
@@ -382,7 +389,16 @@ const STATUS_DEF = {
   booked:  { label:'Gebucht',        dot:'#0a84ff' },
   skip:    { label:'Kein Interesse', dot:'#636366' },
 };
-function getSt(id)   { return prStatus[id]||'open'; }
+function getLocalSt(id)   { return prStatus[id]||'open'; }
+function getSt(id){
+  const local = getLocalSt(id);
+  if(local && local !== 'none') return local;
+  const live = (typeof getPrStatus === 'function') ? getPrStatus(id) : null;
+  if(live?.status === 'closed') return 'closed';
+  if(live?.status === 'partial') return 'restricted';
+  return local || 'none';
+}
+
 function setSt(id,s) {
   prStatus[id]=s;
   saveStatus();
@@ -813,7 +829,7 @@ function focusDetailPins(id){
 }
 function clearPinFocus(){ lgMarkers.eachLayer(m=>{const el=m.getElement();if(el){el.classList.remove('pin-sel','pin-hidden');}}); }
 function highlightPin(id){ focusDetailPins(id); }
-function soloOnMap(id){ cfg.soloMode=true;cfg.soloId=id;cfg.layers.tracks=true;cfg.layers.drive=true;cfg.layers.markers=true;saveCfg();renderLayers();setTab('map');const r=DATA.find(x=>x.id===id);if(r){setTimeout(()=>{const b=routeBounds(r);if(isValidBounds(b))map.flyToBounds(b,mapSafeFitOptions(false));toast(`${id} · Tippe Karte für alle PR`);},200);} }
+function soloOnMap(id){ cfg.soloMode=true;cfg.soloId=id;cfg.layers.tracks=true;cfg.layers.drive=true;cfg.layers.markers=true;saveCfg();renderLayers();initPrLiveStatus();setTab('map');const r=DATA.find(x=>x.id===id);if(r){setTimeout(()=>{const b=routeBounds(r);if(isValidBounds(b))map.flyToBounds(b,mapSafeFitOptions(false));toast(`${id} · Tippe Karte für alle PR`);},200);} }
 function exitSoloMode(){ cfg.soloMode=false;cfg.soloId=null;saveCfg();renderLayers(); }
 
 /* UI */
@@ -972,6 +988,7 @@ function renderDetail(){
       ${!isLoop?'<span class="d-pill warn-pill">⚠️ Kein Rundkurs</span>':''}
       <span class="d-pill" style="background:${STATUS_DEF[st].dot}22;border-color:${STATUS_DEF[st].dot}44;color:${STATUS_DEF[st].dot}">● ${STATUS_DEF[st].label}</span>
     </div>
+    ${prxLiveStatusHtml(r.id)}
     ${hasElev?`<div class="elev-wrap"><div class="elev-title">Höhenprofil</div><canvas id="elevCanvas" class="elev-canvas" width="300" height="100"></canvas><div class="elev-stats"><div class="elev-stat"><b>${fmt(r.elevMin||r.low)} m</b><small>Tiefpunkt</small></div><div class="elev-stat"><b>${fmt(r.elevMax||r.high)} m</b><small>Hochpunkt</small></div><div class="elev-stat"><b>↑ ${fmt(r.elevUp)} m</b><small>Aufstieg</small></div><div class="elev-stat"><b>↓ ${fmt(r.elevDown)} m</b><small>Abstieg</small></div></div></div>`:''}
     <div class="p-section">Status setzen</div>
     <div class="status-btns">${stBtns}</div>
@@ -1456,6 +1473,30 @@ function v320SyncUI(){
   document.documentElement.style.setProperty('--v320-sheet-opacity', cfg.bottomSheetOpacity||0.88);
 }
 
+
+
+/* V3.2.11 PR-LIVE-STATUS */
+function prxLiveStatusHtml(id){
+  const live = (typeof getPrStatus === 'function') ? getPrStatus(id) : null;
+  if(!live) return '';
+  const labels = (typeof PR_STATUS_LABELS !== 'undefined') ? PR_STATUS_LABELS : {open:'Geöffnet',partial:'Eingeschränkt',closed:'Geschlossen',unknown:'Status unbekannt'};
+  const label = labels[live.status] || labels.unknown || 'Status unbekannt';
+  return `<div class="live-status-block">
+    <div class="live-status-head"><span class="live-status-dot live-${htmlEsc(live.status || 'unknown')}"></span><b>Offiziell: ${htmlEsc(label)}</b></div>
+    ${live.note ? `<span class="live-status-note">${htmlEsc(live.note)}</span>` : ''}
+    ${live.lastUpdate ? `<small>Stand: ${htmlEsc(live.lastUpdate)}</small>` : '<small>Stand: nicht angegeben</small>'}
+  </div>`;
+}
+function initPrLiveStatus(){
+  if(typeof fetchPrStatus !== 'function') return;
+  fetchPrStatus().then(map => {
+    if(map && map.size > 0){
+      try{ renderLayers(); }catch(e){ console.warn('[PR-Status] renderLayers nach Statusupdate fehlgeschlagen', e); }
+      try{ renderPanel(); }catch(e){ console.warn('[PR-Status] renderPanel nach Statusupdate fehlgeschlagen', e); }
+      try{ if(S.selected) renderDetail(); }catch(e){ console.warn('[PR-Status] renderDetail nach Statusupdate fehlgeschlagen', e); }
+    }
+  }).catch(err => console.warn('[PR-Status] fetchPrStatus fehlgeschlagen', err));
+}
 
 /* V3.2.5 CACHE- UND STARTDIAGNOSE */
 function v325RunDiagnostics(){

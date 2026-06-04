@@ -1,5 +1,5 @@
-const APP_VERSION = 'V3.2.10';
-const CACHE_NAME = 'pr-explorer-v3-2-10-syntax-fix-20260604';
+const APP_VERSION = 'V3.2.11';
+const CACHE_NAME = 'pr-explorer-v3-2-11-pr-live-status-20260604g';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -8,6 +8,7 @@ const CORE_ASSETS = [
   './style.css',
   './app.js',
   './pr-data.js',
+  './pr-status-fetcher.js',
   './icon-180.png',
   './icon-192.png',
   './icon-512.png',

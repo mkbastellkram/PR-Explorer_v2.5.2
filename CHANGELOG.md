@@ -1,3 +1,12 @@
+# V3.2.11 · PR-Live-Status-Integration
+
+- `pr-status-fetcher.js` eingebunden.
+- PR-Live-Status wird nicht-blockierend nach App-Start geladen.
+- `getSt(id)` nutzt Live-Status nur als Fallback; lokale User-Auswahl bleibt vorrangig.
+- Detailansicht zeigt offiziellen Statusblock mit Status, Hinweis und Stand.
+- Service Worker cached `./pr-status-fetcher.js` ohne Query-String.
+- Keine Änderung an `setTab()`, `openDetail()`, Karteninitialisierung, Bottom-Dock oder `pr-data.js`.
+
 # V3.2.9 · Detail-Karte-Rückkehr
 
 - Karten-Icon in der Detailansicht wechselt zur Karte und fokussiert den aktiven PR.
