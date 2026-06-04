@@ -1,3 +1,13 @@
+# V3.2.19 · POI-Unterwegs im Detail
+
+- Detail-Sheet zeigt „🏛 Unterwegs – Sehenswürdigkeiten“.
+- KML-Parser per DOMParser ergänzt.
+- KML-Dateiname wird automatisch aus PR-ID abgeleitet, z. B. `PR 6.3` → `kml/PR6.3.kml`.
+- Falls KML fehlt, greift ein Startpunkt-Fallback bis 5 km.
+- Wikipedia-Thumbnail und Kurzbeschreibung werden mit 24h sessionStorage-Cache geladen.
+- POI-Kartenlayer aus V3.2.17 bleibt unverändert.
+- Keine Änderung an Wetter, Webcams, PR-Statuslogik, Dashboard, `setTab()`, `openDetail()` oder `pr-data.js`.
+
 # V3.2.18 · Webcams final
 
 - `webcam-data.js` mit 20 Madeira-Webcams eingebunden.

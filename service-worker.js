@@ -1,5 +1,5 @@
-const APP_VERSION = 'V3.2.18';
-const CACHE_NAME = 'pr-explorer-v3-2-18-webcams-final-20260604n';
+const APP_VERSION = 'V3.2.19';
+const CACHE_NAME = 'pr-explorer-v3-2-19-poi-unterwegs-20260604p';
 const CORE_ASSETS = [
   './',
   './index.html',

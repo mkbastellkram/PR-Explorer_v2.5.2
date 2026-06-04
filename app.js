@@ -7,8 +7,17 @@
 const qs  = s => document.querySelector(s);
 const qsa = s => [...document.querySelectorAll(s)];
 
-const APP_VERSION = 'V3.2.18';
+const APP_VERSION = 'V3.2.19';
 const APP_CHANGELOG = [
+  { version:'V3.2.19', date:'2026-06-04', title:'POI-Unterwegs im Detail', changes:[
+    'Detail-Sheet zeigt Unterwegs – Sehenswürdigkeiten.',
+    'KML-Parsing per DOMParser ergänzt.',
+    'KML-Dateiname wird automatisch aus PR-ID abgeleitet, z. B. PR 6.3 → kml/PR6.3.kml.',
+    'Falls keine KML-Datei vorhanden ist, greift ein Startpunkt-Fallback.',
+    'Wikipedia-Thumbnail und Kurzbeschreibung werden mit 24h sessionStorage-Cache geladen.',
+    'Bestehender POI-Kartenlayer bleibt unverändert.',
+    'Keine Änderung an Wetter, Webcams, PR-Statuslogik, Dashboard, setTab(), openDetail() oder pr-data.js.'
+  ]},
   { version:'V3.2.18', date:'2026-06-04', title:'Webcams final', changes:[
     'webcam-data.js mit 20 Madeira-Webcams und echten YouTube-IDs eingebunden.',
     'Webcam-Layer ist über Optionen/Ebenen aktivierbar und standardmäßig aus.',
@@ -925,7 +934,7 @@ function openDetail(id,zoom=false){
   focusDetailPins(id);
   renderDetail();
   if(zoom){const b=routeBounds(S.selected);if(isValidBounds(b))map.flyToBounds(b,mapSafeFitOptions(true));}
-  setTimeout(()=>{focusDetailPins(id);drawElevProfile(S.selected,'elevCanvas');initWeatherForTrail(S.selected);renderNearbyWebcams(S.selected);},200);
+  setTimeout(()=>{focusDetailPins(id);drawElevProfile(S.selected,'elevCanvas');initWeatherForTrail(S.selected);renderNearbyWebcams(S.selected);renderPOIsAlongTrail(S.selected);},200);
 }
 function closeDetail(){ qs('#detailPanel').classList.add('hidden');S.selected=null;V329_DETAIL_CONTEXT.active=false;V329_DETAIL_CONTEXT.activeId=null;v329SyncDetailReturnButton();clearPinFocus();drawPois(); }
 function setFullscreen(on){ S.fullscreen=on;qs('#app').classList.toggle('fullscreen',on);qs('#fullscreenClose').classList.toggle('hidden',!on);closeDetail();qs('#panel').classList.add('hidden');S.panel=false;setTimeout(()=>map.invalidateSize(),200); }
@@ -1061,7 +1070,7 @@ function renderDetail(){
       <span class="d-pill" style="background:${STATUS_DEF[st].dot}22;border-color:${STATUS_DEF[st].dot}44;color:${STATUS_DEF[st].dot}">● ${STATUS_DEF[st].label}</span>
     </div>
     ${hasElev?`<div class="elev-wrap"><div class="elev-title">Höhenprofil</div><canvas id="elevCanvas" class="elev-canvas" width="300" height="100"></canvas>
-    ${prxWeatherContainerHtml()}${prxWebcamContainerHtml()}<div class="elev-stats"><div class="elev-stat"><b>${fmt(r.elevMin||r.low)} m</b><small>Tiefpunkt</small></div><div class="elev-stat"><b>${fmt(r.elevMax||r.high)} m</b><small>Hochpunkt</small></div><div class="elev-stat"><b>↑ ${fmt(r.elevUp)} m</b><small>Aufstieg</small></div><div class="elev-stat"><b>↓ ${fmt(r.elevDown)} m</b><small>Abstieg</small></div></div></div>`:''}
+    ${prxWeatherContainerHtml()}${prxWebcamContainerHtml()}${prxPOIContainerHtml()}<div class="elev-stats"><div class="elev-stat"><b>${fmt(r.elevMin||r.low)} m</b><small>Tiefpunkt</small></div><div class="elev-stat"><b>${fmt(r.elevMax||r.high)} m</b><small>Hochpunkt</small></div><div class="elev-stat"><b>↑ ${fmt(r.elevUp)} m</b><small>Aufstieg</small></div><div class="elev-stat"><b>↓ ${fmt(r.elevDown)} m</b><small>Abstieg</small></div></div></div>`:''}
     <div class="p-section">Status setzen</div>
     <div class="status-btns">${stBtns}</div>
 
@@ -2127,3 +2136,186 @@ Object.assign(window,{S,F,cfg,favs,saveFavs,saveCfg,saveStatus,openDetail,closeD
 /* INIT */
 bind();try{renderFilterSheet();}catch(e){console.warn('Initial filter render skipped',e);}renderLayers();setTab('map');syncTestToggle();v320SyncUI();setTimeout(fitMadeira,300);_updateTestBadge();
 if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js').catch(()=>{});
+
+
+/* V3.2.19 POI-UNTERWEGS DETAIL */
+function prxPOIContainerHtml(){
+  return `<div id="poiContainer" class="poi-container"></div>`;
+}
+function prxTrailStartCoords(trail){
+  const lat = Number(trail?.startLat ?? trail?.lat ?? trail?.start_lat ?? trail?.start?.[0] ?? trail?.coords?.[0]);
+  const lng = Number(trail?.startLng ?? trail?.startLon ?? trail?.lon ?? trail?.lng ?? trail?.start_lng ?? trail?.start?.[1] ?? trail?.coords?.[1]);
+  if(!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return {lat,lng};
+}
+function prxTrailKmlPath(trail){
+  if(trail?.kmlFile) return trail.kmlFile;
+  if(!trail?.id) return null;
+  const id = String(trail.id).replace(/\s+/g,'');
+  return `kml/${id}.kml`;
+}
+async function parseKMLtoPoints(kmlPath){
+  if(!kmlPath) return [];
+  const cacheKey = `kml_points_${kmlPath}`;
+  try{
+    const cached = sessionStorage.getItem(cacheKey);
+    if(cached) return JSON.parse(cached);
+  }catch(_){}
+  try{
+    const res = await fetch(kmlPath);
+    if(!res.ok) return [];
+    const text = await res.text();
+    const xml = new DOMParser().parseFromString(text, 'text/xml');
+    const nodes = Array.from(xml.querySelectorAll('LineString coordinates, coordinates'));
+    const points = [];
+    nodes.forEach(node=>{
+      String(node.textContent || '').trim().split(/\s+/).filter(s=>s.includes(',')).forEach(s=>{
+        const parts = s.split(',').map(Number);
+        const lng = parts[0];
+        const lat = parts[1];
+        if(Number.isFinite(lat) && Number.isFinite(lng)) points.push({lat,lng});
+      });
+    });
+    try{ sessionStorage.setItem(cacheKey, JSON.stringify(points)); }catch(_){}
+    return points;
+  }catch(err){
+    console.warn('[POI] KML nicht verfügbar:', kmlPath, err);
+    return [];
+  }
+}
+function minDistanceToPath(poiLat, poiLng, pathPoints){
+  if(!Array.isArray(pathPoints) || !pathPoints.length) return Infinity;
+  let min = Infinity;
+  for(const p of pathPoints){
+    const d = typeof haversineKm === 'function'
+      ? haversineKm(poiLat, poiLng, p.lat, p.lng)
+      : webcamHaversineKm(poiLat, poiLng, p.lat, p.lng);
+    if(d < min) min = d;
+  }
+  return min;
+}
+function getPOIsAlongPath(pathPoints, maxKm = 2.0){
+  const pois = Array.isArray(window.MADEIRA_POIS) ? window.MADEIRA_POIS : [];
+  return pois
+    .map(poi => ({...poi, distanzKm:minDistanceToPath(poi.lat, poi.lng, pathPoints)}))
+    .filter(poi => poi.distanzKm <= maxKm)
+    .sort((a,b)=>a.distanzKm-b.distanzKm);
+}
+function poiWikiUrl(slug){
+  return slug ? `https://en.wikipedia.org/wiki/${encodeURIComponent(slug)}` : '';
+}
+async function fetchWikipediaData(slug){
+  if(!slug) return null;
+  const cacheKey = `wiki_${slug}`;
+  try{
+    const cached = sessionStorage.getItem(cacheKey);
+    if(cached){
+      const parsed = JSON.parse(cached);
+      if(parsed?.expires && parsed.expires > Date.now()) return parsed.data;
+      if(parsed?.data && !parsed.expires) return parsed.data;
+    }
+  }catch(_){}
+  try{
+    const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(slug)}`);
+    if(!res.ok) return null;
+    const data = await res.json();
+    const result = {
+      thumbnail:data.thumbnail?.source || null,
+      extract:data.extract ? data.extract.slice(0,120)+(data.extract.length>120?'…':'') : null,
+      pageUrl:data.content_urls?.desktop?.page || poiWikiUrl(slug)
+    };
+    try{
+      sessionStorage.setItem(cacheKey, JSON.stringify({
+        expires:Date.now() + 24*60*60*1000,
+        data:result
+      }));
+    }catch(_){}
+    return result;
+  }catch(_){
+    return null;
+  }
+}
+async function renderPOIsAlongTrail(trail){
+  const container = document.getElementById('poiContainer');
+  if(!container || !trail) return;
+  const poisAll = Array.isArray(window.MADEIRA_POIS) ? window.MADEIRA_POIS : [];
+  if(!poisAll.length){
+    container.innerHTML = '';
+    return;
+  }
+
+  container.innerHTML = '<div class="poi-loading">Sehenswürdigkeiten werden geladen …</div>';
+
+  let pathPoints = [];
+  const kmlPath = prxTrailKmlPath(trail);
+  if(kmlPath) pathPoints = await parseKMLtoPoints(kmlPath);
+
+  let pois = [];
+  let modeText = 'innerhalb 2 km';
+  let distSuffix = 'vom Weg';
+
+  if(pathPoints.length){
+    pois = getPOIsAlongPath(pathPoints, 2.0).slice(0, 8);
+  }else{
+    const c = prxTrailStartCoords(trail);
+    if(!c){
+      container.innerHTML = '';
+      return;
+    }
+    pois = poisAll
+      .map(p => ({
+        ...p,
+        distanzKm: typeof haversineKm === 'function'
+          ? haversineKm(c.lat, c.lng, p.lat, p.lng)
+          : webcamHaversineKm(c.lat, c.lng, p.lat, p.lng)
+      }))
+      .filter(p => p.distanzKm <= 5.0)
+      .sort((a,b)=>a.distanzKm-b.distanzKm)
+      .slice(0,8);
+    modeText = 'nahe Startpunkt';
+    distSuffix = 'vom Start';
+  }
+
+  if(!pois.length){
+    container.innerHTML = '';
+    return;
+  }
+
+  const wikiData = await Promise.all(pois.map(p => fetchWikipediaData(p.wikipediaSlug)));
+
+  const items = pois.map((poi,i)=>{
+    const wiki = wikiData[i];
+    const k = POI_KATEGORIEN[poi.kategorie] || POI_KATEGORIEN.kultur;
+    const mapsUrl = typeof poiMapsUrl === 'function'
+      ? poiMapsUrl(poi)
+      : (/iPad|iPhone|iPod/.test(navigator.userAgent)
+        ? `maps://maps.apple.com/?ll=${poi.lat},${poi.lng}&q=${encodeURIComponent(poi.name)}`
+        : `https://www.google.com/maps/search/?api=1&query=${poi.lat},${poi.lng}`);
+    const pageUrl = wiki?.pageUrl || poiWikiUrl(poi.wikipediaSlug);
+    return `<div class="poi-item">
+      ${wiki?.thumbnail
+        ? `<img class="poi-thumb" src="${htmlEsc(wiki.thumbnail)}" alt="${htmlEsc(poi.name)}" loading="lazy">`
+        : `<div class="poi-thumb-placeholder">${k.emoji}</div>`}
+      <div class="poi-info">
+        <div class="poi-header">
+          <span class="poi-name">${htmlEsc(poi.name)}</span>
+          <span class="poi-badge" style="color:${k.farbe}">${k.emoji} ${htmlEsc(k.label)}</span>
+        </div>
+        <p class="poi-desc">${htmlEsc(wiki?.extract || poi.beschreibung || '')}</p>
+        <span class="poi-dist">📍 ${poi.distanzKm.toFixed(1)} km ${htmlEsc(distSuffix)}</span>
+        <div class="poi-actions">
+          <a href="${htmlEsc(mapsUrl)}" target="_blank" rel="noopener" class="poi-btn maps">📍 Route</a>
+          ${pageUrl ? `<a href="${htmlEsc(pageUrl)}" target="_blank" rel="noopener" class="poi-btn wiki">🌐 Wikipedia</a>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  container.innerHTML = `<div class="poi-section">
+    <div class="poi-section-header">
+      <span class="poi-section-title">🏛 Unterwegs – Sehenswürdigkeiten</span>
+      <span class="poi-section-sub">${pois.length} ${htmlEsc(modeText)}</span>
+    </div>
+    <div class="poi-list">${items}</div>
+  </div>`;
+}

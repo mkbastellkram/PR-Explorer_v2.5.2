@@ -1,10 +1,10 @@
 {
   "name": "PR Explorer Madeira",
-  "version": "V3.2.18",
+  "version": "V3.2.19",
   "date": "2026-06-04",
-  "title": "Webcams final",
-  "cache": "pr-explorer-v3-2-18-webcams-final-20260604n",
-  "base": "V3.2.17",
+  "title": "POI-Unterwegs im Detail",
+  "cache": "pr-explorer-v3-2-19-poi-unterwegs-20260604p",
+  "base": "V3.2.18",
   "activeFiles": [
     "index.html",
     "style.css",
@@ -17,5 +17,5 @@
     "app.js",
     "service-worker.js"
   ],
-  "scope": "webcam layer and nearest webcam detail grid"
+  "scope": "POI detail section with KML parser, startpoint fallback, Wikipedia cache"
 }

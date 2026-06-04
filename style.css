@@ -2050,3 +2050,148 @@ button,input,select,textarea,label,a,.pr-card,.card-map-btn{
    V3.2.18 Webcams final
    ============================================================ */
 .webcam-popup{font-size:13px;line-height:1.45;color:#1a1a2e;min-width:190px}.webcam-popup-region{display:block;font-size:11px;color:#666;margin:1px 0 6px}.webcam-popup-thumb{width:100%;max-width:200px;aspect-ratio:16/9;object-fit:cover;border-radius:6px;display:block;margin:5px 0 7px;background:#ddd}.webcam-popup-desc{display:block;font-size:11px;color:#555;margin:2px 0 7px}.webcam-popup-link{display:inline-flex;align-items:center;justify-content:center;min-height:30px;padding:5px 10px;background:#2DD4BF;color:#0F2027;border-radius:6px;font-size:12px;font-weight:800;text-decoration:none}.webcam-container{margin:12px 0 4px}.webcam-section{margin:12px 0;background:rgba(255,255,255,.05);border-radius:14px;border:1px solid rgba(45,212,191,.20);padding:12px}.webcam-section-header{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:10px}.webcam-section-title{font-size:13px;font-weight:800;color:#2DD4BF;letter-spacing:.04em;text-transform:uppercase}.webcam-section-sub{font-size:10px;color:rgba(255,255,255,.35);white-space:nowrap}.webcam-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.webcam-card{position:relative;display:flex;flex-direction:column;min-height:44px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden;text-decoration:none;color:inherit;-webkit-tap-highlight-color:transparent}.webcam-card:active{background:rgba(45,212,191,.10);border-color:rgba(45,212,191,.40)}.webcam-card-thumb{width:100%;aspect-ratio:16/9;object-fit:cover;background:rgba(255,255,255,.06)}.webcam-card-thumb-empty{display:flex;align-items:center;justify-content:center;font-size:24px}.webcam-card-name{font-size:12px;font-weight:800;color:#F8FAFC;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:7px 8px 0}.webcam-card-meta{font-size:10px;color:rgba(255,255,255,.48);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:2px 8px 8px}.webcam-card-cta{position:absolute;top:6px;right:6px;font-size:10px;font-weight:800;color:#0F2027;background:rgba(45,212,191,.90);padding:3px 7px;border-radius:999px}@media(max-width:360px){.webcam-grid{grid-template-columns:1fr}}
+
+
+/* ============================================================
+   V3.2.19 POI-Unterwegs Detail
+   ============================================================ */
+.poi-container{
+  margin:12px 0 4px;
+}
+.poi-section {
+  margin: 12px 0;
+  background: rgba(255,255,255,0.05);
+  border-radius: 14px;
+  border: 1px solid rgba(45,212,191,0.20);
+  padding: 12px;
+}
+.poi-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.poi-section-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #2DD4BF;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.poi-section-sub {
+  font-size: 10px;
+  color: rgba(255,255,255,0.35);
+  white-space: nowrap;
+}
+.poi-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.poi-item {
+  display: flex;
+  gap: 10px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 10px;
+  padding: 8px;
+  overflow: hidden;
+}
+.poi-thumb,
+.poi-thumb-placeholder {
+  width: 72px;
+  height: 72px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+.poi-thumb {
+  object-fit: cover;
+  background: rgba(255,255,255,0.06);
+}
+.poi-thumb-placeholder {
+  background: rgba(255,255,255,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+}
+.poi-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.poi-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 6px;
+}
+.poi-name {
+  font-size: 12px;
+  font-weight: 800;
+  color: #F8FAFC;
+  line-height: 1.3;
+}
+.poi-badge {
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.poi-desc {
+  font-size: 11px;
+  color: rgba(255,255,255,0.58);
+  margin: 0;
+  line-height: 1.4;
+}
+.poi-dist {
+  font-size: 10px;
+  color: rgba(255,255,255,0.34);
+}
+.poi-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+.poi-btn {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 5px 9px;
+  border-radius: 7px;
+  text-decoration: none;
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+}
+.poi-btn.maps {
+  background: rgba(45,212,191,0.15);
+  color: #2DD4BF;
+  border: 1px solid rgba(45,212,191,0.35);
+}
+.poi-btn.wiki {
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.60);
+  border: 1px solid rgba(255,255,255,0.10);
+}
+.poi-loading {
+  font-size: 12px;
+  color: rgba(255,255,255,0.40);
+  padding: 8px 0;
+}
+@media(max-width:430px){
+  .poi-item{
+    align-items:flex-start;
+  }
+  .poi-thumb,
+  .poi-thumb-placeholder{
+    width:64px;
+    height:64px;
+  }
+  .poi-header{
+    flex-direction:column;
+    gap:2px;
+  }
+}
