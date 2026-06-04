@@ -1,28 +1,14 @@
 /* ============================================================
    PR Explorer · app.js · Midnight Teal Pro
-   V3.2.7: Detail-Header-Korrektur
+   V3.2.5: Cache- und Startdiagnose
    ============================================================ */
 'use strict';
 
 const qs  = s => document.querySelector(s);
 const qsa = s => [...document.querySelectorAll(s)];
 
-const APP_VERSION = 'V3.2.7';
+const APP_VERSION = 'V3.2.5';
 const APP_CHANGELOG = [
-  { version:'V3.2.7', date:'2026-06-04', title:'Detail-Header-Korrektur', changes:[
-    'Karte-Textbutton aus der oberen Detail-Navigation entfernt, damit er nicht mehr vom Schließen-X überlagert wird.',
-    'Kartenfunktion als Icon-Button im Titelbereich der Detailansicht platziert.',
-    'Karten-Icon nutzt dieselbe Symbolsprache wie die Journal-Kartenbuttons.',
-    'Keine Änderung an Karteninitialisierung, setTab(), Service Worker, Safe-Area oder Bottom-Dock.',
-    'Startdiagnose bleibt enthalten.'
-  ]},
-  { version:'V3.2.6', date:'2026-06-04', title:'Detail-Navigation Phase 1', changes:[
-    'Detailansicht erhält eine eigene Rückkehr-Zeile mit „Zurück“ und optional „Karte“.',
-    'Beim Öffnen eines Details wird die vorherige Hauptfläche gespeichert.',
-    'Zurück schließt nur die Detailansicht und stellt die vorherige Hauptfläche wieder her.',
-    'Keine Änderung an setTab(), Karteninitialisierung, Solo-Modus, Detail-Parken oder Bottom-Dock.',
-    'Startdiagnose aus V3.2.5 bleibt erhalten.'
-  ]},
   { version:'V3.2.5', date:'2026-06-04', title:'Cache- und Startdiagnose', changes:[
     'Service Worker bereinigt: CORE_ASSETS ohne Query-Strings; Cache-Busting bleibt nur in index.html.',
     'Startdiagnose ergänzt: Leaflet, Daten, Map-Container, Tile-Layer, PR-Datensätze und Marker werden geprüft.',
@@ -398,7 +384,6 @@ function fmtMin(v) { if(!v)return '–'; const h=Math.floor(v/60),m=v%60; return
 const F = { region:'all', status:'all', schedule:'all', distMin:0, distMax:999, driveKmMin:0, driveKmMax:999, driveMinMin:0, driveMinMax:9999, elevUpMin:0, elevUpMax:99999 };
 let _fb = {};
 const S = { tab:'map', selected:null, query:'', fullscreen:false, panel:false };
-const V326_DETAIL_NAV = { fromTab:'map', fromQuery:'', fromScroll:0 };
 
 /* MAP */
 const map = L.map('map',{zoomControl:false,attributionControl:false,preferCanvas:true,tap:true,doubleClickZoom:true,touchZoom:true}).setView([32.755,-16.93],10);
@@ -808,7 +793,6 @@ function openTestPanel(){
 function syncTestToggle(){ const t=qs('#testToggle'); if(!t)return; t.classList.toggle('hidden',!cfg.showTestToggle); t.classList.toggle('active',S.tab==='test'); }
 function setTab(tab){ qs('#panel')?.classList.remove('test-panel'); qs('#app')?.classList.remove('test-mode'); S.tab=tab;qsa('#bottomNav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));qs('#testToggle')?.classList.remove('active');qs('#panel').classList.toggle('hidden',tab==='map');qs('#hero').classList.toggle('hide',tab!=='map');qs('.filter-fab')?.classList.toggle('hidden',tab!=='map');S.panel=tab!=='map';syncTestToggle();if(S.panel){renderPanel();setTimeout(()=>map.invalidateSize(),200);} v320SyncUI(); }
 function openDetail(id,zoom=false){
-  v326RememberDetailOrigin();
   S.selected=DATA.find(r=>r.id===id);
   if(!S.selected)return;
   closeAllSheets(false);
@@ -934,7 +918,6 @@ function renderDetail(){
   const st=getSt(r.id),col=levelColor(r.level),isFav=favs.has(r.id),isLoop=r.loop!==false,hasElev=r.elev&&r.elev.length>2;
   const stBtns=Object.entries(STATUS_DEF).map(([k,d])=>`<button class="st-btn ${st===k?'st-active':''}" data-st="${k}" onclick="setSt('${r.id}','${k}')"><span class="dot"></span>${d.label}</button>`).join('');
   qs('#detailContent').innerHTML=`
-    ${v326DetailNavHtml(r)}
     <div class="d-tag" style="background:${col}">${r.id} · ${fmt(r.level)}</div>
     <div class="d-name">${r.name}</div><div class="d-sub">${regionLabel(r)}</div>
     <div class="d-meta">
@@ -1287,64 +1270,6 @@ function initAllSwipe(){
   addSwipeClose(qs('#dateSheet'),closeDateSheet,['down'],true);
 }
 
-
-
-/* V3.2.6 DETAIL-NAVIGATION PHASE 1 */
-function v326RememberDetailOrigin(){
-  V326_DETAIL_NAV.fromTab = S.tab || 'map';
-  V326_DETAIL_NAV.fromQuery = S.query || '';
-  const pc = qs('#panelContent');
-  V326_DETAIL_NAV.fromScroll = pc && Number.isFinite(pc.scrollTop) ? pc.scrollTop : 0;
-}
-function v326TabLabel(tab){
-  return ({map:'Karte',overview:'Übersicht',journal:'Journal',trips:'Reisen',options:'Optionen',test:'Audit'})[tab] || 'zurück';
-}
-function v326DetailNavHtml(r){
-  const label = v326TabLabel(V326_DETAIL_NAV.fromTab);
-  return `<div class="v326-detail-nav">
-    <button type="button" class="v326-back" onclick="v326BackFromDetail()">← Zurück ${htmlEsc(label)}</button>
-  </div>`;
-}
-
-function v327DetailMapIconHtml(r){
-  return `<button type="button" class="v327-detail-map-icon" aria-label="Auf Karte zeigen" onclick="v326DetailToMap('${r.id}')">
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M4.5 5.5 9 3.8l6 2.4 4.5-1.7v14L15 20.2l-6-2.4-4.5 1.7v-14Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/>
-      <path d="M9 3.8v14M15 6.2v14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
-    </svg>
-  </button>`;
-}
-
-function v326BackFromDetail(){
-  const target = V326_DETAIL_NAV.fromTab || 'map';
-  // nutzt bewusst bestehendes closeDetail(), kein Umbau der Detail-/Kartenlogik
-  closeDetail();
-  if(target && target !== S.tab){
-    setTab(target);
-  }else{
-    setTab(target || 'map');
-  }
-  if(target !== 'map'){
-    if(typeof V326_DETAIL_NAV.fromQuery === 'string') S.query = V326_DETAIL_NAV.fromQuery;
-    setTimeout(()=>{
-      renderPanel();
-      const pc = qs('#panelContent');
-      if(pc) pc.scrollTop = V326_DETAIL_NAV.fromScroll || 0;
-    },80);
-  }
-}
-function v326DetailToMap(id){
-  // Phase 1: nur zur Karte wechseln und Detail offen lassen.
-  // Kein Solo-Modus, kein Parken, keine neue Navigation.
-  setTab('map');
-  const r = DATA.find(x=>x.id===id) || S.selected;
-  if(r){
-    setTimeout(()=>{
-      const b = routeBounds(r);
-      if(isValidBounds(b)) map.flyToBounds(b,mapSafeFitOptions(false));
-    },120);
-  }
-}
 
 /* V3.2.0 DIRECT UI FLÄCHEN — keine Zusatzlayer */
 function v320OptionsHtml(){
