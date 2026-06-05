@@ -1,3 +1,12 @@
+# V3.2.23 – POI sammeln & Stopps übernehmen
+
+- Deutsche Wikipedia wird für POI-Kurzinfos bevorzugt; englische Wikipedia bleibt Fallback.
+- POI-Karten erhalten Aktionen: Merken, Stopp übernehmen, Route via PR, POI-Route und Wikipedia.
+- Karten-Popups für Sehenswürdigkeiten erhalten Merken-/Stopp-Aktionen.
+- Gesammelte Ziele erscheinen im Reisebereich und werden lokal in `prTripItems` gespeichert.
+- Routenlink für Zwischenstopps erzeugt Hotel → POI → PR-Start über Google Maps.
+- Detailmodule werden nach Merken/Stopp sequenziell neu gerendert, ohne das Detail-Sheet leerzuschießen.
+
 # V3.2.22 – PWA-Homebildschirm-Fix
 
 - Manifest-Start-URL auf `./` ohne Querystring umgestellt, damit iOS-Homescreen nicht auf einer alten `index.html?v=...`-Instanz hängen bleibt.

@@ -7,8 +7,15 @@
 const qs  = s => document.querySelector(s);
 const qsa = s => [...document.querySelectorAll(s)];
 
-const APP_VERSION = 'V3.2.21';
+const APP_VERSION = 'V3.2.23';
 const APP_CHANGELOG = [
+  { version:'V3.2.23', date:'2026-06-05', title:'POI sammeln & Stopps übernehmen', changes:[
+    'Wikipedia-Daten werden bevorzugt aus der deutschen Wikipedia geladen; Englisch bleibt Fallback.',
+    'Sehenswürdigkeiten können direkt aus Detail- und Popup-Karten gemerkt oder als Stopp übernommen werden.',
+    'Gesammelte Ziele erscheinen im Reisebereich mit PR-Zuordnung, Status, Route und Quellenlink.',
+    'Routenbutton für Zwischenstopp erzeugt eine Google-Maps-Route Hotel → POI → PR-Start.',
+    'POI-Karten erhalten Aktionen Merken, Stopp, Route via PR und Wikipedia.'
+  ]},
   { version:'V3.2.21', date:'2026-06-05', title:'Routenintelligenz & POI-Kontext', changes:[
     'POI-Logik aufgetrennt: Anfahrtsstopps (KML/driveRoute), Sehenswürdigkeiten am Wanderweg (track), Zugangspunkte (Start/Ziel).',
     'Detailseite zeigt drei getrennte POI-Blöcke mit klarem Kontext und Empty-State.',
@@ -400,6 +407,68 @@ function unscheduledFavs(){ return DATA.filter(r=>favs.has(r.id)&&!getPrSchedule
 function tripItemsForDay(key){ return tripItems.filter(x=>dateKey(x.dt)===key && x.status!=='skip'); }
 function travelEventsForDay(key){ return prScheduleRows().filter(x=>dateKey(x.dt)===key).concat(tripItemsForDay(key).map(x=>({kind:'item',dt:x.dt,item:x}))).sort((a,b)=>String(a.dt).localeCompare(String(b.dt))); }
 function tripItemTitle(x){ return htmlEsc(x.title||'Unternehmung'); }
+
+function tripPrLabel(x){ return x.assignedPrId ? ` · ${htmlEsc(x.assignedPrId)}` : ''; }
+function poiById(id){ return (Array.isArray(window.MADEIRA_POIS)?window.MADEIRA_POIS:[]).find(p=>String(p.id)===String(id)); }
+function trailById(id){ return DATA.find(r=>String(r.id)===String(id)); }
+function targetExists(sourceType,sourceId){ return tripItems.find(x=>x.sourceType===sourceType && String(x.sourceId)===String(sourceId) && x.status!=='skip'); }
+function targetStatusLabel(sourceType,sourceId){ const x=targetExists(sourceType,sourceId); return x ? ((TRIP_STATUS[x.status]||TRIP_STATUS.idea).label) : ''; }
+function prxRouteViaPoiUrl(poi,trail){
+  const start=prxTrailStartCoords(trail);
+  const home=cfg.home||{};
+  const pLat=Number(poi?.lat), pLng=Number(poi?.lng);
+  if(!Number.isFinite(pLat)||!Number.isFinite(pLng)) return sightMapsUrl(poi);
+  if(!start||!Number.isFinite(+home.lat)||!Number.isFinite(+home.lon)) return sightMapsUrl(poi);
+  return `https://www.google.com/maps/dir/?api=1&origin=${home.lat},${home.lon}&destination=${start.lat},${start.lng}&waypoints=${pLat},${pLng}&travelmode=driving`;
+}
+function buildPoiTripItem(poi,trail,mode,status){
+  const k=SIGHT_CAT[poi.kategorie]||SIGHT_CAT.kultur;
+  const sourceUrl=poi.wikipediaSlug ? poiWikiUrl(poi.wikipediaSlug,'de') : '';
+  return {
+    id:'poi-'+poi.id+'-'+Date.now(),
+    title:poi.name||'Sehenswürdigkeit',
+    cat:k.label||poi.kategorie||'POI',
+    status:status||'fav',
+    dt:'',
+    durationMin:45,
+    driveMin:0,
+    link:sourceUrl,
+    sourceUrl,
+    mapsUrl:sightMapsUrl(poi),
+    routeViaPrUrl:trail?prxRouteViaPoiUrl(poi,trail):sightMapsUrl(poi),
+    lat:Number(poi.lat),
+    lon:Number(poi.lng),
+    sourceType:'poi',
+    sourceId:String(poi.id),
+    assignedPrId:trail?.id||'',
+    assignedMode:mode||'',
+    description:poi.beschreibung||'',
+    createdAt:new Date().toISOString(),
+    updatedAt:new Date().toISOString()
+  };
+}
+function savePoiTarget(poiId,trailId='',mode=''){
+  const poi=poiById(poiId); if(!poi){toast('POI nicht gefunden');return;}
+  const existing=targetExists('poi',poiId);
+  const trail=trailById(trailId)||S.selected||null;
+  if(existing){ existing.status='fav'; existing.assignedPrId=existing.assignedPrId||trail?.id||''; existing.assignedMode=existing.assignedMode||mode||''; existing.updatedAt=new Date().toISOString(); toast('Ziel ist bereits gemerkt'); }
+  else { tripItems.push(buildPoiTripItem(poi,trail,mode,'fav')); toast('Ziel gemerkt'); }
+  saveTripItems(); renderPanel(); if(S.selected) renderDetailModules(S.selected);
+}
+function addPoiStop(poiId,trailId='',mode=''){
+  const poi=poiById(poiId); if(!poi){toast('POI nicht gefunden');return;}
+  const trail=trailById(trailId)||S.selected||null;
+  let existing=targetExists('poi',poiId);
+  if(existing){ existing.status='planned'; existing.assignedPrId=trail?.id||existing.assignedPrId||''; existing.assignedMode=mode||existing.assignedMode||''; existing.routeViaPrUrl=trail?prxRouteViaPoiUrl(poi,trail):(existing.routeViaPrUrl||sightMapsUrl(poi)); existing.updatedAt=new Date().toISOString(); }
+  else { tripItems.push(buildPoiTripItem(poi,trail,mode,'planned')); }
+  saveTripItems(); renderPanel(); if(S.selected) renderDetailModules(S.selected); toast('Als Stopp übernommen');
+}
+function openTripMaps(id){ const x=tripItems.find(i=>i.id===id); if(!x){return;} const url=x.routeViaPrUrl||x.mapsUrl||x.link; if(!url){toast('Keine Route gespeichert');return;} window.open(url,'_blank'); }
+function collectedTargetsHtml(){
+  const items=tripItems.filter(x=>x.sourceType==='poi' && x.status!=='skip' && !x.dt);
+  if(!items.length) return `<div class="trip-targets empty"><div class="trip-target-head"><b>Gesammelte Ziele</b><span>Noch leer</span></div><div class="free-slot">Tippe in einer Sehenswürdigkeit auf „Merken“ oder „Stopp“, dann erscheint sie hier.</div></div>`;
+  return `<div class="trip-targets"><div class="trip-target-head"><b>Gesammelte Ziele</b><span>${items.length}</span></div>${items.map(x=>`<div class="trip-target-card"><div class="trip-target-main"><b>${htmlEsc(x.title)}</b><small>${htmlEsc(x.cat||'POI')}${tripPrLabel(x)}${x.assignedMode?` · ${htmlEsc(x.assignedMode)}`:''}</small>${x.description?`<p>${htmlEsc(x.description)}</p>`:''}</div><div class="trip-target-actions">${tripStatusPill(x.status)}<button onclick="event.stopPropagation();setTripItemStatus('${x.id}','planned')">Planen</button>${x.routeViaPrUrl||x.mapsUrl?`<button onclick="event.stopPropagation();openTripMaps('${x.id}')">Route</button>`:''}${x.link?`<button onclick="event.stopPropagation();openTripLink('${x.id}')">Quelle</button>`:''}<button class="event-delete" onclick="event.stopPropagation();deleteTripItem('${x.id}')">×</button></div></div>`).join('')}</div>`;
+}
 function addTripItemFromForm(){
   const title=(qs('#tiTitle')?.value||'').trim(); if(!title){toast('Titel fehlt');return;}
   const date=qs('#tiDate')?.value||''; const hour=qs('#tiHour')?.value||'09'; const min=qs('#tiMin')?.value||'00';
@@ -433,11 +502,12 @@ function eventCardHtml(ev){
   return `<div class="day-event item">
     <div class="event-main">
       <div class="event-title-line"><span class="event-time">${timeOf(x.dt)}</span><b>${tripItemTitle(x)}</b></div>
-      <span class="event-meta">${htmlEsc(x.cat||'Unternehmung')} · ${x.durationMin||0} min · Fahrt ${x.driveMin||0} min</span>
+      <span class="event-meta">${htmlEsc(x.cat||'Unternehmung')}${tripPrLabel(x)} · ${x.durationMin||0} min · Fahrt ${x.driveMin||0} min</span>
       ${x.link?`<small class="event-link">${htmlEsc(x.link).slice(0,80)}</small>`:''}
     </div>
     <div class="event-actions">
       ${tripStatusPill(x.status)}
+      ${x.routeViaPrUrl||x.mapsUrl?`<button onclick="event.stopPropagation();openTripMaps('${x.id}')">Route</button>`:''}
       ${x.link?`<button onclick="event.stopPropagation();openTripLink('${x.id}')">Link</button>`:''}
       <button onclick="event.stopPropagation();exportTripItemICS('${x.id}')">ICS</button>
       <button class="event-delete" onclick="event.stopPropagation();deleteTripItem('${x.id}')">×</button>
@@ -445,7 +515,7 @@ function eventCardHtml(ev){
   </div>`;
 }
 function tripDayCardsHtml(){ const days=tripDays(); if(!days.length)return '<div class="empty-state">Reisezeitraum in den Einstellungen setzen. Danach werden hier automatisch Tageskarten erzeugt.</div>'; return `<div class="trip-days">${days.map(d=>{ const k=dateKey(d), ev=travelEventsForDay(k); return `<div class="trip-day"><div class="trip-day-head"><b>${niceDay(d)}</b><span>${ev.length?ev.length+' Eintrag'+(ev.length>1?'e':''):'frei'}</span></div>${ev.length?ev.map(eventCardHtml).join(''):'<div class="free-slot">Noch keine feste Planung. Geeignet für POI, Reserve oder Ruhetag.</div>'}</div>`; }).join('')}</div>`; }
-function travelPlannerHtml(){ return `<div class="p-section">Roadmap / Tagesplanung</div>${tripBannerHtml()}<div class="trip-toolbar"><button class="mini-btn" onclick="exportTravelPlanJson()">Reiseplan JSON sichern</button><button class="mini-btn" onclick="exportTripICS()">Reisezeitraum ICS</button></div>${tripDayCardsHtml()}${unscheduledFavsHtml()}${tripPlannerFormHtml()}`; }
+function travelPlannerHtml(){ return `<div class="p-section">Roadmap / Tagesplanung</div>${tripBannerHtml()}<div class="trip-toolbar"><button class="mini-btn" onclick="exportTravelPlanJson()">Reiseplan JSON sichern</button><button class="mini-btn" onclick="exportTripICS()">Reisezeitraum ICS</button></div>${collectedTargetsHtml()}${tripDayCardsHtml()}${unscheduledFavsHtml()}${tripPlannerFormHtml()}`; }
 
 function saveCfg()    { localStorage.setItem('prCfg',    JSON.stringify(cfg)); }
 function saveFavs()   { localStorage.setItem('prFavs',   JSON.stringify([...favs])); }
@@ -860,7 +930,7 @@ const SIGHT_CAT = {
 };
 function sightMapsUrl(p){return /iPad|iPhone|iPod/.test(navigator.userAgent)?`maps://maps.apple.com/?ll=${p.lat},${p.lng}&q=${encodeURIComponent(p.name)}`:`https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}`;}
 function makeSightIcon(cat){const k=SIGHT_CAT[cat]||SIGHT_CAT.kultur;return L.divIcon({className:'',html:`<div class="sight-marker" style="border-color:${k.farbe}">${k.emoji}</div>`,iconSize:[28,28],iconAnchor:[14,14],popupAnchor:[0,-16]});}
-function sightPopupHtml(p){const k=SIGHT_CAT[p.kategorie]||SIGHT_CAT.kultur;const wiki=p.wikipediaSlug?`https://en.wikipedia.org/wiki/${encodeURIComponent(p.wikipediaSlug)}`:'';return `<div class="poi-popup"><strong>${htmlEsc(p.name)}</strong><span class="poi-popup-badge" style="background:${k.farbe}22;color:${k.farbe}">${k.emoji} ${htmlEsc(k.label)}</span><p class="poi-popup-desc">${htmlEsc(p.beschreibung||'')}</p><div class="poi-popup-actions"><a href="${htmlEsc(sightMapsUrl(p))}" target="_blank" rel="noopener" class="poi-popup-btn">📍 Route</a>${wiki?`<a href="${htmlEsc(wiki)}" target="_blank" rel="noopener" class="poi-popup-btn wiki">🌐 Wikipedia</a>`:''}</div></div>`;}
+function sightPopupHtml(p){const k=SIGHT_CAT[p.kategorie]||SIGHT_CAT.kultur;const wiki=p.wikipediaSlug?poiWikiUrl(p.wikipediaSlug,'de'):'';const saved=targetStatusLabel('poi',p.id);return `<div class="poi-popup"><strong>${htmlEsc(p.name)}</strong><span class="poi-popup-badge" style="background:${k.farbe}22;color:${k.farbe}">${k.emoji} ${htmlEsc(k.label)}</span><p class="poi-popup-desc">${htmlEsc(p.beschreibung||'')}</p>${saved?`<small class="poi-popup-saved">★ ${htmlEsc(saved)}</small>`:''}<div class="poi-popup-actions"><button class="poi-popup-btn" onclick="savePoiTarget('${p.id}',S.selected?.id||'','Karten-Popup');event.stopPropagation();">☆ Merken</button><button class="poi-popup-btn" onclick="addPoiStop('${p.id}',S.selected?.id||'','Karten-Popup');event.stopPropagation();">➕ Stopp</button><a href="${htmlEsc(sightMapsUrl(p))}" target="_blank" rel="noopener" class="poi-popup-btn">📍 Route</a>${wiki?`<a href="${htmlEsc(wiki)}" target="_blank" rel="noopener" class="poi-popup-btn wiki">🌐 Wiki DE</a>`:''}</div></div>`;}
 function drawStaticSights(){lgSights.clearLayers();if(!cfg.layers.sights)return;const list=Array.isArray(window.MADEIRA_POIS)?window.MADEIRA_POIS:[];list.forEach(p=>{if(!Number.isFinite(+p.lat)||!Number.isFinite(+p.lng))return;L.marker([+p.lat,+p.lng],{icon:makeSightIcon(p.kategorie),keyboard:false,pane:'poiPane'}).bindPopup(sightPopupHtml(p),{maxWidth:240}).addTo(lgSights);});}
 
 function drawHomePin(){
@@ -942,6 +1012,16 @@ function openTestPanel(){
 }
 function syncTestToggle(){ const t=qs('#testToggle'); if(!t)return; t.classList.toggle('hidden',!cfg.showTestToggle); t.classList.toggle('active',S.tab==='test'); }
 function setTab(tab){ qs('#panel')?.classList.remove('test-panel'); qs('#app')?.classList.remove('test-mode'); S.tab=tab;qsa('#bottomNav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));qs('#testToggle')?.classList.remove('active');qs('#panel').classList.toggle('hidden',tab==='map');qs('#hero').classList.toggle('hide',tab!=='map');qs('.filter-fab')?.classList.toggle('hidden',tab!=='map');S.panel=tab!=='map';syncTestToggle();if(S.panel){renderPanel();setTimeout(()=>map.invalidateSize(),200);} v320SyncUI(); }
+async function renderDetailModules(trail){
+  if(!trail) return;
+  focusDetailPins(trail.id);
+  drawElevProfile(trail,'elevCanvas');
+  initWeatherForTrail(trail);
+  renderNearbyWebcams(trail);
+  await renderDriveStops(trail);
+  await renderHikePOIs(trail);
+  await renderAccessPOIs(trail);
+}
 function openDetail(id,zoom=false){
   v326RememberDetailOrigin();
   S.selected=DATA.find(r=>r.id===id);
@@ -952,7 +1032,7 @@ function openDetail(id,zoom=false){
   focusDetailPins(id);
   renderDetail();
   if(zoom){const b=routeBounds(S.selected);if(isValidBounds(b))map.flyToBounds(b,mapSafeFitOptions(true));}
-  setTimeout(()=>{focusDetailPins(id);drawElevProfile(S.selected,'elevCanvas');initWeatherForTrail(S.selected);renderNearbyWebcams(S.selected);renderDriveStops(S.selected);renderHikePOIs(S.selected);renderAccessPOIs(S.selected);},200);
+  setTimeout(()=>renderDetailModules(S.selected),200);
 }
 function closeDetail(){ qs('#detailPanel').classList.add('hidden');S.selected=null;V329_DETAIL_CONTEXT.active=false;V329_DETAIL_CONTEXT.activeId=null;v329SyncDetailReturnButton();clearPinFocus();drawPois(); }
 function setFullscreen(on){ S.fullscreen=on;qs('#app').classList.toggle('fullscreen',on);qs('#fullscreenClose').classList.toggle('hidden',!on);closeDetail();qs('#panel').classList.add('hidden');S.panel=false;setTimeout(()=>map.invalidateSize(),200); }
@@ -2146,11 +2226,22 @@ const _addCSS=`
 .line-style-btn.ls-active{background:rgba(90,200,250,.15);border-color:var(--teal);color:var(--teal)}
 .s-range-sl{width:100%;height:28px;border-radius:14px;-webkit-appearance:none;appearance:none;background:rgba(90,200,250,.2);outline:none}
 .s-range-sl::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:white;box-shadow:0 2px 8px rgba(0,0,0,.3);cursor:pointer;border:2px solid var(--teal)}
+
+.trip-targets{margin:12px 0 16px;padding:12px;border:1px solid rgba(90,200,250,.14);border-radius:18px;background:rgba(8,24,22,.62)}
+.trip-target-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;font-size:var(--fs-md,15px)}
+.trip-target-head span{font-size:var(--fs-xs,10px);color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.trip-target-card{display:flex;justify-content:space-between;gap:10px;padding:10px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);margin-top:8px}
+.trip-target-main{min-width:0;flex:1}.trip-target-main b{display:block;font-size:var(--fs-md,15px)}.trip-target-main small{display:block;color:var(--muted);margin-top:3px}.trip-target-main p{margin:6px 0 0;color:rgba(240,250,248,.7);font-size:var(--fs-sm,12px);line-height:1.35}
+.trip-target-actions{display:flex;align-items:flex-end;justify-content:center;flex-direction:column;gap:6px}.trip-target-actions button{height:28px;padding:0 9px;border-radius:999px;background:rgba(90,200,250,.1);border:1px solid rgba(90,200,250,.18);color:var(--text);font-size:11px;font-weight:700}
+.poi-actions button.poi-btn{border:1px solid rgba(90,200,250,.18);cursor:pointer}
+.poi-btn.stop{background:rgba(52,199,89,.12)!important;border-color:rgba(52,199,89,.28)!important;color:#7dff9d!important}
+.poi-meta-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.poi-lang,.poi-saved-pill,.poi-popup-saved{font-size:10px;color:var(--muted);border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:2px 6px;background:rgba(255,255,255,.04)}
+.poi-saved{box-shadow:0 0 0 1px rgba(255,214,10,.22) inset;background:rgba(255,214,10,.05)}
 `;
 const _styleEl=document.createElement('style');_styleEl.textContent=_addCSS;document.head.appendChild(_styleEl);
 
 /* GLOBALS */
-Object.assign(window,{S,F,cfg,favs,saveFavs,saveCfg,saveStatus,openDetail,closeDetail,setTab,setSt,setBase,setLayer,setHikingMode,setHikingColorMode,soloOnMap,exitSoloMode,openSettings,closeSettings,renderSettings,setPinShape,openColorSheet,closeColorSheet,confirmColor,setColorTab,sliderChanged,hexChanged,pickColor,openIconSheet,closeIconSheet,confirmIcon,filterIcons,pickIcon,openDateSheet,closeDateSheet,confirmDate,calPrev,calNext,calDay,exportICS,exportTripICS,exportBookedICS,updatePrSchedule,composeDt,clearPrSchedule,tripItems,saveTripItems,addTripItemFromForm,deleteTripItem,setTripItemStatus,openTripLink,planFavFromCard,exportTravelPlanJson,exportTripItemICS,resetFilters,setRegion,setSF,toggleRegions,dualMove,renderFilterSheet,closeAllSheets,closeBackdrop,fitVisible,googleMapsPoint,renderLayers,renderPanel,renderDetail,tcToggle,tcResult,tcReset,tcExport,tcSaveNote,tcClearNote,renderTestTab,openTestPanel,syncTestToggle,APP_VERSION,APP_CHANGELOG,qs,lineStyleBtns,setSort,setScheduleFilter,refreshPoiData,setPoiCat,googleMapsSearch,exportRouteFile,shareRouteFile,shareTestReport,openShareSheet,shareText,prInfoText,filteredCsv,darkenChanged,setHomeField,drawHomePin,togglePois,focusDetailPins,clearPinFocus,openFilterSheet,installCriticalTapGuards,v320OptionsHtml,v320SetBool,v320SetNum,v320SetOpacity,v320SyncUI,v320EnsureZoomSlider});
+Object.assign(window,{S,F,cfg,favs,saveFavs,saveCfg,saveStatus,openDetail,closeDetail,setTab,setSt,setBase,setLayer,setHikingMode,setHikingColorMode,soloOnMap,exitSoloMode,openSettings,closeSettings,renderSettings,setPinShape,openColorSheet,closeColorSheet,confirmColor,setColorTab,sliderChanged,hexChanged,pickColor,openIconSheet,closeIconSheet,confirmIcon,filterIcons,pickIcon,openDateSheet,closeDateSheet,confirmDate,calPrev,calNext,calDay,exportICS,exportTripICS,exportBookedICS,updatePrSchedule,composeDt,clearPrSchedule,tripItems,saveTripItems,addTripItemFromForm,deleteTripItem,setTripItemStatus,openTripLink,planFavFromCard,exportTravelPlanJson,exportTripItemICS,openTripMaps,savePoiTarget,addPoiStop,collectedTargetsHtml,renderDetailModules,resetFilters,setRegion,setSF,toggleRegions,dualMove,renderFilterSheet,closeAllSheets,closeBackdrop,fitVisible,googleMapsPoint,renderLayers,renderPanel,renderDetail,tcToggle,tcResult,tcReset,tcExport,tcSaveNote,tcClearNote,renderTestTab,openTestPanel,syncTestToggle,APP_VERSION,APP_CHANGELOG,qs,lineStyleBtns,setSort,setScheduleFilter,refreshPoiData,setPoiCat,googleMapsSearch,exportRouteFile,shareRouteFile,shareTestReport,openShareSheet,shareText,prInfoText,filteredCsv,darkenChanged,setHomeField,drawHomePin,togglePois,focusDetailPins,clearPinFocus,openFilterSheet,installCriticalTapGuards,v320OptionsHtml,v320SetBool,v320SetNum,v320SetOpacity,v320SyncUI,v320EnsureZoomSlider});
 
 /* INIT */
 bind();try{renderFilterSheet();}catch(e){console.warn('Initial filter render skipped',e);}renderLayers();setTab('map');syncTestToggle();v320SyncUI();setTimeout(fitMadeira,300);_updateTestBadge();
@@ -2292,46 +2383,53 @@ function getPOIsAlongPath(pathPoints, maxKm = 2.0){
     .filter(poi => poi.distanzKm <= maxKm)
     .sort((a,b)=>a.distanzKm-b.distanzKm);
 }
-function poiWikiUrl(slug){
-  return slug ? `https://en.wikipedia.org/wiki/${encodeURIComponent(slug)}` : '';
+
+function poiWikiUrl(slug,lang='de'){
+  return slug ? `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(slug)}` : '';
+}
+async function fetchWikipediaSummary(slug,lang){
+  const res = await fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(slug)}`);
+  if(!res.ok) return null;
+  const data = await res.json();
+  return {
+    thumbnail:data.thumbnail?.source || null,
+    extract:data.extract ? data.extract.slice(0,180)+(data.extract.length>180?'…':'') : null,
+    pageUrl:data.content_urls?.desktop?.page || poiWikiUrl(slug,lang),
+    lang,
+    title:data.title || slug.replace(/_/g,' ')
+  };
 }
 async function fetchWikipediaData(slug){
   if(!slug) return null;
-  const cacheKey = `wiki_${slug}`;
+  const cacheKey = `wiki_de_first_${slug}`;
   try{
     const cached = sessionStorage.getItem(cacheKey);
     if(cached){
       const parsed = JSON.parse(cached);
       if(parsed?.expires && parsed.expires > Date.now()) return parsed.data;
-      if(parsed?.data && !parsed.expires) return parsed.data;
     }
   }catch(_){}
-  try{
-    const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(slug)}`);
-    if(!res.ok) return null;
-    const data = await res.json();
-    const result = {
-      thumbnail:data.thumbnail?.source || null,
-      extract:data.extract ? data.extract.slice(0,120)+(data.extract.length>120?'…':'') : null,
-      pageUrl:data.content_urls?.desktop?.page || poiWikiUrl(slug)
-    };
+  for(const lang of ['de','en']){
     try{
-      sessionStorage.setItem(cacheKey, JSON.stringify({
-        expires:Date.now() + 24*60*60*1000,
-        data:result
-      }));
+      const result = await fetchWikipediaSummary(slug,lang);
+      if(result && (result.extract || result.thumbnail || result.pageUrl)){
+        try{ sessionStorage.setItem(cacheKey, JSON.stringify({expires:Date.now()+24*60*60*1000,data:result})); }catch(_){}
+        return result;
+      }
     }catch(_){}
-    return result;
-  }catch(_){
-    return null;
   }
+  return null;
 }
 /* ── POI-Hilfsunktion: Wiki-Item-HTML ──────────────────── */
-function poiItemHtml(poi, wiki, distSuffix){
+
+function poiItemHtml(poi, wiki, distSuffix, trail=null, mode=''){
   const k = SIGHT_CAT[poi.kategorie] || SIGHT_CAT.kultur;
   const mapsUrl = sightMapsUrl(poi);
-  const pageUrl = wiki?.pageUrl || poiWikiUrl(poi.wikipediaSlug);
-  return `<div class="poi-item">
+  const viaUrl = trail ? prxRouteViaPoiUrl(poi,trail) : mapsUrl;
+  const pageUrl = wiki?.pageUrl || poiWikiUrl(poi.wikipediaSlug,'de');
+  const saved = targetStatusLabel('poi',poi.id);
+  const title = wiki?.title || poi.name;
+  return `<div class="poi-item ${saved?'poi-saved':''}">
     ${wiki?.thumbnail
       ? `<img class="poi-thumb" src="${htmlEsc(wiki.thumbnail)}" alt="${htmlEsc(poi.name)}" loading="lazy">`
       : `<div class="poi-thumb-placeholder">${k.emoji}</div>`}
@@ -2341,10 +2439,13 @@ function poiItemHtml(poi, wiki, distSuffix){
         <span class="poi-badge" style="color:${k.farbe}">${k.emoji} ${htmlEsc(k.label)}</span>
       </div>
       <p class="poi-desc">${htmlEsc(wiki?.extract || poi.beschreibung || '')}</p>
-      <span class="poi-dist">📍 ${poi.distanzKm.toFixed(1)} km ${htmlEsc(distSuffix)}</span>
+      <div class="poi-meta-line"><span class="poi-dist">📍 ${poi.distanzKm.toFixed(1)} km ${htmlEsc(distSuffix)}</span>${wiki?.lang?`<span class="poi-lang">Wiki ${wiki.lang.toUpperCase()}</span>`:''}${saved?`<span class="poi-saved-pill">★ ${htmlEsc(saved)}</span>`:''}</div>
       <div class="poi-actions">
-        <a href="${htmlEsc(mapsUrl)}" target="_blank" rel="noopener" class="poi-btn maps">📍 Route</a>
-        ${pageUrl ? `<a href="${htmlEsc(pageUrl)}" target="_blank" rel="noopener" class="poi-btn wiki">🌐 Wikipedia</a>` : ''}
+        <button class="poi-btn" onclick="savePoiTarget('${poi.id}','${trail?.id||''}','${htmlEsc(mode)}');event.stopPropagation();">☆ Merken</button>
+        <button class="poi-btn stop" onclick="addPoiStop('${poi.id}','${trail?.id||''}','${htmlEsc(mode)}');event.stopPropagation();">➕ Stopp</button>
+        <a href="${htmlEsc(viaUrl)}" target="_blank" rel="noopener" class="poi-btn maps">🧭 via PR</a>
+        <a href="${htmlEsc(mapsUrl)}" target="_blank" rel="noopener" class="poi-btn maps">📍 POI</a>
+        ${pageUrl ? `<a href="${htmlEsc(pageUrl)}" target="_blank" rel="noopener" class="poi-btn wiki">🌐 Wiki</a>` : ''}
       </div>
     </div>
   </div>`;
@@ -2415,7 +2516,7 @@ async function renderDriveStops(trail){
   }
 
   const wikiData = await Promise.all(pois.map(p => fetchWikipediaData(p.wikipediaSlug)));
-  const items = pois.map((poi,i) => poiItemHtml(poi, wikiData[i], 'von der Anfahrt'));
+  const items = pois.map((poi,i) => poiItemHtml(poi, wikiData[i], 'von der Anfahrt', trail, 'Anfahrt'));
   container.innerHTML = poiSectionHtml('🚗','Stopps auf der Anfahrt',`${pois.length} nahe der Anfahrtsroute`, items);
 }
 
@@ -2449,7 +2550,7 @@ async function renderHikePOIs(trail){
   }
 
   const wikiData = await Promise.all(pois.map(p => fetchWikipediaData(p.wikipediaSlug)));
-  const items = pois.map((poi,i) => poiItemHtml(poi, wikiData[i], 'vom Wanderweg'));
+  const items = pois.map((poi,i) => poiItemHtml(poi, wikiData[i], 'vom Wanderweg', trail, 'Wanderroute'));
   container.innerHTML = poiSectionHtml('🏛','Nahe der Wanderroute',`${pois.length} nahe dem Wanderweg`, items);
 }
 
@@ -2483,6 +2584,6 @@ async function renderAccessPOIs(trail){
   }
 
   const wikiData = await Promise.all(pois.map(p => fetchWikipediaData(p.wikipediaSlug)));
-  const items = pois.map((poi,i) => poiItemHtml(poi, wikiData[i], 'vom Startpunkt'));
+  const items = pois.map((poi,i) => poiItemHtml(poi, wikiData[i], 'vom Startpunkt', trail, 'Start/Ziel'));
   container.innerHTML = poiSectionHtml('📍','Nahe Start & Ziel',`${pois.length} nahe dem Startpunkt`, items);
 }

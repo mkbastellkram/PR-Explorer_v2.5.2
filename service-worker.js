@@ -1,5 +1,5 @@
-const APP_VERSION = 'V3.2.22';
-const CACHE_NAME = 'pr-explorer-v3-2-22-pwa-homefix-20260605';
+const APP_VERSION = 'V3.2.23';
+const CACHE_NAME = 'pr-explorer-v3-2-23-poi-targets-20260605';
 const CORE_ASSETS = [
   './',
   './index.html',

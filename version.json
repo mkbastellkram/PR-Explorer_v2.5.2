@@ -1,10 +1,10 @@
 {
   "name": "PR Explorer Madeira",
-  "version": "V3.2.22",
+  "version": "V3.2.23",
   "date": "2026-06-05",
-  "title": "PWA-Homebildschirm-Fix",
-  "cache": "pr-explorer-v3-2-22-pwa-homefix-20260605",
-  "base": "V3.2.21",
+  "title": "POI sammeln & Stopps übernehmen",
+  "cache": "pr-explorer-v3-2-23-poi-targets-20260605",
+  "base": "V3.2.22",
   "activeFiles": [
     "index.html",
     "style.css",
@@ -18,5 +18,5 @@
     "service-worker.js",
     "kml/*.kml"
   ],
-  "scope": "Stabilisierung für iOS-Homescreen-PWA: Start-URL ohne Querystring, Service-Worker mit Network-First für App-Dateien, optionale Leaflet-Vorcache-Strategie und Diagnosehinweis bei CDN-/Bootfehlern."
+  "scope": "POIs aus Detail und Karte merken oder als Stopp übernehmen; deutsche Wikipedia bevorzugt; gesammelte Ziele im Reisebereich; Route Hotel → POI → PR-Start."
 }
