@@ -58,7 +58,7 @@ window.MADEIRA_WEBCAMS = [
     "lng": -16.942,
     "youtubeId": "0QUto3lSCh8",
     "embedUrl": "https://www.youtube-nocookie.com/embed/0QUto3lSCh8",
-    "watchUrl": "https://youtu.be/0QUto3lSCh8",
+    "watchUrl": "https://www.youtube.com/live/0QUto3lSCh8",
     "quelle": "madeira-web.com"
   },
   {
@@ -70,7 +70,7 @@ window.MADEIRA_WEBCAMS = [
     "lng": -16.937,
     "youtubeId": "xOUhPimEMw4",
     "embedUrl": "https://www.youtube-nocookie.com/embed/xOUhPimEMw4",
-    "watchUrl": "https://youtu.be/xOUhPimEMw4",
+    "watchUrl": "https://www.youtube.com/live/xOUhPimEMw4",
     "quelle": "madeira-web.com"
   },
   {
@@ -82,7 +82,7 @@ window.MADEIRA_WEBCAMS = [
     "lng": -16.935,
     "youtubeId": "8_IvM-qKWvI",
     "embedUrl": "https://www.youtube-nocookie.com/embed/8_IvM-qKWvI",
-    "watchUrl": "https://youtu.be/8_IvM-qKWvI",
+    "watchUrl": "https://www.youtube.com/live/8_IvM-qKWvI",
     "quelle": "madeira-web.com"
   },
   {
@@ -94,7 +94,7 @@ window.MADEIRA_WEBCAMS = [
     "lng": -16.895,
     "youtubeId": "46L7FMm0MRY",
     "embedUrl": "https://www.youtube-nocookie.com/embed/46L7FMm0MRY",
-    "watchUrl": "https://youtu.be/46L7FMm0MRY",
+    "watchUrl": "https://www.youtube.com/live/46L7FMm0MRY",
     "quelle": "madeira-web.com"
   },
   {
@@ -106,7 +106,7 @@ window.MADEIRA_WEBCAMS = [
     "lng": -16.9314,
     "youtubeId": "Wwmv233GOvQ",
     "embedUrl": "https://www.youtube-nocookie.com/embed/Wwmv233GOvQ",
-    "watchUrl": "https://youtu.be/Wwmv233GOvQ",
+    "watchUrl": "https://www.youtube.com/live/Wwmv233GOvQ",
     "quelle": "madeira-web.com"
   },
   {
@@ -118,7 +118,7 @@ window.MADEIRA_WEBCAMS = [
     "lng": -16.9435,
     "youtubeId": "5hg111TE3xI",
     "embedUrl": "https://www.youtube-nocookie.com/embed/5hg111TE3xI",
-    "watchUrl": "https://youtu.be/5hg111TE3xI",
+    "watchUrl": "https://www.youtube.com/live/5hg111TE3xI",
     "quelle": "madeira-web.com"
   },
   {

@@ -7,8 +7,15 @@
 const qs  = s => document.querySelector(s);
 const qsa = s => [...document.querySelectorAll(s)];
 
-const APP_VERSION = 'V3.2.19';
+const APP_VERSION = 'V3.2.20';
 const APP_CHANGELOG = [
+  { version:'V3.2.20', date:'2026-06-05', title:'Stabilisierung POI/Webcam-Layer', changes:[
+    'ReferenceError in Unterwegs-Sehenswürdigkeiten behoben: SIGHT_CAT wird korrekt genutzt.',
+    'POI-Route im Detail nutzt jetzt sightMapsUrl(poi).',
+    'POI-Kategorie-Schalter in Optionen schalten wieder die korrekte Kategorie.',
+    'Webcams und Sehenswürdigkeiten werden nach Reload mit gespeicherten Layer-Einstellungen sofort neu gezeichnet.',
+    'POI-Unterwegs nutzt vorhandene Trackdaten vor externem KML-Fetch.'
+  ]},
   { version:'V3.2.19', date:'2026-06-04', title:'POI-Unterwegs im Detail', changes:[
     'Detail-Sheet zeigt Unterwegs – Sehenswürdigkeiten.',
     'KML-Parsing per DOMParser ergänzt.',
@@ -895,6 +902,8 @@ function renderLayers(){
     if(cfg.layers.markers&&r.lat&&r.lon){const st=getSt(r.id),col=levelColor(r.level),nr=r.id.replace('PR ','');const fav=favs.has(r.id)?'<span class="pin-fav"></span>':'';const w=Math.round(58*ps),h=Math.round(48*ps),fs=Math.round(9.8*ps);const html=`<div class="pr-pin-hit"><div class="pr-pin-inner"><div class="pin-tag" style="background:${col};font-size:${fs}px">${nr}${fav}<span class="pin-sd ${st}"></span></div><div class="pin-tail" style="border-top-color:${col}"></div></div></div>`;const ico=L.divIcon({html,className:'pr-pin',iconSize:[w,h],iconAnchor:[w/2,h]});const m=L.marker([r.lat,r.lon],{icon:ico,riseOnHover:true,keyboard:false,bubblingMouseEvents:false,pane:'prMarkerPane'});let lastOpen=0;const openFromPin=e=>{L.DomEvent.stopPropagation(e);const now=Date.now();if(now-lastOpen<350)return;lastOpen=now;openDetail(r.id,true);};m._prId=r.id;m.on('click',openFromPin);m.on('touchend',openFromPin);m.on('touchstart',e=>{L.DomEvent.stopPropagation(e);},{passive:true});m.addTo(lgMarkers);}
   });
   drawPois();
+  drawStaticSights();
+  drawWebcams();
   drawHomePin();
   updateZoom();
 }
@@ -1034,7 +1043,7 @@ function renderPanel(){
   if(S.tab==='overview'){ h=`${tripBannerHtml()}<div class="stats"><div class="stat"><b>${DATA.length}</b><small>PR gesamt</small></div><div class="stat"><b>${list.length}</b><small>Sichtbar</small></div><div class="stat"><b>${favs.size}</b><small>Favoriten</small></div></div>${prxDashboardHtml()}<button class="btn-primary" onclick="setTab('journal')">Alle PR anzeigen</button>`; if(typeof initDashboard==='function') setTimeout(initDashboard,0); }
   else if(S.tab==='journal'){ const sb=cfg.soloMode?`<div class="solo-banner"><span>Solo: ${cfg.soloId}</span><button onclick="exitSoloMode();renderPanel()">× Alle</button></div>`:'';h=`${prxManualStatusCardHtml()}<div class="search-row"><input class="search-input" placeholder="PR suchen…" value="${S.query}" oninput="S.query=this.value;clearTimeout(window.__prxSearchT);window.__prxSearchT=setTimeout(()=>{renderLayers();renderPanel()},450)"></div><div class="sort-row"><span>Sortierung</span><select onchange="setSort(this.value)"><option value="id" ${cfg.sort==='id'?'selected':''}>PR-Nummer</option><option value="name" ${cfg.sort==='name'?'selected':''}>Name</option><option value="distance" ${cfg.sort==='distance'?'selected':''}>Track-Länge</option><option value="drive" ${cfg.sort==='drive'?'selected':''}>Anfahrtszeit</option><option value="elev" ${cfg.sort==='elev'?'selected':''}>Höhenmeter</option><option value="status" ${cfg.sort==='status'?'selected':''}>Status</option></select></div>${sb}<div class="list">${list.map(r=>prCardHtml(r,true)).join('')||'<div class="empty-state">Keine PR gefunden.</div>'}</div>`; }
   else if(S.tab==='trips'){ h=travelPlannerHtml(); }
-  else if(S.tab==='options'){ h=`<div class="p-section">Kartenstil</div><div class="mode-grid">${Object.keys(BASE_LABELS).map(m=>`<button class="mode-chip ${cfg.base===m?'active':''}" onclick="setBase('${m}')">${BASE_LABELS[m]}</button>`).join('')}</div><div class="p-section">Ebenen</div><div class="sg-box" style="border-radius:18px;overflow:hidden;background:rgba(90,200,250,.04);border:1px solid rgba(90,200,250,.1)">${APP_LAYER_KEYS.map(k=>`<div class="opt-row"><span style="font-size:18px;width:28px;text-align:center">${OVERLAY_ICONS[k]}</span><span class="opt-label">${OVERLAY_LABELS[k]}</span><input type="checkbox" class="s-tog" ${cfg.layers[k]?'checked':''} onchange="setLayer('${k}',this.checked)"></div>`).join('')}</div><div class="p-section">POI-Reiseziele</div><div class="vector-info-card"><b>OSM Reise-POIs</b><span>${poiStatusHtml()}</span><button class="mini-btn" onclick="refreshPoiData()">POIs laden / aktualisieren</button><div class="poi-cat-grid">${Object.entries(POI_DEF).map(([k,d])=>`<button class="poi-cat-btn ${cfg.poiCats?.[k]!==false?'active':''}" onclick="setPoiCat('${k}',!(cfg.poiCats?.['${k}']!==false));event.stopPropagation();"><span>${d.icon}</span>${d.label}</button>`).join('')}</div><button class="mini-btn" onclick="googleMapsSearch('Cafe Madeira')">Google-Maps-Suche Test</button></div><div class="p-section">Hiking-Darstellung</div><div class="vector-info-card"><b>${hikingModeLabel()}</b>${hikingModeControlsHtml('panel')}<span>${cfg.hikingMode==='raster'?'Waymarked Trails Raster-Referenz aktiv.':cfg.hikingMode==='vector'?'Editierbare OSM-Vektorlinien aktiv.':cfg.hikingMode==='compare'?'Vergleichsmodus: Raster und Vektor bewusst übereinander.':'Keine zusätzliche Hiking-Ebene aktiv.'}</span></div><div class="p-section">OSM Hiking Vektor</div><div class="vector-info-card"><b>Editierbare Rohdaten-Linien</b><span>${hikingVectorStatusHtml()}</span><button class="mini-btn" onclick="refreshHikingVectorData()">Rohdaten laden / aktualisieren</button></div><button class="btn-primary" style="margin-top:14px" onclick="fitVisible();setTab('map')">Sichtbare PR einpassen</button>${v320OptionsHtml()}${v325DiagnosticsHtml()}${prxStatusDiagnosticsHtml()}`; }
+  else if(S.tab==='options'){ h=`<div class="p-section">Kartenstil</div><div class="mode-grid">${Object.keys(BASE_LABELS).map(m=>`<button class="mode-chip ${cfg.base===m?'active':''}" onclick="setBase('${m}')">${BASE_LABELS[m]}</button>`).join('')}</div><div class="p-section">Ebenen</div><div class="sg-box" style="border-radius:18px;overflow:hidden;background:rgba(90,200,250,.04);border:1px solid rgba(90,200,250,.1)">${APP_LAYER_KEYS.map(k=>`<div class="opt-row"><span style="font-size:18px;width:28px;text-align:center">${OVERLAY_ICONS[k]}</span><span class="opt-label">${OVERLAY_LABELS[k]}</span><input type="checkbox" class="s-tog" ${cfg.layers[k]?'checked':''} onchange="setLayer('${k}',this.checked)"></div>`).join('')}</div><div class="p-section">POI-Reiseziele</div><div class="vector-info-card"><b>OSM Reise-POIs</b><span>${poiStatusHtml()}</span><button class="mini-btn" onclick="refreshPoiData()">POIs laden / aktualisieren</button><div class="poi-cat-grid">${Object.entries(POI_DEF).map(([k,d])=>`<button class="poi-cat-btn ${cfg.poiCats?.[k]!==false?'active':''}" onclick="setPoiCat('${k}',${cfg.poiCats?.[k] !== false ? 'false' : 'true'});event.stopPropagation();"><span>${d.icon}</span>${d.label}</button>`).join('')}</div><button class="mini-btn" onclick="googleMapsSearch('Cafe Madeira')">Google-Maps-Suche Test</button></div><div class="p-section">Hiking-Darstellung</div><div class="vector-info-card"><b>${hikingModeLabel()}</b>${hikingModeControlsHtml('panel')}<span>${cfg.hikingMode==='raster'?'Waymarked Trails Raster-Referenz aktiv.':cfg.hikingMode==='vector'?'Editierbare OSM-Vektorlinien aktiv.':cfg.hikingMode==='compare'?'Vergleichsmodus: Raster und Vektor bewusst übereinander.':'Keine zusätzliche Hiking-Ebene aktiv.'}</span></div><div class="p-section">OSM Hiking Vektor</div><div class="vector-info-card"><b>Editierbare Rohdaten-Linien</b><span>${hikingVectorStatusHtml()}</span><button class="mini-btn" onclick="refreshHikingVectorData()">Rohdaten laden / aktualisieren</button></div><button class="btn-primary" style="margin-top:14px" onclick="fitVisible();setTab('map')">Sichtbare PR einpassen</button>${v320OptionsHtml()}${v325DiagnosticsHtml()}${prxStatusDiagnosticsHtml()}`; }
   el.innerHTML=h;
 }
 
@@ -1279,7 +1288,7 @@ function renderSettings(){
       <div class="sg-row" style="cursor:default"><span class="sg-label">Anzeige nur im Radius</span><input type="checkbox" class="s-tog" ${(cfg.poiMode||'near')==='near'?'checked':''} onchange="cfg.poiMode=this.checked?'near':'all';saveCfg();drawPois();renderSettings()"></div>
       <div class="sg-row" style="cursor:default;flex-direction:column;align-items:stretch;padding:12px 16px;gap:8px"><div style="display:flex;justify-content:space-between"><span class="sg-label">POI-Radius aktiver PR</span><span id="poiRadVal" style="font-size:13px;color:var(--teal);font-weight:700">${cfg.poiRadiusKm||3} km</span></div><input type="range" min="0.5" max="12" step="0.5" value="${cfg.poiRadiusKm||3}" class="s-range-sl" oninput="cfg.poiRadiusKm=+this.value;saveCfg();drawPois();qs('#poiRadVal').textContent=this.value+' km'"></div>
       <div class="sg-row" style="cursor:default;flex-direction:column;align-items:stretch;padding:12px 16px;gap:8px"><div style="display:flex;justify-content:space-between"><span class="sg-label">POI-Größe</span><span id="poiSizeVal" style="font-size:13px;color:var(--teal);font-weight:700">${Math.round((cfg.poiSize||1)*100)}%</span></div><input type="range" min="0.6" max="1.8" step="0.1" value="${cfg.poiSize||1}" class="s-range-sl" oninput="cfg.poiSize=+this.value;saveCfg();drawPois();qs('#poiSizeVal').textContent=Math.round(this.value*100)+'%'"></div>
-      <div class="poi-cat-grid">${Object.entries(POI_DEF).map(([k,d])=>`<button class="poi-cat-btn ${cfg.poiCats?.[k]!==false?'active':''}" onclick="setPoiCat('${k}',!(cfg.poiCats?.['${k}']!==false));event.stopPropagation();"><span>${d.icon}</span>${d.label}</button>`).join('')}</div>
+      <div class="poi-cat-grid">${Object.entries(POI_DEF).map(([k,d])=>`<button class="poi-cat-btn ${cfg.poiCats?.[k]!==false?'active':''}" onclick="setPoiCat('${k}',${cfg.poiCats?.[k] !== false ? 'false' : 'true'});event.stopPropagation();"><span>${d.icon}</span>${d.label}</button>`).join('')}</div>
     </div></div>
     <div class="sg"><div class="sg-title">Ebenen</div><div class="sg-box">
       ${APP_LAYER_KEYS.map(k=>`<div class="sg-row" style="cursor:default"><span class="sg-label">${OVERLAY_ICONS[k]} ${OVERLAY_LABELS[k]}</span><input type="checkbox" class="s-tog" ${cfg.layers[k]?'checked':''} onchange="setLayer('${k}',this.checked);renderSettings()"></div>`).join('')}
@@ -2138,7 +2147,7 @@ bind();try{renderFilterSheet();}catch(e){console.warn('Initial filter render ski
 if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js').catch(()=>{});
 
 
-/* V3.2.19 POI-UNTERWEGS DETAIL */
+/* V3.2.20 POI/WEBCAM STABILIZATION */
 function prxPOIContainerHtml(){
   return `<div id="poiContainer" class="poi-container"></div>`;
 }
@@ -2247,8 +2256,14 @@ async function renderPOIsAlongTrail(trail){
   container.innerHTML = '<div class="poi-loading">Sehenswürdigkeiten werden geladen …</div>';
 
   let pathPoints = [];
-  const kmlPath = prxTrailKmlPath(trail);
-  if(kmlPath) pathPoints = await parseKMLtoPoints(kmlPath);
+  if(Array.isArray(trail.track) && trail.track.length > 2){
+    pathPoints = trail.track.map(p => ({lat:p[0], lng:p[1]}));
+  }else if(Array.isArray(trail.driveRoute) && trail.driveRoute.length > 2){
+    pathPoints = trail.driveRoute.map(p => ({lat:p[0], lng:p[1]}));
+  }else{
+    const kmlPath = prxTrailKmlPath(trail);
+    if(kmlPath) pathPoints = await parseKMLtoPoints(kmlPath);
+  }
 
   let pois = [];
   let modeText = 'innerhalb 2 km';
@@ -2285,12 +2300,8 @@ async function renderPOIsAlongTrail(trail){
 
   const items = pois.map((poi,i)=>{
     const wiki = wikiData[i];
-    const k = POI_KATEGORIEN[poi.kategorie] || POI_KATEGORIEN.kultur;
-    const mapsUrl = typeof poiMapsUrl === 'function'
-      ? poiMapsUrl(poi)
-      : (/iPad|iPhone|iPod/.test(navigator.userAgent)
-        ? `maps://maps.apple.com/?ll=${poi.lat},${poi.lng}&q=${encodeURIComponent(poi.name)}`
-        : `https://www.google.com/maps/search/?api=1&query=${poi.lat},${poi.lng}`);
+    const k = SIGHT_CAT[poi.kategorie] || SIGHT_CAT.kultur;
+    const mapsUrl = sightMapsUrl(poi);
     const pageUrl = wiki?.pageUrl || poiWikiUrl(poi.wikipediaSlug);
     return `<div class="poi-item">
       ${wiki?.thumbnail

@@ -1,3 +1,13 @@
+# V3.2.20 · Stabilisierung POI/Webcam-Layer
+
+- POI-Detail-Crash durch undefiniertes `POI_KATEGORIEN` behoben.
+- POI-Route im Detail nutzt jetzt `sightMapsUrl(poi)`.
+- POI-Kategorie-Schalter in Optionen korrigiert.
+- Webcams und Sehenswürdigkeiten werden bei gespeicherter Layer-Aktivierung nach Reload sofort gezeichnet.
+- POI-Unterwegs nutzt vorhandene `track`-/`driveRoute`-Daten vor externem KML-Fetch.
+- Service-Worker-Cache auf V3.2.20 erhöht; Prompt-Datei aus CORE_ASSETS entfernt.
+- Webcam-Live-Links cam05–cam10 auf `youtube.com/live/...` normiert.
+
 # V3.2.19 · POI-Unterwegs im Detail
 
 - Detail-Sheet zeigt „🏛 Unterwegs – Sehenswürdigkeiten“.

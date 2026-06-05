@@ -1,5 +1,5 @@
-const APP_VERSION = 'V3.2.19';
-const CACHE_NAME = 'pr-explorer-v3-2-19-poi-unterwegs-20260604p';
+const APP_VERSION = 'V3.2.20';
+const CACHE_NAME = 'pr-explorer-v3-2-20-stabilisierung-20260605';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -17,8 +17,7 @@ const CORE_ASSETS = [
   './icon-192.png',
   './icon-512.png',
   './README.md',
-  './CHANGELOG.md',
-  './PROMPT_CHATGPT_ROADMAP.md'
+  './CHANGELOG.md'
 ];
 
 self.addEventListener('install', event => {
