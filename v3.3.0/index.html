@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <title>PR Explorer Madeira · V3.3.0</title>
+  <meta name="theme-color" content="#e8f1ea">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PR Explorer">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<div id="app">
+  <div id="map" aria-label="Madeira Karte"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <span>MADEIRA</span>
+      <strong>PR Explorer</strong>
+      <em>V3.3.0</em>
+    </div>
+    <div class="top-actions">
+      <button id="locateBtn" class="glass-btn" title="Standort">⌖</button>
+      <button id="fitBtn" class="glass-btn" title="Einpassen">⛶</button>
+      <button id="layerBtn" class="glass-btn" title="Layer">▧</button>
+    </div>
+  </header>
+
+  <section class="filter-rail" id="filterRail">
+    <button class="filter-chip active" data-filter="level" data-value="all">Alle</button>
+    <button class="filter-chip" data-filter="level" data-value="leicht">Leicht</button>
+    <button class="filter-chip" data-filter="level" data-value="mittel">Mittel</button>
+    <button class="filter-chip" data-filter="level" data-value="schwer">Schwer</button>
+    <button class="filter-chip" data-filter="fav" data-value="fav">★ Favoriten</button>
+    <button class="filter-chip" id="searchBtn">Suchen</button>
+  </section>
+
+  <aside class="search-panel hidden" id="searchPanel">
+    <div class="panel-head"><strong>PR suchen</strong><button id="closeSearch">×</button></div>
+    <input id="searchInput" type="search" placeholder="PR, Name, Region …">
+    <div id="resultCount" class="muted"></div>
+  </aside>
+
+  <aside class="layer-panel hidden" id="layerPanel">
+    <div class="panel-head"><strong>Karten & Layer</strong><button id="closeLayers">×</button></div>
+    <div class="layer-grid">
+      <button class="layer-card active" data-base="topo">Topo</button>
+      <button class="layer-card" data-base="light">OSM</button>
+      <button class="layer-card" data-base="sat">Satellit</button>
+    </div>
+    <div class="layer-grid">
+      <button class="layer-card toggle active" data-layer="pins">PR-Pins</button>
+      <button class="layer-card toggle active" data-layer="tracks">GPX</button>
+      <button class="layer-card toggle active" data-layer="drives">Anfahrt</button>
+      <button class="layer-card toggle" data-layer="context">POI/Webcam</button>
+    </div>
+  </aside>
+
+  <nav class="modebar">
+    <button class="mode active" data-mode="map">Karte</button>
+    <button class="mode" data-mode="journal">Journal</button>
+    <button class="mode" data-mode="travel">Reise</button>
+    <button class="mode" data-mode="settings">Info</button>
+  </nav>
+
+  <section class="journal hidden" id="journal">
+    <div class="journal-head"><strong>Journal</strong><span id="journalCount"></span></div>
+    <div id="journalList" class="journal-list"></div>
+  </section>
+
+  <section class="carousel-shell hidden" id="carouselShell">
+    <div class="carousel-handle" id="sheetHandle"></div>
+    <div class="carousel" id="carousel"></div>
+  </section>
+
+  <section class="detail-sheet hidden" id="detailSheet" aria-label="PR Detail">
+    <div class="sheet-grip" id="sheetGrip"></div>
+    <div id="sheetContent"></div>
+  </section>
+
+  <section class="travel-panel hidden" id="travelPanel">
+    <div class="panel-head"><strong>Reise-Sammlung</strong><button id="closeTravel">×</button></div>
+    <div id="travelList" class="travel-list"></div>
+  </section>
+
+  <div id="toast" class="toast hidden"></div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="./data.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>
