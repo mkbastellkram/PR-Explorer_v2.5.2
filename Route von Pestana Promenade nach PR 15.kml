@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2">
   <Document>
-    <name>Route von Pestana Promenade nach PR 3</name>
+    <name>Route von Pestana Promenade nach PR_1</name>
     <Style id="icon-1899-DB4436-nodesc-normal">
       <IconStyle>
         <color>ff3644db</color>
@@ -73,7 +73,7 @@
       </Pair>
     </StyleMap>
     <Placemark>
-      <name>Route von Pestana Promenade nach PR 3</name>
+      <name>Route von Pestana Promenade nach PR_1</name>
       <styleUrl>#line-1267FF-5000-nodesc</styleUrl>
       <LineString>
         <tessellate>1</tessellate>
@@ -1362,7 +1362,7 @@
           -16.92892,32.73376,0
           -16.92893,32.73377,0
           -16.92893,32.73381,0
-          -16.92868,32.73491,0
+          -16.92866,32.73499,0
         </coordinates>
       </LineString>
     </Placemark>
@@ -1376,11 +1376,11 @@
       </Point>
     </Placemark>
     <Placemark>
-      <name>PR 3</name>
+      <name>PR_1</name>
       <styleUrl>#icon-1899-DB4436-nodesc</styleUrl>
       <Point>
         <coordinates>
-          -16.9286828,32.7349117,0
+          -16.9286646,32.7349934,0
         </coordinates>
       </Point>
     </Placemark>

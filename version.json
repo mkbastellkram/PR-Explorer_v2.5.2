@@ -1,10 +1,10 @@
 {
   "name": "PR Explorer Madeira",
-  "version": "V3.2.20",
+  "version": "V3.2.21",
   "date": "2026-06-05",
-  "title": "Stabilisierung POI/Webcam-Layer",
-  "cache": "pr-explorer-v3-2-20-stabilisierung-20260605",
-  "base": "V3.2.19",
+  "title": "Routenintelligenz & POI-Kontext",
+  "cache": "pr-explorer-v3-2-21-uploadfix-20260605",
+  "base": "V3.2.20",
   "activeFiles": [
     "index.html",
     "style.css",
@@ -15,7 +15,8 @@
     "poi-data.js",
     "webcam-data.js",
     "app.js",
-    "service-worker.js"
+    "service-worker.js",
+    "kml/*.kml"
   ],
-  "scope": "Stabilisierungspatch: POI-Detail-Crash, Layer-Reload, Track-Priorität, Service-Worker und Webcam-URL-Normierung"
+  "scope": "Uploadfähige V3.2.21: KML-Dateien als PWA-Ressourcen integriert, Anfahrtsstopps nutzen KML primär; nicht benötigte Prompt-Datei aus Liefer-ZIP entfernt."
 }
