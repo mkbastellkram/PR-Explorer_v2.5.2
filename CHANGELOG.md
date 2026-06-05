@@ -1,586 +1,267 @@
-{
-  "version": "V3.0.1",
-  "statusValues": [
-    "✓",
-    "✗",
-    "!",
-    "—"
-  ],
-  "sections": [
-    {
-      "id": "A",
-      "title": "App-Start & Grundlayout",
-      "questions": [
-        {
-          "id": "A01",
-          "title": "App startet ohne Fehlermeldung"
-        },
-        {
-          "id": "A02",
-          "title": "Topo-Karte wird geladen"
-        },
-        {
-          "id": "A03",
-          "title": "PR-Pins werden angezeigt"
-        },
-        {
-          "id": "A04",
-          "title": "Home-/Hotel-PIN wird angezeigt"
-        },
-        {
-          "id": "A05",
-          "title": "Unterer Displayrand wird vollständig genutzt"
-        },
-        {
-          "id": "A06",
-          "title": "Safe-Area oben/unten korrekt"
-        },
-        {
-          "id": "A07",
-          "title": "Stabil nach App-Wechsel"
-        }
-      ]
-    },
-    {
-      "id": "B",
-      "title": "Karte & Gestensteuerung",
-      "questions": [
-        {
-          "id": "B01",
-          "title": "Ein-Finger-Verschieben funktioniert"
-        },
-        {
-          "id": "B02",
-          "title": "Pinch-Zoom funktioniert"
-        },
-        {
-          "id": "B03",
-          "title": "Doppeltippen zoomt hinein"
-        },
-        {
-          "id": "B04",
-          "title": "Apple-ähnliches Kartenverhalten"
-        },
-        {
-          "id": "B05",
-          "title": "Route einpassen ohne Abschneiden"
-        },
-        {
-          "id": "B06",
-          "title": "Zoomslider aktivierbar"
-        },
-        {
-          "id": "B07",
-          "title": "Zoomslider bedienbar"
-        },
-        {
-          "id": "B08",
-          "title": "Zoomslider deaktivierbar"
-        },
-        {
-          "id": "B09",
-          "title": "Vollbildmodus funktioniert"
-        }
-      ]
-    },
-    {
-      "id": "C",
-      "title": "Bottom-Sheets & Overlays",
-      "questions": [
-        {
-          "id": "C01",
-          "title": "Sheets öffnen zuverlässig"
-        },
-        {
-          "id": "C02",
-          "title": "Sheets schließen zuverlässig"
-        },
-        {
-          "id": "C03",
-          "title": "Schließen-Button kollidiert nicht mit Kopierbutton"
-        },
-        {
-          "id": "C04",
-          "title": "Audit-Sheet ohne doppelten Kopierbutton oben rechts"
-        },
-        {
-          "id": "C05",
-          "title": "Teilen/Kopieren bleibt verfügbar"
-        },
-        {
-          "id": "C06",
-          "title": "Transparenz-Slider vorhanden"
-        },
-        {
-          "id": "C07",
-          "title": "Transparenz wirkt sichtbar"
-        },
-        {
-          "id": "C08",
-          "title": "Transparenz bleibt gespeichert"
-        },
-        {
-          "id": "C09",
-          "title": "Text bleibt lesbar"
-        }
-      ]
-    },
-    {
-      "id": "D",
-      "title": "Einstellungen",
-      "questions": [
-        {
-          "id": "D01",
-          "title": "Einstellungen öffnen/schließen"
-        },
-        {
-          "id": "D02",
-          "title": "Zoomslider-Schalter vorhanden"
-        },
-        {
-          "id": "D03",
-          "title": "Bottom-Sheet-Transparenz-Slider vorhanden"
-        },
-        {
-          "id": "D04",
-          "title": "Home-/Hotel-PIN speicherbar"
-        },
-        {
-          "id": "D05",
-          "title": "Verbrauch l/100 km speicherbar"
-        },
-        {
-          "id": "D06",
-          "title": "Madeira-Bergkorrektur speicherbar"
-        },
-        {
-          "id": "D07",
-          "title": "Kraftstoffpreis speicherbar"
-        },
-        {
-          "id": "D08",
-          "title": "Einstellungen bleiben nach Neustart"
-        }
-      ]
-    },
-    {
-      "id": "E",
-      "title": "PR-Pins & Detailseite",
-      "questions": [
-        {
-          "id": "E01",
-          "title": "Pin öffnet passende Detailseite"
-        },
-        {
-          "id": "E02",
-          "title": "Detailseite zeigt korrekten PR-Namen"
-        },
-        {
-          "id": "E03",
-          "title": "GPX-Overlay passt"
-        },
-        {
-          "id": "E04",
-          "title": "Nahegelegene PRs werden angezeigt"
-        },
-        {
-          "id": "E05",
-          "title": "Nahegelegene PRs plausibel"
-        },
-        {
-          "id": "E06",
-          "title": "IFCN/VisitMadeira-Link vorhanden"
-        },
-        {
-          "id": "E07",
-          "title": "SIMplifica-Link vorhanden"
-        },
-        {
-          "id": "E08",
-          "title": "SIMplifica bevorzugt Chrome"
-        },
-        {
-          "id": "E09",
-          "title": "Schmale-Pfade-Link vorhanden"
-        },
-        {
-          "id": "E10",
-          "title": "Schmale-Pfade-Link korrekt zugeordnet"
-        }
-      ]
-    },
-    {
-      "id": "F",
-      "title": "Kalender & Termine",
-      "questions": [
-        {
-          "id": "F01",
-          "title": "Kalenderfeld öffnet"
-        },
-        {
-          "id": "F02",
-          "title": "Kein automatisches Jetzt-Datum beim Antippen"
-        },
-        {
-          "id": "F03",
-          "title": "Picker bleibt bis Auswahl/Abbruch offen"
-        },
-        {
-          "id": "F04",
-          "title": "Datum änderbar"
-        },
-        {
-          "id": "F05",
-          "title": "Uhrzeit änderbar"
-        },
-        {
-          "id": "F06",
-          "title": "Termin löschbar"
-        },
-        {
-          "id": "F07",
-          "title": "Gebucht ohne Termin deaktiviert"
-        },
-        {
-          "id": "F08",
-          "title": "Gebucht nach Termin aktiv"
-        },
-        {
-          "id": "F09",
-          "title": "Termin löschen setzt Buchung zurück"
-        },
-        {
-          "id": "F10",
-          "title": "IFCN-fixe Einträge erkennbar"
-        },
-        {
-          "id": "F11",
-          "title": "Nicht-fixe Einträge verschiebbar"
-        }
-      ]
-    },
-    {
-      "id": "G",
-      "title": "PR-Status",
-      "questions": [
-        {
-          "id": "G01",
-          "title": "Status-Schalter vorhanden"
-        },
-        {
-          "id": "G02",
-          "title": "Status manuell änderbar"
-        },
-        {
-          "id": "G03",
-          "title": "Erster Status-Klick pro Tag öffnet/offert offizielle Quelle"
-        },
-        {
-          "id": "G04",
-          "title": "Quelle nicht bei jedem Klick erneut"
-        },
-        {
-          "id": "G05",
-          "title": "Datum letzter Statusprüfung gespeichert"
-        },
-        {
-          "id": "G06",
-          "title": "Offizielle Quelle öffnet korrekt"
-        },
-        {
-          "id": "G07",
-          "title": "Status lokal gespeichert"
-        }
-      ]
-    },
-    {
-      "id": "H",
-      "title": "Reiseliste & Tagesplanung",
-      "questions": [
-        {
-          "id": "H01",
-          "title": "Reiseliste öffnet"
-        },
-        {
-          "id": "H02",
-          "title": "Geplante PRs erscheinen"
-        },
-        {
-          "id": "H03",
-          "title": "Externe Unternehmungen erscheinen"
-        },
-        {
-          "id": "H04",
-          "title": "Nicht-fixe Einträge im Bearbeiten-Modus verschiebbar"
-        },
-        {
-          "id": "H05",
-          "title": "Bearbeiten-Schalter vorhanden"
-        },
-        {
-          "id": "H06",
-          "title": "iOS-Anfasser rechts sichtbar"
-        },
-        {
-          "id": "H07",
-          "title": "Reihenfolge bleibt gespeichert"
-        },
-        {
-          "id": "H08",
-          "title": "IFCN-fixe Einträge gesperrt/gewarned"
-        },
-        {
-          "id": "H09",
-          "title": "Tages-Zeitfenster angezeigt"
-        },
-        {
-          "id": "H10",
-          "title": "Anfahrt berücksichtigt"
-        },
-        {
-          "id": "H11",
-          "title": "Parken/Vorbereitung berücksichtigt"
-        },
-        {
-          "id": "H12",
-          "title": "GPX-Hinweg berücksichtigt"
-        },
-        {
-          "id": "H13",
-          "title": "Rückweg/Shuttle berücksichtigt"
-        },
-        {
-          "id": "H14",
-          "title": "Rückfahrt berücksichtigt"
-        },
-        {
-          "id": "H15",
-          "title": "Tageskilometer angezeigt"
-        },
-        {
-          "id": "H16",
-          "title": "Reisekilometer kumuliert"
-        },
-        {
-          "id": "H17",
-          "title": "Kraftstoffbedarf berechnet"
-        },
-        {
-          "id": "H18",
-          "title": "Fahrkosten berechnet"
-        }
-      ]
-    },
-    {
-      "id": "I",
-      "title": "Journal-Liste",
-      "questions": [
-        {
-          "id": "I01",
-          "title": "Journal öffnet"
-        },
-        {
-          "id": "I02",
-          "title": "PIN steht oben auf Höhe der Bezeichnung"
-        },
-        {
-          "id": "I03",
-          "title": "Status unterhalb des Textes"
-        },
-        {
-          "id": "I04",
-          "title": "Keine Textüberlagerung"
-        },
-        {
-          "id": "I05",
-          "title": "Eintrag öffnet Detailseite"
-        },
-        {
-          "id": "I06",
-          "title": "Filter/Sortierung funktionieren"
-        }
-      ]
-    },
-    {
-      "id": "J",
-      "title": "Externe Unternehmungen & Ideenliste",
-      "questions": [
-        {
-          "id": "J01",
-          "title": "Neue externe Unternehmung anlegbar"
-        },
-        {
-          "id": "J02",
-          "title": "Landet zuerst in Ideenliste"
-        },
-        {
-          "id": "J03",
-          "title": "Nachträglich editierbar"
-        },
-        {
-          "id": "J04",
-          "title": "Titel editierbar"
-        },
-        {
-          "id": "J05",
-          "title": "Ort/Region editierbar"
-        },
-        {
-          "id": "J06",
-          "title": "Koordinaten editierbar"
-        },
-        {
-          "id": "J07",
-          "title": "ca. Dauer eintragbar"
-        },
-        {
-          "id": "J08",
-          "title": "Kategorie wählbar"
-        },
-        {
-          "id": "J09",
-          "title": "Einem Reisetag zuordenbar"
-        },
-        {
-          "id": "J10",
-          "title": "Innerhalb Tagesplanung verschiebbar"
-        },
-        {
-          "id": "J11",
-          "title": "Zurück in Ideenliste verschiebbar"
-        },
-        {
-          "id": "J12",
-          "title": "Löschbar"
-        }
-      ]
-    },
-    {
-      "id": "K",
-      "title": "GPX-Import & freie Routen",
-      "questions": [
-        {
-          "id": "K01",
-          "title": "GPX aus Dateien-App importierbar"
-        },
-        {
-          "id": "K02",
-          "title": "Komoot-GPX wird geladen"
-        },
-        {
-          "id": "K03",
-          "title": "Strava-GPX wird geladen"
-        },
-        {
-          "id": "K04",
-          "title": "freie GPX-Route erscheint/ist erfasst"
-        },
-        {
-          "id": "K05",
-          "title": "Distanz berechnet"
-        },
-        {
-          "id": "K06",
-          "title": "Höhenmeter berechnet"
-        },
-        {
-          "id": "K07",
-          "title": "Route Tagesplanung zuordenbar"
-        },
-        {
-          "id": "K08",
-          "title": "Route editierbar"
-        },
-        {
-          "id": "K09",
-          "title": "Route löschbar"
-        }
-      ]
-    },
-    {
-      "id": "L",
-      "title": "Export & Teilen",
-      "questions": [
-        {
-          "id": "L01",
-          "title": "Audit kopierbar"
-        },
-        {
-          "id": "L02",
-          "title": "Audit über Teilen exportierbar"
-        },
-        {
-          "id": "L03",
-          "title": "Reiseplanung exportierbar"
-        },
-        {
-          "id": "L04",
-          "title": "Ideenliste exportierbar"
-        },
-        {
-          "id": "L05",
-          "title": "ZIP-Paket funktioniert"
-        },
-        {
-          "id": "L06",
-          "title": "ZIP enthält JSON-Daten"
-        },
-        {
-          "id": "L07",
-          "title": "ZIP enthält GPX-Dateien soweit gespeichert"
-        },
-        {
-          "id": "L08",
-          "title": "ZIP enthält Prompt"
-        },
-        {
-          "id": "L09",
-          "title": "Import-Rückgabe vorgesehen"
-        }
-      ]
-    },
-    {
-      "id": "M",
-      "title": "Speicherung & Datenpersistenz",
-      "questions": [
-        {
-          "id": "M01",
-          "title": "Einstellungen bleiben erhalten"
-        },
-        {
-          "id": "M02",
-          "title": "PR-Status bleibt erhalten"
-        },
-        {
-          "id": "M03",
-          "title": "Termine bleiben erhalten"
-        },
-        {
-          "id": "M04",
-          "title": "Buchungsstatus bleibt erhalten"
-        },
-        {
-          "id": "M05",
-          "title": "Reiseliste bleibt erhalten"
-        },
-        {
-          "id": "M06",
-          "title": "Sortierung bleibt erhalten"
-        },
-        {
-          "id": "M07",
-          "title": "Externe Unternehmungen bleiben erhalten"
-        },
-        {
-          "id": "M08",
-          "title": "importierte GPX-Routen bleiben erhalten"
-        },
-        {
-          "id": "M09",
-          "title": "Offline/Online-Wechsel robust"
-        }
-      ]
-    }
-  ],
-  "freeText": "Sonstige Anmerkungen / Funktionswünsche"
-}
+# V3.2.22 – PWA-Homebildschirm-Fix
+
+- Manifest-Start-URL auf `./` ohne Querystring umgestellt, damit iOS-Homescreen nicht auf einer alten `index.html?v=...`-Instanz hängen bleibt.
+- Service Worker: App-Dateien (`js/css/json/webmanifest`) laden jetzt Network-First mit Cache-Fallback.
+- Leaflet CDN-Dateien werden beim Service-Worker-Install optional mit vorgecached.
+- Service-Worker-Registrierung mit `updateViaCache:'none'` gehärtet.
+- Startdiagnose ergänzt: Bei fehlendem Leaflet oder Bootfehler erscheint ein sichtbarer Cache-Reset-Hinweis statt leerer App.
+
+# V3.2.21 · Routenintelligenz & POI-Kontext
+
+- POI-Logik in drei getrennte Kontexte aufgeteilt: Anfahrtsstopps (driveRoute), Sehenswürdigkeiten nahe Wanderweg (track), Zugangspunkte nahe Start/Ziel.
+- POI-Container aus dem Höhenprofil-Block herausgelöst — erscheint jetzt bei **allen** 37 PRs, nicht nur bei PRs mit Höhenprofil.
+- Anfahrts-KML-Dateien (Pestana Promenade → PR X) integriert. 36 von 37 PRs mit echten Anfahrtsrouten.
+- KML-Parser verbessert: verwendet nur LineString-Placemarks, filtert Luftlinien (>0,05° Sprung).
+- Fallback-Kette für Anfahrt: driveRoute → KML-Datei → Home-Pin-Linie → Startpunkt.
+- PR 9 ohne driveRoute nutzt Hotel-zu-Start-Linie als Fallback.
+- Leere POI-Blöcke zeigen sauberen Empty-State statt leerem Container.
+- Duplikat-Filter zwischen den drei POI-Blöcken.
+- `POI_ROUTE_SETTINGS`-Konstante für konfigurierbare Distanzradien.
+- Zentrales Typografie-System als CSS-Variablen (`--fs-*`, `--fw-*`, `--lh-*`).
+- POI-Karten optisch überarbeitet, nutzen neue Typografie-Tokens.
+- manifest.webmanifest auf V3.2.21 aktualisiert.
+- Service-Worker-Cache auf V3.2.21 aktualisiert.
+- Hinweis: Bei iPhone-PWA nach Update App schließen und neu öffnen.
+
+# V3.2.20 · Stabilisierung POI/Webcam-Layer
+
+- POI-Detail-Crash durch undefiniertes `POI_KATEGORIEN` behoben.
+- POI-Route im Detail nutzt jetzt `sightMapsUrl(poi)`.
+- POI-Kategorie-Schalter in Optionen korrigiert.
+- Webcams und Sehenswürdigkeiten werden bei gespeicherter Layer-Aktivierung nach Reload sofort gezeichnet.
+- POI-Unterwegs nutzt vorhandene `track`-/`driveRoute`-Daten vor externem KML-Fetch.
+- Service-Worker-Cache auf V3.2.20 erhöht; Prompt-Datei aus CORE_ASSETS entfernt.
+- Webcam-Live-Links cam05–cam10 auf `youtube.com/live/...` normiert.
+
+# V3.2.19 · POI-Unterwegs im Detail
+
+- Detail-Sheet zeigt „🏛 Unterwegs – Sehenswürdigkeiten“.
+- KML-Parser per DOMParser ergänzt.
+- KML-Dateiname wird automatisch aus PR-ID abgeleitet, z. B. `PR 6.3` → `kml/PR6.3.kml`.
+- Falls KML fehlt, greift ein Startpunkt-Fallback bis 5 km.
+- Wikipedia-Thumbnail und Kurzbeschreibung werden mit 24h sessionStorage-Cache geladen.
+- POI-Kartenlayer aus V3.2.17 bleibt unverändert.
+- Keine Änderung an Wetter, Webcams, PR-Statuslogik, Dashboard, `setTab()`, `openDetail()` oder `pr-data.js`.
+
+# V3.2.18 · Webcams final
+
+- `webcam-data.js` mit 20 Madeira-Webcams eingebunden.
+- Webcam-Layer „📷 Webcams“ in Optionen/Ebenen ergänzt.
+- Webcam-Popups zeigen Thumbnail und Live-Link.
+- Detail-Sheet zeigt vier nächste Webcams im 2×2 Grid.
+- Keine Änderung an Wetter, PR-Statuslogik, Dashboard, POI-Daten, `setTab()`, `openDetail()` oder `pr-data.js`.
+
+# V3.2.17 · POI-Layer + Dashboard-Patch
+
+- `poi-data.js` mit 90 Sehenswürdigkeiten eingebunden.
+- Neuer Layer „🏛 Sehenswürdigkeiten“ in Optionen/Ebenen.
+- POI-Popups mit Route und Wikipedia-Link.
+- Dashboard-Eventkarten öffnen vertikal lesbar.
+- Detail-Sheet-Unterwegs/KML bewusst noch nicht integriert.
+
+# V3.2.16 · Dashboard Events erweitert
+
+- `events-data.js` um Koordinaten und `infoUrl` erweitert.
+- `mapsUrl` wird zur Laufzeit generiert: iOS Apple Maps, sonst Google Maps.
+- Eventkarten im Dashboard sind per Tap aufklappbar.
+- Aufgeklappte Events zeigen Beschreibung, Route-Button und Mehr-Info-Link.
+- Keine Änderung an Karte, Detail, Wetter, PR-Statuslogik, `setTab()`, `openDetail()` oder `pr-data.js`.
+
+# V3.2.15 · Dashboard Events & Märkte
+
+- `events-data.js` und `markets-data.js` eingebunden.
+- Home/Übersicht erhält Eventsektion „Diese Woche auf Madeira“.
+- Wochenmärkte werden angezeigt und Heute/Morgen hervorgehoben.
+- Optionale KI-Zusammenfassung per Anthropic API-Key in sessionStorage.
+- Keine Änderung an Karte, Detail, Wetter, PR-Statuslogik, `setTab()`, `openDetail()` oder `pr-data.js`.
+
+# V3.2.14 · Wetter im Detail-Sheet
+
+- Open-Meteo-Wetterblock in der Detailansicht ergänzt.
+- 7-Tage-Streifen mit Tageswerten, Wettericon und Regenwahrscheinlichkeit.
+- Stündliche Canvas-Kurve für Temperatur und Regenwahrscheinlichkeit.
+- sessionStorage-Cache je Trail/Tag für 6 Stunden.
+- Fehlerfall bleibt weich: Wetterblock zeigt Hinweis oder bleibt leer.
+- Keine Änderung an `setTab()`, `openDetail()`, Karteninitialisierung, PR-Statuslogik oder `pr-data.js`.
+
+# V3.2.13 · Manueller PR-Status im Journal
+
+- Automatischer PR-Live-Status-Abruf beim App-Start deaktiviert.
+- Journal zeigt oben eine Statuskarte mit letztem Abruf und Aktualisieren-Button.
+- Statushinweis wird warnend dargestellt, wenn der letzte Abruf älter als 24 Stunden ist.
+- Button „Status aktualisieren“ lädt den offiziellen Status bewusst neu.
+- Live-Status-Diagnose in Optionen bleibt erhalten.
+- Lokale User-Status bleiben vorrangig.
+- Keine Änderung an `setTab()`, `openDetail()`, Karteninitialisierung, Bottom-Dock oder `pr-data.js`.
+
+# V3.2.12 · PR-Live-Status-Fallback korrekt
+
+- `pr-status-fetcher.js` eingebunden.
+- `getSt(id)` korrigiert: Lokaler User-Status gilt nur, wenn `prStatus[id]` wirklich gesetzt ist.
+- Live-Status wirkt als Fallback; `partial` wird korrekt auf App-Status `limited` gemappt.
+- Detailansicht zeigt offiziellen Statusblock.
+- Optionen zeigen PR-Live-Status-Diagnose mit Stichproben.
+- Service Worker cached `./pr-status-fetcher.js` ohne Query-String.
+- Keine Änderung an `setTab()`, `openDetail()`, Karteninitialisierung, Bottom-Dock oder `pr-data.js`.
+
+# V3.2.9 · Detail-Karte-Rückkehr
+
+- Karten-Icon in der Detailansicht wechselt zur Karte und fokussiert den aktiven PR.
+- Detail-Kontext bleibt gespeichert.
+- Auf der Karte erscheint ein kleiner Button „Detail“, solange ein Detail-Kontext aktiv ist.
+- Der Button „Detail“ öffnet die Detailansicht wieder.
+- Keine Änderung an Karteninitialisierung, setTab, Service Worker, Safe-Area oder Bottom-Dock.
+
+# V3.2.8 · Detail-Icon tatsächlich aktiv
+
+- Korrigiert: Karten-Icon wird jetzt tatsächlich in `renderDetail()` eingebunden.
+- Detailtitelbereich nutzt nun Text links und Karten-Icon rechts.
+- Oberer Karte-Textbutton bleibt entfernt.
+- Keine Änderung an Karteninitialisierung, Navigationstiefe, Service-Worker-Prinzip, Safe-Area oder Bottom-Dock.
+- Startdiagnose bleibt enthalten.
+
+# V3.2.7 · Detail-Header-Korrektur
+
+- Karte-Textbutton aus der oberen Detail-Navigation entfernt.
+- Kartenfunktion als rundes Karten-Icon im Titelbereich platziert.
+- Schließen-X wird nicht mehr vom Kartenbutton überlagert.
+- Keine Änderung an Karteninitialisierung, Navigationstiefe, Service-Worker-Prinzip, Safe-Area oder Bottom-Dock.
+- Startdiagnose bleibt enthalten.
+
+# V3.2.6 · Detail-Navigation Phase 1
+
+- Detailansicht erhält Zurück zur vorherigen Hauptfläche.
+- Herkunft wird beim Öffnen eines Details gespeichert.
+- Zurück schließt nur das Detail und stellt Journal/Reisen/Optionen/Karte wieder her.
+- Button „Karte“ fokussiert den aktiven PR auf der Karte, ohne Solo-/Parkmodus.
+- Keine Änderung an Karteninitialisierung, setTab, Safe-Area, Bottom-Dock oder Service-Worker-Prinzip.
+- Startdiagnose aus V3.2.5 bleibt enthalten.
+
+# V3.2.5 · Cache- und Startdiagnose
+
+- Service Worker CORE_ASSETS ohne Query-Strings.
+- index.html behält Cache-Busting per `?v=3.2.5-20260604a`.
+- Startdiagnose in Optionen ergänzt.
+- Sichtbarer Warnhinweis bei schwerem Startfehler.
+- Keine Navigations-, Detail-, Safe-Area-, Bottom-Dock- oder Overlay-Änderungen.
+- Basis bleibt V3.2.3 Recovery.
+
+# V3.2.3 · Recovery zurück auf V3.2.1
+
+- V3.2.2 verworfen, weil die Navigationsänderung die Grundfunktion beschädigt hat.
+- Recovery basiert wieder auf V3.2.1.
+- Karte, Pins, Reisen, Optionen, Sheet-Fix und externe Aktivitäten sind wieder auf dem funktionierenden Stand.
+- Keine V3.2.2-Navigationslogik enthalten.
+- Weiterhin keine aktive prx-v*-Zusatzdatei.
+
+# V3.2.1 · Sheet- und Kartenstil-Fix
+
+- Zweilagige Bottom-Sheet-Wirkung reduziert: äußere Sheets clippen, innere Inhalte scrollen.
+- Schließen-X in Sheet-Headern einheitlicher nach rechts ausgerichtet.
+- Externe Aktivitäten typografisch an PR-Karten angenähert.
+- Keine Safe-Area-, Bottom-Dock-, Overlay- oder Floatingbutton-Änderungen.
+- Weiterhin keine aktive prx-v*-Zusatzdatei.
+
+# V3.2.0 · UI-Flächen-Rebuild
+
+- Aktive prx-v*-Zusatzdateien vollständig entfernt.
+- Roadmap/Tagesplanung liegt in „Reisen“.
+- Audit/Testbericht liegt in „Optionen“.
+- V3-/Planungseinstellungen liegen in „Optionen“.
+- Zoomslider ist ein direktes Karten-Control in app.js/style.css.
+- Test-Floatingbutton, Roadmap/Audit/V3-Floatingbuttons und Zusatzoverlays entfernt.
+- Keine body::before/body::after- oder Dock-/Safe-Area-Overlays.
+
+# V3.1.1 · HUD-Scope-Fix
+
+- Roadmap/Audit/V3-HUD nur noch bei freier Kartenansicht sichtbar.
+- Zoomslider nur noch bei freier Kartenansicht sichtbar.
+- Filter-FAB und Testbutton werden bei geöffneten Panels/Sheets/Einstellungen ausgeblendet.
+- Keine Safe-Area- oder Bottom-Dock-Änderungen.
+
+# V3.1.0 · Clean Layer Reset
+
+- Alte V3.0.x-Hotfixdateien aus dem Upload-Paket entfernt.
+- Z-Index-System neu definiert.
+- Experimentelle Safe-Area-/Dock-/Pseudo-Overlays verboten.
+- Aktives Zusatzmodul konsolidiert auf prx-v3.1.0.js und prx-v3.1.0.css.
+- Service Worker cached nur aktive V3.1.0-Dateien.
+- Bedienbarkeit hat Vorrang vor optischer Safe-Area-Finalisierung.
+
+# V3.0.3 · Detail-, Audit-Export-, Zoomslider- und Viewport-Hotfix
+
+- Doppelter Zoomslider entfernt; alter prx301-Slider wird zwangsweise ausgeblendet.
+- Audit/Test-Schließen gegen versehentlichen Export-/Kopierdialog abgesichert.
+- Viewport-Fix nochmals härter: 100dvh, bottom:0, keine Bottom-Margins.
+- Journal-Kachel öffnet vollständig per Tippen; Pfeil rechts ausgeblendet.
+- Solo-Kartenbutton bleibt als separater Button erhalten.
+- Detailöffnung aus Journal mit Fehlerfang versehen, damit keine weiße Seite ohne Hinweis bleibt.
+
+# V3.0.2 · Audit-, Roadmap- und Bedienfixes nach Praxistest
+
+- Alter Testbericht auf vollständige V3-Auditstruktur erweitert.
+- Kopierbutton oben rechts im Audit/Test-Kopf entfernt.
+- Bottom-/Safe-Area nochmals verschärft.
+- Doppeltipp-Zoom per Touch-Fallback abgesichert.
+- Zoomslider-Schalter in normalen Einstellungen ergänzt.
+- Detail-Nachrendern für nahegelegene PRs und Links stabilisiert.
+- Journal-Layout und Suchfeld stabilisiert.
+- Roadmap-Export bereinigt verwaiste Einträge.
+- ZIP-Dateinamen werden mit UTF-8-Flag geschrieben.
+
+# V3.0.1 · Integrierte Roadmap-, Audit- und Planungsarchitektur
+
+- Direkte Integration in die aktuelle app.js-/style.css-/service-worker.js-Struktur.
+- index.html lädt nun prx-v3.0.1.css und prx-v3.0.1.js mit Cache-Busting.
+- app.js meldet APP_VERSION V3.0.1 und enthält den V3.0.1-Eintrag im Änderungslogbuch.
+- service-worker.js nutzt eigenen V3.0.1-Cache und cached die neuen V3-Dateien.
+- version.json und manifest.webmanifest auf V3.0.1 aktualisiert.
+- Roadmap/Audit/V3-Zusatzmodule sind jetzt direkt über die laufende App erreichbar.
+
+# PR Explorer Madeira · Changelog
+
+## V2.5.8 · 2026-06-02 · Reiseplan-Grundsystem
+
+- Reise-Tab erweitert: Reisetage werden aus dem Reisezeitraum erzeugt und als eigene Tageskarten angezeigt.
+- Geplante PR-Termine und IFCN-Buchungen erscheinen chronologisch in den jeweiligen Tageskarten.
+- PR-Favoriten ohne Termin werden separat als offener Planungsrückstand angezeigt.
+- Offene PR-Favoriten können direkt mit Reisetag, Stunde und 00/30-Minutenraster eingeplant werden.
+- Externe Unternehmungen können lokal gespeichert werden: Titel, Kategorie, Status, Datum, Uhrzeit, Dauer, Fahrzeit, Link und optionale Koordinaten.
+- Externe Unternehmungen können als ICS exportiert oder per gespeichertem Link geöffnet werden.
+- Reiseplan kann als JSON gesichert werden.
+- Statuslogik für Reiseelemente: Idee, Favorit, geplant, gebucht, erledigt, verworfen.
+
+## V2.5.7 · 2026-06-02 · POI-, Kalender- und Linien-Regression-Fix
+
+- Concelhos-Grenzen aus App-UI entfernt und als Layer deaktiviert.
+- POIs: transparente Liquid-Glass-Marker, editierbare Größe, Google-Maps-Übergabe und Radiusmodus um den aktiven PR.
+- Kalenderfelder im Detail auf iOS-robuste Datum/Uhrzeit-Steuerung mit Stundenwahl und 30-Minuten-Raster umgestellt.
+- IFCN-Termin berechnet Hotel-Abfahrt aus Google-Fahrzeit, Fahrzeit-Faktor, Parkplatzpuffer und Wegzeit zum Start.
+- ICS-Export nutzt die berechnete Abfahrt und zwei editierbare Erinnerungen.
+- GPX/KML-Konturbreiten wieder einstellbar.
+- Sortierung im Filter-Sheet wieder ergänzt.
+- Teilen-Button öffnet eine Auswahl für Audit, gefilterte PR-Liste und aktive PR-Daten.
+
+## V2.5.2 · 2026-06-01 · Stabilisierung Maschinenraum
+
+- Repository bereinigt: aktive App-Dateien heißen jetzt `app.js` und `style.css`.
+- Alte Versionierungsreste aus dem Auslieferungsstand entfernt.
+- `index.html`, `app.js`, `style.css`, `service-worker.js`, `version.json` und `CHANGELOG.md` auf V2.5.2 synchronisiert.
+- Service Worker auf eindeutigen Cache `pr-explorer-V2.5.2` umgestellt.
+- Alte `pr-explorer-*` Caches werden beim Aktivieren gelöscht.
+- Navigation/HTML wird network-first geladen; zentrale Assets besitzen Cache-Busting.
+- Dark-/ungültige Altwerte in `cfg.base` fallen auf `topo` zurück.
+- Hybrid-Kartenwechsel entfernt Beschriftungs-Overlay zuverlässig beim Wechsel auf andere Basemaps.
+- Dynamische Safe-Area-Paddinglogik für `fitVisible()` und Detail-Zoom ergänzt.
+- Leaflet-Panes für Regionen, KML, GPX, Heatmap, Hiking, POI, Home und PR-Pins definiert.
+- GPX/KML/Heat-Linien sind nicht interaktiv und blockieren keine Marker-Touches.
+- PR-Pins öffnen Details robuster über `click` und `touchend` mit Debounce.
+- Audit-Export über Teilen-Button; sichtbarer manueller Fallback bei iOS Clipboard-/Share-Blockade.
+- Liquid-Glass-Overrides konsolidieren Bottom-Navigation, Test-Schalter, Filter-FAB und Panels.
+
+## Vorbestand aus V2.5.1
+
+- Bottom-Sheet-Stabilisierung, POI-Layer, Hybridkarte und Exportfunktionen.
+- GPX/KML-Export aus Detailseiten.
+- Farbpicker-Synchronisierung.
+- Testbericht-Export über Teilen-Button.

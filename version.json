@@ -1,10 +1,10 @@
 {
   "name": "PR Explorer Madeira",
-  "version": "V3.2.21",
+  "version": "V3.2.22",
   "date": "2026-06-05",
-  "title": "Routenintelligenz & POI-Kontext",
-  "cache": "pr-explorer-v3-2-21-uploadfix-20260605",
-  "base": "V3.2.20",
+  "title": "PWA-Homebildschirm-Fix",
+  "cache": "pr-explorer-v3-2-22-pwa-homefix-20260605",
+  "base": "V3.2.21",
   "activeFiles": [
     "index.html",
     "style.css",
@@ -18,5 +18,5 @@
     "service-worker.js",
     "kml/*.kml"
   ],
-  "scope": "Uploadfähige V3.2.21: KML-Dateien als PWA-Ressourcen integriert, Anfahrtsstopps nutzen KML primär; nicht benötigte Prompt-Datei aus Liefer-ZIP entfernt."
+  "scope": "Stabilisierung für iOS-Homescreen-PWA: Start-URL ohne Querystring, Service-Worker mit Network-First für App-Dateien, optionale Leaflet-Vorcache-Strategie und Diagnosehinweis bei CDN-/Bootfehlern."
 }

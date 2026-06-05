@@ -1,5 +1,5 @@
-const APP_VERSION = 'V3.2.21';
-const CACHE_NAME = 'pr-explorer-v3-2-21-uploadfix-20260605';
+const APP_VERSION = 'V3.2.22';
+const CACHE_NAME = 'pr-explorer-v3-2-22-pwa-homefix-20260605';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -57,9 +57,18 @@ const CORE_ASSETS = [
   './CHANGELOG.md'
 ];
 
+const EXTERNAL_ASSETS = [
+  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
+];
+
 self.addEventListener('install', event => {
   self.skipWaiting();
-  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(CORE_ASSETS)));
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    await cache.addAll(CORE_ASSETS);
+    await Promise.allSettled(EXTERNAL_ASSETS.map(url => cache.add(url)));
+  })());
 });
 
 self.addEventListener('activate', event => {
@@ -94,9 +103,21 @@ self.addEventListener('fetch', event => {
   const req = event.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
+
+  // Navigation immer frisch versuchen; bei Offline auf lokale App-Hülle zurückfallen.
   if (req.mode === 'navigate' || url.pathname.endsWith('/index.html')) {
     event.respondWith(networkFirst(req));
     return;
   }
+
+  // App-Code und App-Daten nicht stumpf aus altem Cache nehmen.
+  // Das verhindert den iOS-Homescreen-Zustand: neue HTML-Hülle + alte/fehlende JS-Daten.
+  const isSameOrigin = url.origin === self.location.origin;
+  const isAppAsset = isSameOrigin && /\.(js|css|json|webmanifest)$/i.test(url.pathname);
+  if (isAppAsset) {
+    event.respondWith(networkFirst(req));
+    return;
+  }
+
   event.respondWith(cacheFirst(req));
 });

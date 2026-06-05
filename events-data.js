@@ -1,259 +1,301 @@
-# V3.2.21 · Routenintelligenz & POI-Kontext
+// PR Explorer Madeira — Events & Festivals 2026
+// Quellen laut Modulvorgabe: madeira-web.com, visitmadeira.com, travel-to-madeira.com
+// Neue Felder: lat, lng, infoUrl; mapsUrl wird zur Laufzeit generiert.
 
-- POI-Logik in drei getrennte Kontexte aufgeteilt: Anfahrtsstopps (driveRoute), Sehenswürdigkeiten nahe Wanderweg (track), Zugangspunkte nahe Start/Ziel.
-- POI-Container aus dem Höhenprofil-Block herausgelöst — erscheint jetzt bei **allen** 37 PRs, nicht nur bei PRs mit Höhenprofil.
-- Anfahrts-KML-Dateien (Pestana Promenade → PR X) integriert. 36 von 37 PRs mit echten Anfahrtsrouten.
-- KML-Parser verbessert: verwendet nur LineString-Placemarks, filtert Luftlinien (>0,05° Sprung).
-- Fallback-Kette für Anfahrt: driveRoute → KML-Datei → Home-Pin-Linie → Startpunkt.
-- PR 9 ohne driveRoute nutzt Hotel-zu-Start-Linie als Fallback.
-- Leere POI-Blöcke zeigen sauberen Empty-State statt leerem Container.
-- Duplikat-Filter zwischen den drei POI-Blöcken.
-- `POI_ROUTE_SETTINGS`-Konstante für konfigurierbare Distanzradien.
-- Zentrales Typografie-System als CSS-Variablen (`--fs-*`, `--fw-*`, `--lh-*`).
-- POI-Karten optisch überarbeitet, nutzen neue Typografie-Tokens.
-- manifest.webmanifest auf V3.2.21 aktualisiert.
-- Service-Worker-Cache auf V3.2.21 aktualisiert.
-- Hinweis: Bei iPhone-PWA nach Update App schließen und neu öffnen.
+window.MADEIRA_EVENTS = [
+  {
+    "id": "e01",
+    "name": "Heilige Drei Könige",
+    "ort": "Funchal Stadtzentrum",
+    "kategorie": "tradition",
+    "start": "2026-01-05",
+    "ende": "2026-01-06",
+    "beschreibung": "Traditionelle Gesangsgruppen treten in Funchal und Dörfern auf. Hauptveranstaltung am Largo do Município.",
+    "lat": 32.649,
+    "lng": -16.9078,
+    "infoUrl": "https://www.madeira-web.com/en/whats-on/madeira-events.html",
+    "emoji": "⭐"
+  },
+  {
+    "id": "e02",
+    "name": "Karneval Madeira",
+    "ort": "Avenida do Mar, Funchal",
+    "kategorie": "festival",
+    "start": "2026-02-11",
+    "ende": "2026-02-22",
+    "beschreibung": "Allegorischer Umzug (14. Feb) und Trapalhão-Parade (17. Feb) entlang der Avenida do Mar. Tägliche Konzerte im Stadtzentrum.",
+    "lat": 32.6466,
+    "lng": -16.9126,
+    "infoUrl": "https://www.madeira-web.com/en/whats-on/madeira-carnival.html",
+    "emoji": "🎭"
+  },
+  {
+    "id": "e03",
+    "name": "Anona Festival (Cherimoya)",
+    "ort": "Faial, Santana",
+    "kategorie": "markt",
+    "start": "2026-02-14",
+    "ende": "2026-02-15",
+    "beschreibung": "Fest der tropischen Cherimoya-Frucht mit Folkloremusik, Essensständen und lokalen Handwerkern.",
+    "lat": 32.7756,
+    "lng": -16.8456,
+    "infoUrl": "https://www.madeira-web.com/en/whats-on/madeira-events.html",
+    "emoji": "🍈"
+  },
+  {
+    "id": "e04",
+    "name": "Madeira Music Festival (XXXIX)",
+    "ort": "Teatro Municipal Baltazar Dias, Funchal",
+    "kategorie": "musik",
+    "start": "2026-03-07",
+    "ende": "2026-03-28",
+    "beschreibung": "10 klassische Konzerte in verschiedenen Spielstätten auf Madeira und Porto Santo. Hauptspielort: Teatro Municipal Baltazar Dias.",
+    "lat": 32.6493,
+    "lng": -16.9074,
+    "infoUrl": "https://visitmadeira.com/en/whats-on/",
+    "emoji": "🎼"
+  },
+  {
+    "id": "e05",
+    "name": "Schokoladen-Markt",
+    "ort": "Mercado dos Lavradores, Funchal",
+    "kategorie": "markt",
+    "start": "2026-03-29",
+    "ende": "2026-04-04",
+    "beschreibung": "Schokoladenmarkt auf der 3. Etage des berühmten Bauernmarkts inkl. Wettbewerb für die beste Schokoladentorte Funchals.",
+    "lat": 32.6478,
+    "lng": -16.9046,
+    "infoUrl": "https://www.madeira-web.com/en/whats-on/madeira-events.html",
+    "emoji": "🍫"
+  },
+  {
+    "id": "e06",
+    "name": "Zitronen-Festival (Festa do Limão)",
+    "ort": "Ilha, Santana",
+    "kategorie": "festival",
+    "start": "2026-04-11",
+    "ende": "2026-04-12",
+    "beschreibung": "Jährliches Zitronenfest in der Gemeinde Ilha mit Unterhaltungsprogramm, lokalen Spezialitäten und Folkloredarbietungen.",
+    "lat": 32.8012,
+    "lng": -16.8834,
+    "infoUrl": "https://www.madeira-web.com/en/whats-on/madeira-events.html",
+    "emoji": "🍋"
+  },
+  {
+    "id": "e07",
+    "name": "Madeira Rum Festival",
+    "ort": "Largo da Restauração, Funchal",
+    "kategorie": "festival",
+    "start": "2026-04-14",
+    "ende": "2026-04-18",
+    "beschreibung": "Verkostung neuer und traditioneller Madeira-Rums direkt am Largo da Restauração im Herzen Funchals.",
+    "lat": 32.6502,
+    "lng": -16.9089,
+    "infoUrl": "https://www.madeira-web.com/en/whats-on/madeira-events.html",
+    "emoji": "🥃"
+  },
+  {
+    "id": "e08",
+    "name": "MIUT Ultra-Trail",
+    "ort": "Start: Pico do Arieiro",
+    "kategorie": "sport",
+    "start": "2026-04-23",
+    "ende": "2026-04-26",
+    "beschreibung": "Internationales Trailrunning-Event über die Berge Madeiras. Verschiedene Distanzen (16–115 km). Startbereich Pico do Arieiro.",
+    "lat": 32.7355,
+    "lng": -16.9291,
+    "infoUrl": "https://www.miutmadeira.com/",
+    "emoji": "🏃"
+  },
+  {
+    "id": "e09",
+    "name": "Blumenfestival (Festa da Flor)",
+    "ort": "Funchal Stadtzentrum",
+    "kategorie": "festival",
+    "start": "2026-04-30",
+    "ende": "2026-05-24",
+    "beschreibung": "Blumenausstellung im Pavillon, Allegorischer Umzug (3. & 17. Mai) entlang der Avenida Arriaga, Blumenmarkt, Konzerte.",
+    "lat": 32.649,
+    "lng": -16.9078,
+    "infoUrl": "https://visitmadeira.com/en/whats-on/flower-festival/",
+    "emoji": "🌸"
+  },
+  {
+    "id": "e10",
+    "name": "Madeira Classic Car Revival",
+    "ort": "Funchal & Insel",
+    "kategorie": "sport",
+    "start": "2026-05-22",
+    "ende": "2026-05-25",
+    "beschreibung": "Oldtimer-Rallye durch die Straßen Madeiras. Hauptversammlung und Ziel: Avenida Arriaga, Funchal.",
+    "lat": 32.649,
+    "lng": -16.9078,
+    "infoUrl": "https://www.madeira-web.com/en/whats-on/madeira-events.html",
+    "emoji": "🏎"
+  },
+  {
+    "id": "e11",
+    "name": "Mittelaltermarkt Machico",
+    "ort": "Largo do Município, Machico",
+    "kategorie": "markt",
+    "start": "2026-06-05",
+    "ende": "2026-06-07",
+    "beschreibung": "Historischer Markt (Mercado Quinhentista) mit Kostümen, Pferdeshow, Feuerspuckern und Live-Musik im historischen Zentrum Machicos.",
+    "lat": 32.7162,
+    "lng": -16.7675,
+    "infoUrl": "https://www.madeira-web.com/en/whats-on/machico-medieval-market.html",
+    "emoji": "⚔️"
+  },
+  {
+    "id": "e12",
+    "name": "Atlantic Festival & Feuerwerk",
+    "ort": "Hafen Funchal",
+    "kategorie": "festival",
+    "start": "2026-06-05",
+    "ende": "2026-06-28",
+    "beschreibung": "Internationaler Feuerwerk-Wettbewerb jeden Samstag (6., 13., 20., 27. Juni) über dem Hafen. Konzerte und Straßenfeste ganzen Monat.",
+    "lat": 32.6453,
+    "lng": -16.9089,
+    "infoUrl": "https://visitmadeira.com/en/whats-on/atlantic-festival/",
+    "emoji": "🎆"
+  },
+  {
+    "id": "e13",
+    "name": "Ultra Skyrunning Madeira",
+    "ort": "Achada do Teixeira, Santana",
+    "kategorie": "sport",
+    "start": "2026-06-12",
+    "ende": "2026-06-13",
+    "beschreibung": "Berglauf-Rennen mit internationalem Starterfeld. Startbereich Achada do Teixeira nahe Pico Ruivo.",
+    "lat": 32.7726,
+    "lng": -16.9108,
+    "infoUrl": "https://www.madeira-web.com/en/whats-on/madeira-events.html",
+    "emoji": "⛰️"
+  },
+  {
+    "id": "e14",
+    "name": "Santos Populares",
+    "ort": "Inselweit (Funchal, Câmara de Lobos)",
+    "kategorie": "tradition",
+    "start": "2026-06-13",
+    "ende": "2026-06-29",
+    "beschreibung": "Straßenfeste zu Ehren der Volksheiligen Antonius, Johannes und Peter. Gegrillte Sardinen, Wein, Musik. Größtes Fest: São Pedro in Câmara de Lobos (28. Jun).",
+    "lat": 32.649,
+    "lng": -16.983,
+    "infoUrl": "https://www.madeira-web.com/en/whats-on/madeira-events.html",
+    "emoji": "🐟"
+  },
+  {
+    "id": "e15",
+    "name": "Sommer Opening Festival",
+    "ort": "Funchal Stadtzentrum",
+    "kategorie": "festival",
+    "start": "2026-07-02",
+    "ende": "2026-07-04",
+    "beschreibung": "Offizieller Saisonauftakt mit Konzerten, Straßenfesten und Unterhaltung im Funchal Stadtzentrum.",
+    "lat": 32.649,
+    "lng": -16.9078,
+    "infoUrl": "https://www.madeira-web.com/en/whats-on/madeira-events.html",
+    "emoji": "☀️"
+  },
+  {
+    "id": "e16",
+    "name": "Classic Car Festival Quinta Magnólia",
+    "ort": "Quinta Magnólia, Funchal",
+    "kategorie": "sport",
+    "start": "2026-07-25",
+    "ende": "2026-07-26",
+    "beschreibung": "Oldtimer-Ausstellung im historischen Park der Quinta Magnólia. Freier Eintritt zum Park.",
+    "lat": 32.6472,
+    "lng": -16.9198,
+    "infoUrl": "https://www.madeira-web.com/en/whats-on/madeira-events.html",
+    "emoji": "🚗"
+  },
+  {
+    "id": "e17",
+    "name": "Madeira Wine Rally",
+    "ort": "Start/Ziel: Funchal",
+    "kategorie": "sport",
+    "start": "2026-07-30",
+    "ende": "2026-08-01",
+    "beschreibung": "Eine der ältesten Automobil-Rallyes Europas durch die Bergstraßen Madeiras. Zuschauerfreundliche Sonderprüfungen.",
+    "lat": 32.649,
+    "lng": -16.9078,
+    "infoUrl": "https://www.madeira-web.com/en/whats-on/madeira-wine-rally.html",
+    "emoji": "🏁"
+  },
+  {
+    "id": "e18",
+    "name": "Madeira Wine Festival",
+    "ort": "Funchal & Câmara de Lobos",
+    "kategorie": "festival",
+    "start": "2026-08-27",
+    "ende": "2026-09-13",
+    "beschreibung": "Weinfest mit traditioneller Traubenerntemesse, Weinverkostungen, Folklorevorführungen und historischen Umzügen in Funchal und Câmara de Lobos.",
+    "lat": 32.649,
+    "lng": -16.9078,
+    "infoUrl": "https://visitmadeira.com/en/whats-on/wine-festival/",
+    "emoji": "🍷"
+  },
+  {
+    "id": "e19",
+    "name": "Nature Festival",
+    "ort": "Madeira Island",
+    "kategorie": "natur",
+    "start": "2026-10-01",
+    "ende": "2026-10-31",
+    "beschreibung": "Natur- und Ökotourismus-Festival mit geführten Wanderungen, Vogelbeobachtung, Walexkursionen und Outdoor-Aktivitäten.",
+    "lat": 32.75,
+    "lng": -17.0,
+    "infoUrl": "https://visitmadeira.com/en/whats-on/",
+    "emoji": "🌿"
+  },
+  {
+    "id": "e20",
+    "name": "Kastanienfest (Festa das Castanhas)",
+    "ort": "Curral das Freiras",
+    "kategorie": "markt",
+    "start": "2026-11-07",
+    "ende": "2026-11-08",
+    "beschreibung": "Traditionelles Kastanienfest im malerischen Nonnental. Kastanienspezialitäten (Suppe, Likör, Kuchen), Folklore und Handwerksmarkt.",
+    "lat": 32.7072,
+    "lng": -16.9703,
+    "infoUrl": "https://www.madeira-web.com/en/whats-on/madeira-events.html",
+    "emoji": "🌰"
+  },
+  {
+    "id": "e21",
+    "name": "Weihnachtslichter & Mercadinho de Natal",
+    "ort": "Funchal Stadtzentrum",
+    "kategorie": "tradition",
+    "start": "2026-12-01",
+    "ende": "2027-01-10",
+    "beschreibung": "Weltberühmte Weihnachtsbeleuchtung über dem Funchal-Amphitheater. Weihnachtsmarkt (Mercadinho de Natal) mit regionalen Produkten, Süßigkeiten und Handwerk.",
+    "lat": 32.649,
+    "lng": -16.9078,
+    "infoUrl": "https://visitmadeira.com/en/whats-on/christmas/",
+    "emoji": "🎄"
+  },
+  {
+    "id": "e22",
+    "name": "Silvester Funchal (Weltrekord-Feuerwerk)",
+    "ort": "Hafen Funchal",
+    "kategorie": "festival",
+    "start": "2026-12-31",
+    "ende": "2026-12-31",
+    "beschreibung": "Eines der spektakulärsten Silvesterfeuerwerke der Welt — Guinness-Rekordhalter. Bestes Sichtfeld: Hafen und erhöhte Aussichtspunkte rund um Funchal.",
+    "lat": 32.6453,
+    "lng": -16.9089,
+    "infoUrl": "https://visitmadeira.com/en/whats-on/new-years-eve/",
+    "emoji": "🎆"
+  }
+];
 
-# V3.2.20 · Stabilisierung POI/Webcam-Layer
-
-- POI-Detail-Crash durch undefiniertes `POI_KATEGORIEN` behoben.
-- POI-Route im Detail nutzt jetzt `sightMapsUrl(poi)`.
-- POI-Kategorie-Schalter in Optionen korrigiert.
-- Webcams und Sehenswürdigkeiten werden bei gespeicherter Layer-Aktivierung nach Reload sofort gezeichnet.
-- POI-Unterwegs nutzt vorhandene `track`-/`driveRoute`-Daten vor externem KML-Fetch.
-- Service-Worker-Cache auf V3.2.20 erhöht; Prompt-Datei aus CORE_ASSETS entfernt.
-- Webcam-Live-Links cam05–cam10 auf `youtube.com/live/...` normiert.
-
-# V3.2.19 · POI-Unterwegs im Detail
-
-- Detail-Sheet zeigt „🏛 Unterwegs – Sehenswürdigkeiten“.
-- KML-Parser per DOMParser ergänzt.
-- KML-Dateiname wird automatisch aus PR-ID abgeleitet, z. B. `PR 6.3` → `kml/PR6.3.kml`.
-- Falls KML fehlt, greift ein Startpunkt-Fallback bis 5 km.
-- Wikipedia-Thumbnail und Kurzbeschreibung werden mit 24h sessionStorage-Cache geladen.
-- POI-Kartenlayer aus V3.2.17 bleibt unverändert.
-- Keine Änderung an Wetter, Webcams, PR-Statuslogik, Dashboard, `setTab()`, `openDetail()` oder `pr-data.js`.
-
-# V3.2.18 · Webcams final
-
-- `webcam-data.js` mit 20 Madeira-Webcams eingebunden.
-- Webcam-Layer „📷 Webcams“ in Optionen/Ebenen ergänzt.
-- Webcam-Popups zeigen Thumbnail und Live-Link.
-- Detail-Sheet zeigt vier nächste Webcams im 2×2 Grid.
-- Keine Änderung an Wetter, PR-Statuslogik, Dashboard, POI-Daten, `setTab()`, `openDetail()` oder `pr-data.js`.
-
-# V3.2.17 · POI-Layer + Dashboard-Patch
-
-- `poi-data.js` mit 90 Sehenswürdigkeiten eingebunden.
-- Neuer Layer „🏛 Sehenswürdigkeiten“ in Optionen/Ebenen.
-- POI-Popups mit Route und Wikipedia-Link.
-- Dashboard-Eventkarten öffnen vertikal lesbar.
-- Detail-Sheet-Unterwegs/KML bewusst noch nicht integriert.
-
-# V3.2.16 · Dashboard Events erweitert
-
-- `events-data.js` um Koordinaten und `infoUrl` erweitert.
-- `mapsUrl` wird zur Laufzeit generiert: iOS Apple Maps, sonst Google Maps.
-- Eventkarten im Dashboard sind per Tap aufklappbar.
-- Aufgeklappte Events zeigen Beschreibung, Route-Button und Mehr-Info-Link.
-- Keine Änderung an Karte, Detail, Wetter, PR-Statuslogik, `setTab()`, `openDetail()` oder `pr-data.js`.
-
-# V3.2.15 · Dashboard Events & Märkte
-
-- `events-data.js` und `markets-data.js` eingebunden.
-- Home/Übersicht erhält Eventsektion „Diese Woche auf Madeira“.
-- Wochenmärkte werden angezeigt und Heute/Morgen hervorgehoben.
-- Optionale KI-Zusammenfassung per Anthropic API-Key in sessionStorage.
-- Keine Änderung an Karte, Detail, Wetter, PR-Statuslogik, `setTab()`, `openDetail()` oder `pr-data.js`.
-
-# V3.2.14 · Wetter im Detail-Sheet
-
-- Open-Meteo-Wetterblock in der Detailansicht ergänzt.
-- 7-Tage-Streifen mit Tageswerten, Wettericon und Regenwahrscheinlichkeit.
-- Stündliche Canvas-Kurve für Temperatur und Regenwahrscheinlichkeit.
-- sessionStorage-Cache je Trail/Tag für 6 Stunden.
-- Fehlerfall bleibt weich: Wetterblock zeigt Hinweis oder bleibt leer.
-- Keine Änderung an `setTab()`, `openDetail()`, Karteninitialisierung, PR-Statuslogik oder `pr-data.js`.
-
-# V3.2.13 · Manueller PR-Status im Journal
-
-- Automatischer PR-Live-Status-Abruf beim App-Start deaktiviert.
-- Journal zeigt oben eine Statuskarte mit letztem Abruf und Aktualisieren-Button.
-- Statushinweis wird warnend dargestellt, wenn der letzte Abruf älter als 24 Stunden ist.
-- Button „Status aktualisieren“ lädt den offiziellen Status bewusst neu.
-- Live-Status-Diagnose in Optionen bleibt erhalten.
-- Lokale User-Status bleiben vorrangig.
-- Keine Änderung an `setTab()`, `openDetail()`, Karteninitialisierung, Bottom-Dock oder `pr-data.js`.
-
-# V3.2.12 · PR-Live-Status-Fallback korrekt
-
-- `pr-status-fetcher.js` eingebunden.
-- `getSt(id)` korrigiert: Lokaler User-Status gilt nur, wenn `prStatus[id]` wirklich gesetzt ist.
-- Live-Status wirkt als Fallback; `partial` wird korrekt auf App-Status `limited` gemappt.
-- Detailansicht zeigt offiziellen Statusblock.
-- Optionen zeigen PR-Live-Status-Diagnose mit Stichproben.
-- Service Worker cached `./pr-status-fetcher.js` ohne Query-String.
-- Keine Änderung an `setTab()`, `openDetail()`, Karteninitialisierung, Bottom-Dock oder `pr-data.js`.
-
-# V3.2.9 · Detail-Karte-Rückkehr
-
-- Karten-Icon in der Detailansicht wechselt zur Karte und fokussiert den aktiven PR.
-- Detail-Kontext bleibt gespeichert.
-- Auf der Karte erscheint ein kleiner Button „Detail“, solange ein Detail-Kontext aktiv ist.
-- Der Button „Detail“ öffnet die Detailansicht wieder.
-- Keine Änderung an Karteninitialisierung, setTab, Service Worker, Safe-Area oder Bottom-Dock.
-
-# V3.2.8 · Detail-Icon tatsächlich aktiv
-
-- Korrigiert: Karten-Icon wird jetzt tatsächlich in `renderDetail()` eingebunden.
-- Detailtitelbereich nutzt nun Text links und Karten-Icon rechts.
-- Oberer Karte-Textbutton bleibt entfernt.
-- Keine Änderung an Karteninitialisierung, Navigationstiefe, Service-Worker-Prinzip, Safe-Area oder Bottom-Dock.
-- Startdiagnose bleibt enthalten.
-
-# V3.2.7 · Detail-Header-Korrektur
-
-- Karte-Textbutton aus der oberen Detail-Navigation entfernt.
-- Kartenfunktion als rundes Karten-Icon im Titelbereich platziert.
-- Schließen-X wird nicht mehr vom Kartenbutton überlagert.
-- Keine Änderung an Karteninitialisierung, Navigationstiefe, Service-Worker-Prinzip, Safe-Area oder Bottom-Dock.
-- Startdiagnose bleibt enthalten.
-
-# V3.2.6 · Detail-Navigation Phase 1
-
-- Detailansicht erhält Zurück zur vorherigen Hauptfläche.
-- Herkunft wird beim Öffnen eines Details gespeichert.
-- Zurück schließt nur das Detail und stellt Journal/Reisen/Optionen/Karte wieder her.
-- Button „Karte“ fokussiert den aktiven PR auf der Karte, ohne Solo-/Parkmodus.
-- Keine Änderung an Karteninitialisierung, setTab, Safe-Area, Bottom-Dock oder Service-Worker-Prinzip.
-- Startdiagnose aus V3.2.5 bleibt enthalten.
-
-# V3.2.5 · Cache- und Startdiagnose
-
-- Service Worker CORE_ASSETS ohne Query-Strings.
-- index.html behält Cache-Busting per `?v=3.2.5-20260604a`.
-- Startdiagnose in Optionen ergänzt.
-- Sichtbarer Warnhinweis bei schwerem Startfehler.
-- Keine Navigations-, Detail-, Safe-Area-, Bottom-Dock- oder Overlay-Änderungen.
-- Basis bleibt V3.2.3 Recovery.
-
-# V3.2.3 · Recovery zurück auf V3.2.1
-
-- V3.2.2 verworfen, weil die Navigationsänderung die Grundfunktion beschädigt hat.
-- Recovery basiert wieder auf V3.2.1.
-- Karte, Pins, Reisen, Optionen, Sheet-Fix und externe Aktivitäten sind wieder auf dem funktionierenden Stand.
-- Keine V3.2.2-Navigationslogik enthalten.
-- Weiterhin keine aktive prx-v*-Zusatzdatei.
-
-# V3.2.1 · Sheet- und Kartenstil-Fix
-
-- Zweilagige Bottom-Sheet-Wirkung reduziert: äußere Sheets clippen, innere Inhalte scrollen.
-- Schließen-X in Sheet-Headern einheitlicher nach rechts ausgerichtet.
-- Externe Aktivitäten typografisch an PR-Karten angenähert.
-- Keine Safe-Area-, Bottom-Dock-, Overlay- oder Floatingbutton-Änderungen.
-- Weiterhin keine aktive prx-v*-Zusatzdatei.
-
-# V3.2.0 · UI-Flächen-Rebuild
-
-- Aktive prx-v*-Zusatzdateien vollständig entfernt.
-- Roadmap/Tagesplanung liegt in „Reisen“.
-- Audit/Testbericht liegt in „Optionen“.
-- V3-/Planungseinstellungen liegen in „Optionen“.
-- Zoomslider ist ein direktes Karten-Control in app.js/style.css.
-- Test-Floatingbutton, Roadmap/Audit/V3-Floatingbuttons und Zusatzoverlays entfernt.
-- Keine body::before/body::after- oder Dock-/Safe-Area-Overlays.
-
-# V3.1.1 · HUD-Scope-Fix
-
-- Roadmap/Audit/V3-HUD nur noch bei freier Kartenansicht sichtbar.
-- Zoomslider nur noch bei freier Kartenansicht sichtbar.
-- Filter-FAB und Testbutton werden bei geöffneten Panels/Sheets/Einstellungen ausgeblendet.
-- Keine Safe-Area- oder Bottom-Dock-Änderungen.
-
-# V3.1.0 · Clean Layer Reset
-
-- Alte V3.0.x-Hotfixdateien aus dem Upload-Paket entfernt.
-- Z-Index-System neu definiert.
-- Experimentelle Safe-Area-/Dock-/Pseudo-Overlays verboten.
-- Aktives Zusatzmodul konsolidiert auf prx-v3.1.0.js und prx-v3.1.0.css.
-- Service Worker cached nur aktive V3.1.0-Dateien.
-- Bedienbarkeit hat Vorrang vor optischer Safe-Area-Finalisierung.
-
-# V3.0.3 · Detail-, Audit-Export-, Zoomslider- und Viewport-Hotfix
-
-- Doppelter Zoomslider entfernt; alter prx301-Slider wird zwangsweise ausgeblendet.
-- Audit/Test-Schließen gegen versehentlichen Export-/Kopierdialog abgesichert.
-- Viewport-Fix nochmals härter: 100dvh, bottom:0, keine Bottom-Margins.
-- Journal-Kachel öffnet vollständig per Tippen; Pfeil rechts ausgeblendet.
-- Solo-Kartenbutton bleibt als separater Button erhalten.
-- Detailöffnung aus Journal mit Fehlerfang versehen, damit keine weiße Seite ohne Hinweis bleibt.
-
-# V3.0.2 · Audit-, Roadmap- und Bedienfixes nach Praxistest
-
-- Alter Testbericht auf vollständige V3-Auditstruktur erweitert.
-- Kopierbutton oben rechts im Audit/Test-Kopf entfernt.
-- Bottom-/Safe-Area nochmals verschärft.
-- Doppeltipp-Zoom per Touch-Fallback abgesichert.
-- Zoomslider-Schalter in normalen Einstellungen ergänzt.
-- Detail-Nachrendern für nahegelegene PRs und Links stabilisiert.
-- Journal-Layout und Suchfeld stabilisiert.
-- Roadmap-Export bereinigt verwaiste Einträge.
-- ZIP-Dateinamen werden mit UTF-8-Flag geschrieben.
-
-# V3.0.1 · Integrierte Roadmap-, Audit- und Planungsarchitektur
-
-- Direkte Integration in die aktuelle app.js-/style.css-/service-worker.js-Struktur.
-- index.html lädt nun prx-v3.0.1.css und prx-v3.0.1.js mit Cache-Busting.
-- app.js meldet APP_VERSION V3.0.1 und enthält den V3.0.1-Eintrag im Änderungslogbuch.
-- service-worker.js nutzt eigenen V3.0.1-Cache und cached die neuen V3-Dateien.
-- version.json und manifest.webmanifest auf V3.0.1 aktualisiert.
-- Roadmap/Audit/V3-Zusatzmodule sind jetzt direkt über die laufende App erreichbar.
-
-# PR Explorer Madeira · Changelog
-
-## V2.5.8 · 2026-06-02 · Reiseplan-Grundsystem
-
-- Reise-Tab erweitert: Reisetage werden aus dem Reisezeitraum erzeugt und als eigene Tageskarten angezeigt.
-- Geplante PR-Termine und IFCN-Buchungen erscheinen chronologisch in den jeweiligen Tageskarten.
-- PR-Favoriten ohne Termin werden separat als offener Planungsrückstand angezeigt.
-- Offene PR-Favoriten können direkt mit Reisetag, Stunde und 00/30-Minutenraster eingeplant werden.
-- Externe Unternehmungen können lokal gespeichert werden: Titel, Kategorie, Status, Datum, Uhrzeit, Dauer, Fahrzeit, Link und optionale Koordinaten.
-- Externe Unternehmungen können als ICS exportiert oder per gespeichertem Link geöffnet werden.
-- Reiseplan kann als JSON gesichert werden.
-- Statuslogik für Reiseelemente: Idee, Favorit, geplant, gebucht, erledigt, verworfen.
-
-## V2.5.7 · 2026-06-02 · POI-, Kalender- und Linien-Regression-Fix
-
-- Concelhos-Grenzen aus App-UI entfernt und als Layer deaktiviert.
-- POIs: transparente Liquid-Glass-Marker, editierbare Größe, Google-Maps-Übergabe und Radiusmodus um den aktiven PR.
-- Kalenderfelder im Detail auf iOS-robuste Datum/Uhrzeit-Steuerung mit Stundenwahl und 30-Minuten-Raster umgestellt.
-- IFCN-Termin berechnet Hotel-Abfahrt aus Google-Fahrzeit, Fahrzeit-Faktor, Parkplatzpuffer und Wegzeit zum Start.
-- ICS-Export nutzt die berechnete Abfahrt und zwei editierbare Erinnerungen.
-- GPX/KML-Konturbreiten wieder einstellbar.
-- Sortierung im Filter-Sheet wieder ergänzt.
-- Teilen-Button öffnet eine Auswahl für Audit, gefilterte PR-Liste und aktive PR-Daten.
-
-## V2.5.2 · 2026-06-01 · Stabilisierung Maschinenraum
-
-- Repository bereinigt: aktive App-Dateien heißen jetzt `app.js` und `style.css`.
-- Alte Versionierungsreste aus dem Auslieferungsstand entfernt.
-- `index.html`, `app.js`, `style.css`, `service-worker.js`, `version.json` und `CHANGELOG.md` auf V2.5.2 synchronisiert.
-- Service Worker auf eindeutigen Cache `pr-explorer-V2.5.2` umgestellt.
-- Alte `pr-explorer-*` Caches werden beim Aktivieren gelöscht.
-- Navigation/HTML wird network-first geladen; zentrale Assets besitzen Cache-Busting.
-- Dark-/ungültige Altwerte in `cfg.base` fallen auf `topo` zurück.
-- Hybrid-Kartenwechsel entfernt Beschriftungs-Overlay zuverlässig beim Wechsel auf andere Basemaps.
-- Dynamische Safe-Area-Paddinglogik für `fitVisible()` und Detail-Zoom ergänzt.
-- Leaflet-Panes für Regionen, KML, GPX, Heatmap, Hiking, POI, Home und PR-Pins definiert.
-- GPX/KML/Heat-Linien sind nicht interaktiv und blockieren keine Marker-Touches.
-- PR-Pins öffnen Details robuster über `click` und `touchend` mit Debounce.
-- Audit-Export über Teilen-Button; sichtbarer manueller Fallback bei iOS Clipboard-/Share-Blockade.
-- Liquid-Glass-Overrides konsolidieren Bottom-Navigation, Test-Schalter, Filter-FAB und Panels.
-
-## Vorbestand aus V2.5.1
-
-- Bottom-Sheet-Stabilisierung, POI-Layer, Hybridkarte und Exportfunktionen.
-- GPX/KML-Export aus Detailseiten.
-- Farbpicker-Synchronisierung.
-- Testbericht-Export über Teilen-Button.
+window.MADEIRA_EVENTS.forEach(ev => {
+  if (ev.lat && ev.lng) {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    ev.mapsUrl = isIOS
+      ? `maps://maps.apple.com/?ll=${ev.lat},${ev.lng}&q=${encodeURIComponent(ev.name)}`
+      : `https://www.google.com/maps/search/?api=1&query=${ev.lat},${ev.lng}`;
+  }
+});
